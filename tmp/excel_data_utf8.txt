@@ -1,0 +1,1 @@
+﻿ERROR: Pandas requires version '3.1.0' or newer of 'openpyxl' (version '3.0.10' currently installed).
