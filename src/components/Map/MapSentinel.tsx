@@ -38,7 +38,7 @@ const YEAR_LAYER_MAP: Record<string, { layer: string; label: string }> = {
 
 const YEARS = Object.keys(YEAR_LAYER_MAP);
 const PMTILES_URL =
-  'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/od_district_pop_total_2036.pmtiles';
+  'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/population_data/od_district_pop_total_2036_corrected.pmtiles';
 
 const ODISHA_CENTER: [number, number] = [84.8, 20.5];
 const ODISHA_BOUNDS: maplibregl.LngLatBoundsLike = [
@@ -379,7 +379,7 @@ export const MapSentinel: React.FC<MapSentinelProps> = ({
             {/* Play/Pause Button */}
             <button
               onClick={() => setIsPlaying(!isPlaying)}
-              className="w-12 h-12 flex items-center justify-center rounded-xl bg-[#F96000] text-white shadow-lg hover:bg-orange-600 transition-all active:scale-95 shrink-0"
+              className="w-12 h-12 flex items-center justify-center rounded-xl bg-[#F76000] text-white shadow-lg hover:bg-orange-600 transition-all active:scale-95 shrink-0"
             >
               {isPlaying ? (
                 <Pause className="w-6 h-6 fill-current" />
@@ -402,7 +402,7 @@ export const MapSentinel: React.FC<MapSentinelProps> = ({
               <div className="relative h-1.5 w-full bg-white/10 rounded-full cursor-pointer overflow-hidden flex items-center">
                 {/* Track Highlight */}
                 <div
-                  className="absolute left-0 top-0 bottom-0 bg-[#F96000] transition-all duration-300"
+                  className="absolute left-0 top-0 bottom-0 bg-[#F76000] transition-all duration-300"
                   style={{
                     width: `${(YEARS.indexOf(selectedYear) / (YEARS.length - 1)) * 100}%`,
                   }}

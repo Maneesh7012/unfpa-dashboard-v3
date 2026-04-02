@@ -337,20 +337,8 @@ export const MapSection: React.FC<MapSectionProps> = ({
     },
     { id: 'pop', label: 'Total Population', minYear: 2011, maxYear: 2035 },
     {
-      id: 'deg_rural',
-      label: 'Degree of Urbanisation - Rural',
-      minYear: 2015,
-      maxYear: 2035,
-    },
-    {
-      id: 'deg_town',
-      label: 'Degree of Urbanisation - Town',
-      minYear: 2015,
-      maxYear: 2035,
-    },
-    {
-      id: 'deg_city',
-      label: 'Degree of Urbanisation - City',
+      id: 'deg_urbanisation',
+      label: 'Degree of Urbanisation',
       minYear: 2015,
       maxYear: 2035,
     },
@@ -589,7 +577,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
     if (name === 'All Districts' || name === 'Odisha') return DEFAULTS;
 
     const litKeyBase =
-      districtData[`Literacy_${yearSuffix}`] !== undefined
+      districtData?.[`Literacy_${yearSuffix}`] !== undefined
         ? `Literacy_${yearSuffix}`
         : `literacy_${yearSuffix}`;
 
@@ -652,10 +640,10 @@ export const MapSection: React.FC<MapSectionProps> = ({
       name: name,
       pop: latestPop > 0 ? formatNumber(latestPop) : DEFAULTS.pop,
       area:
-        districtData['Shape_Area'] ||
-        districtData['AREA'] ||
-        districtData['Area'] ||
-        districtData['area'] ||
+        districtData?.['Shape_Area'] ||
+        districtData?.['AREA'] ||
+        districtData?.['Area'] ||
+        districtData?.['area'] ||
         0,
       density:
         typeof densityValue === 'number'
@@ -664,7 +652,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
             : densityValue.toFixed(2)
           : densityValue,
       literacy:
-        districtData[litKeyBase] !== undefined
+        districtData?.[litKeyBase] !== undefined
           ? districtData[litKeyBase] + '%'
           : DEFAULTS.literacy,
       male: exactMalePercent.toFixed(1) + '%',
@@ -1043,7 +1031,9 @@ export const MapSection: React.FC<MapSectionProps> = ({
                 {/* Divider */}
                 <div className="w-full mx-auto h-px bg-gray-200 shrink-0"></div>
 
-                <div className="w-full">
+                <div
+                  className={`w-full ${activeLayer === 'deg_urbanisation' ? 'opacity-50 pointer-events-none grayscale-[0.5]' : ''}`}
+                >
                   <span className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-70 block">
                     Gender
                   </span>
@@ -1088,7 +1078,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                     ? '%'
                     : activeLayer === 'density'
                       ? ' P / sq.km'
-                      : activeLayer?.startsWith('deg_')
+                      : activeLayer === 'deg_urbanisation'
                         ? ' sq.km'
                         : '';
 
@@ -1106,24 +1096,33 @@ export const MapSection: React.FC<MapSectionProps> = ({
                       {layers.find((l) => l.id === activeLayer)?.label ||
                         'Legend'}
                     </h4>
-                    <div className="flex flex-col gap-1.5">
-                      {[
-                        { color: '#f0f9e8', label: labels[0] },
-                        { color: '#bae4bc', label: labels[1] },
-                        { color: '#7bccc4', label: labels[2] },
-                        { color: '#43a2ca', label: labels[3] },
-                        { color: '#0868ac', label: labels[4] },
-                      ].map((item, id) => (
-                        <div key={id} className="flex items-center gap-2.5">
-                          <div
-                            className="w-6 h-3 rounded-full"
-                            style={{ backgroundColor: item.color }}
-                          ></div>
+                    <div className="flex flex-col gap-1.5 font-semibold">
+                      {activeLayer === 'deg_urbanisation' ? (
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-6 h-3 rounded-full bg-[#D3D3D3]"></div>
                           <span className="text-[11px] text-gray-800 font-medium tracking-wide">
-                            {item.label}
+                            Urbanisation Distribution
                           </span>
                         </div>
-                      ))}
+                      ) : (
+                        [
+                          { color: '#f0f9e8', label: labels[0] },
+                          { color: '#bae4bc', label: labels[1] },
+                          { color: '#7bccc4', label: labels[2] },
+                          { color: '#43a2ca', label: labels[3] },
+                          { color: '#0868ac', label: labels[4] },
+                        ].map((item, id) => (
+                          <div key={id} className="flex items-center gap-2.5">
+                            <div
+                              className="w-6 h-3 rounded-full"
+                              style={{ backgroundColor: item.color }}
+                            ></div>
+                            <span className="text-[11px] text-gray-800 font-medium tracking-wide">
+                              {item.label}
+                            </span>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 );

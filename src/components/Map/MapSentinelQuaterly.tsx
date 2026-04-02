@@ -1,11 +1,12 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable react-hooks/set-state-in-effect */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from 'react';
 import maplibregl from 'maplibre-gl';
 import {
-  RotateCcw,
   Plus,
   Minus,
   Home,
@@ -15,8 +16,19 @@ import {
   ChevronLeft,
   Calendar,
   X,
+  LineChart as LucideLineChart,
 } from 'lucide-react';
 import * as pmtiles from 'pmtiles';
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ReferenceLine,
+  Dot,
+} from 'recharts';
 
 import { TAB_CONTENT, Points_Data } from '../MapCompare/pointData';
 
@@ -44,39 +56,56 @@ const ODISHA_BBOX = [81.3883, 17.8124, 87.477, 22.5674];
 const PC_RENDER_PARAMS =
   'assets=B04&assets=B03&assets=B02&color_formula=Gamma%20RGB%203.2%20Saturation%200.8%20Sigmoidal%20RGB%2025%200.35&collection=sentinel-2-l2a&format=png';
 
-const LULC_RGBA: Record<number, number[]> = {
-  1: [65, 155, 223, 255], // Water (#419BDF)
-  2: [57, 125, 73, 255], // Trees (#397D49)
-  3: [0, 0, 0, 0], // Empty (#000000)
-  4: [122, 135, 198, 255], // Flooded (#7A87C6)
-  5: [228, 150, 53, 255], // Crops (#E49635)
-  6: [0, 0, 0, 0], // Empty (#000000)
-  7: [196, 40, 27, 255], // Built (#C4281B)
-  8: [240, 207, 14, 255], // Bare Ground/Rangeland (merged #F0CF0E)
-  9: [0, 0, 0, 0], // Empty/Snow (#000000)
-  10: [0, 0, 0, 0], // Empty/Cloud (#000000)
-  11: [240, 207, 14, 255], // Bare Ground/Rangeland (merged #F0CF0E)
+// Common district spelling variations in Odisha datasets
+const DISTRICT_SYNONYMS: Record<string, string[]> = {
+  angul: ['anugul'],
+  balasore: ['baleswar'],
+  bhadrak: ['bhadrakh'],
+  bolangir: ['balangir'],
+  deogarh: ['debagarh'],
+  nabarangpur: ['nawarangpur'],
+  subarnapur: ['sonepur'],
 };
 
-type LulcCategory = number | 'all' | 'merged-bare-range';
+const LULC_RGBA: Record<number, number[]> = {
+  0: [65, 155, 223, 255], // Water (#419BDF)
+  1: [57, 125, 73, 255], // Trees (#397D49)
+  2: [136, 176, 83, 255], // Grass (#88B053)
+  3: [122, 135, 198, 255], // Flooded vegetation (#7A87C6)
+  4: [228, 150, 53, 255], // Crops (#E49635)
+  5: [223, 195, 90, 255], // Shrub & Scrub (#DFC35A)
+  6: [196, 40, 27, 255], // Built (#C4281B)
+  7: [165, 155, 143, 255], // Bare (#A59B8F)
+};
+
+type LulcCategory = number | 'all';
 
 interface LulcLegendItem {
   label: string;
   color: string;
   value: LulcCategory;
+  key: string;
 }
 
 const LULC_LEGEND: LulcLegendItem[] = [
-  { label: 'Water', color: '#419BDF', value: 1 },
-  { label: 'Trees', color: '#397D49', value: 2 },
-  { label: 'Flooded vegetation', color: '#7A87C6', value: 4 },
-  { label: 'Crops', color: '#E49635', value: 5 },
-  { label: 'Built area', color: '#C4281B', value: 7 },
+  { label: 'Water', color: '#419BDF', value: 0, key: 'water' },
+  { label: 'Trees', color: '#397D49', value: 1, key: 'trees' },
+  { label: 'Grass', color: '#88B053', value: 2, key: 'grass' },
   {
-    label: 'Bare Ground/Rangeland',
-    color: '#F0CF0E',
-    value: 'merged-bare-range',
+    label: 'Flooded vegetation',
+    color: '#7A87C6',
+    value: 3,
+    key: 'flooded_vegetation',
   },
+  { label: 'Crops', color: '#E49635', value: 4, key: 'crops' },
+  {
+    label: 'Shrub & Scrub',
+    color: '#DFC35A',
+    value: 5,
+    key: 'shrub_and_scrub',
+  },
+  { label: 'Built area', color: '#C4281B', value: 6, key: 'built' },
+  { label: 'Bare', color: '#A59B8F', value: 7, key: 'bare' },
 ];
 
 interface Quarter {
@@ -109,23 +138,16 @@ function generateQuarters(startYear: number, endYear: number): Quarter[] {
   return quarters;
 }
 
-const QUARTERS = generateQuarters(2018, 2024);
+const QUARTERS = generateQuarters(2018, 2025);
 const PMTILES_URL =
-  'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/od_district_pop_total_2036.pmtiles';
+  'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc_quarterly/od_district_lulc_quarterly.pmtiles';
 const ODISHA_CENTER: [number, number] = [84.8, 20.5];
 const ODISHA_BOUNDS: maplibregl.LngLatBoundsLike = [
   [81.3883, 17.8124],
   [87.477, 22.5674],
 ];
 const SUBDISTRICT_URL =
-  'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/od_subdistrict_pop_total_2036.pmtiles';
-
-const qColors: Record<number, string> = {
-  1: '#4ade80', // spring
-  2: '#facc15', // summer
-  3: '#fb923c', // autumn
-  4: '#818cf8', // winter
-};
+  'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/population_data/od_subdistrict_pop_total_2036.pmtiles';
 
 interface MapSentinelQuaterlyProps {
   targetDistrict?: string;
@@ -138,6 +160,8 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const timelineCardRef = useRef<HTMLDivElement>(null);
+  const [timelineHeight, setTimelineHeight] = useState(180);
   const [selectedIdx, setSelectedIdx] = useState(QUARTERS.length - 1);
   const [isLoaded, setIsLoaded] = useState(false);
   // const [isPlaying, setIsPlaying] = useState(false); // Removed play state
@@ -153,12 +177,19 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
   >('idle');
 
   // LULC states
-  const [showLulc, setShowLulc] = useState(false);
+  const [showChart, setShowChart] = useState(false);
   const [selectedLulcCategory, setSelectedLulcCategory] =
-    useState<LulcCategory>('all');
+    useState<LulcCategory | null>(null);
   const [lulcStatus, setLulcStatus] = useState<
     'idle' | 'loading' | 'ready' | 'error'
   >('idle');
+  const showLulc = selectedLulcCategory !== null;
+
+  useEffect(() => {
+    if (!showLulc && showChart) {
+      setShowChart(false);
+    }
+  }, [showLulc, showChart]);
 
   // Points states
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
@@ -172,18 +203,25 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
     center: maplibregl.LngLatLike;
     zoom: number;
   } | null>(null);
+  const [districtLulcData, setDistrictLulcData] = useState<Record<
+    string,
+    any
+  > | null>(null);
 
   const currentQuarter = QUARTERS[selectedIdx];
 
   const getOrCreateMosaicUrl = useCallback(
-    async (q: Quarter): Promise<string | null> => {
-      if (mosaicCacheRef.current[q.key]) {
-        return `${PC_TILE_BASE}/${mosaicCacheRef.current[q.key]}/WebMercatorQuad/{z}/{x}/{y}@2x.png?${PC_RENDER_PARAMS}`;
+    async (q: Quarter, bbox: number[]): Promise<string | null> => {
+      const bboxKey = bbox.map((v) => v.toFixed(4)).join(',');
+      const cacheKey = `${q.key}_${bboxKey}`;
+
+      if (mosaicCacheRef.current[cacheKey]) {
+        return `${PC_TILE_BASE}/${mosaicCacheRef.current[cacheKey]}/WebMercatorQuad/{z}/{x}/{y}@2x.png?${PC_RENDER_PARAMS}`;
       }
       const [startDate, endDate] = q.time.split('/');
       const body = {
         collections: ['sentinel-2-l2a'],
-        bbox: ODISHA_BBOX,
+        bbox: bbox,
         datetime: `${startDate}T00:00:00Z/${endDate}T23:59:59Z`,
         query: { 'eo:cloud_cover': { lt: 40 } },
         sortby: [{ field: 'eo:cloud_cover', direction: 'asc' }],
@@ -197,7 +235,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
       const json = await res.json();
       const mosaicId: string = json.searchid ?? json.id;
       if (!mosaicId) return null;
-      mosaicCacheRef.current[q.key] = mosaicId;
+      mosaicCacheRef.current[cacheKey] = mosaicId;
       return `${PC_TILE_BASE}/${mosaicId}/WebMercatorQuad/{z}/{x}/{y}@2x.png?${PC_RENDER_PARAMS}`;
     },
     [],
@@ -297,12 +335,6 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
       const layerId = 'sentinel-quarterly-layer';
 
       try {
-        const tileUrl = await getOrCreateMosaicUrl(q);
-        if (!tileUrl) {
-          setTileStatus('error');
-          return;
-        }
-
         const bboxToUse = targetBounds
           ? [
               targetBounds[0][0],
@@ -311,6 +343,11 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
               targetBounds[1][1],
             ]
           : ODISHA_BBOX;
+        const tileUrl = await getOrCreateMosaicUrl(q, bboxToUse);
+        if (!tileUrl) {
+          setTileStatus('error');
+          return;
+        }
 
         if (map.getLayer(layerId)) map.removeLayer(layerId);
         if (map.getSource(sourceId)) map.removeSource(sourceId);
@@ -399,23 +436,24 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
     lastFittedDistrictRef.current = districtKey;
 
     if (targetBounds) {
-      map.fitBounds(targetBounds, { padding: 80, duration: 1500 });
-      // Update maxBounds to focus on the selected district
-      const padding = 0.5; // allow some room to move
-      const districtMaxBounds: maplibregl.LngLatBoundsLike = [
-        [targetBounds[0][0] - padding, targetBounds[0][1] - padding],
-        [targetBounds[1][0] + padding, targetBounds[1][1] + padding],
-      ];
-      map.setMaxBounds(districtMaxBounds);
+      const fitPadding = {
+        top: 30,
+        bottom: timelineHeight + 30,
+        left: 310,
+        right: selectedPoint ? 430 : 30,
+      };
+      map.fitBounds(targetBounds, { padding: fitPadding, duration: 1500 });
     } else if (targetDistrict?.toLowerCase() === 'odisha' || !targetDistrict) {
+      const fitPadding = {
+        top: 20,
+        bottom: timelineHeight + 20,
+        left: 310,
+        right: selectedPoint ? 430 : 20,
+      };
       map.fitBounds(pmtilesBounds || ODISHA_BOUNDS, {
-        padding: 40,
+        padding: fitPadding,
         duration: 1500,
       });
-      map.setMaxBounds([
-        [79.277344, 16.232218],
-        [90.0, 24.058806],
-      ]);
     } else {
       const features =
         accumulatedFeaturesRef.current.get(targetDistrict.toLowerCase()) || [];
@@ -430,13 +468,13 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
           (f: any) => f.geometry?.coordinates && extend(f.geometry.coordinates),
         );
         if (!bounds.isEmpty()) {
-          map.fitBounds(bounds, { padding: 40, duration: 1500 });
-          const b = bounds.toArray();
-          const padding = 0.5;
-          map.setMaxBounds([
-            [b[0][0] - padding, b[0][1] - padding],
-            [b[1][0] + padding, b[1][1] + padding],
-          ]);
+          const fitPadding = {
+            top: 20,
+            bottom: timelineHeight + 10,
+            left: 250,
+            right: selectedPoint ? 430 : 100,
+          };
+          map.fitBounds(bounds, { padding: fitPadding, duration: 1500 });
         }
       } else {
         // If features aren't loaded yet, try again when cacheVersion changes
@@ -453,6 +491,114 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
     }
   }, [targetDistrict, targetBounds, isLoaded, cacheVersion, pmtilesBounds]);
 
+  // Extract LULC attributes for the selected district/state
+  useEffect(() => {
+    if (!isLoaded || !targetDistrict) return;
+
+    const isOdisha = targetDistrict.toLowerCase() === 'odisha';
+
+    // Helper to find a feature by name in our accumulated cache (more robust matching)
+    const normalizeName = (s: string) =>
+      s
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]/g, '');
+
+    const findFeature = (name: string) => {
+      const normalizedTarget = normalizeName(name);
+
+      // 1. Try exact match in cache
+      for (const [key, features] of accumulatedFeaturesRef.current.entries()) {
+        if (normalizeName(key) === normalizedTarget && features.length > 0) {
+          return features[0];
+        }
+      }
+
+      // 2. Try synonyms
+      for (const [canonical, synonyms] of Object.entries(DISTRICT_SYNONYMS)) {
+        if (
+          normalizeName(canonical) === normalizedTarget ||
+          synonyms.some((s) => normalizeName(s) === normalizedTarget)
+        ) {
+          // Search for canonical or any synonym in the cache
+          for (const term of [canonical, ...synonyms]) {
+            const features = accumulatedFeaturesRef.current.get(
+              term.toLowerCase(),
+            );
+            if (features && features.length > 0) return features[0];
+          }
+        }
+      }
+      return null;
+    };
+
+    if (isOdisha) {
+      // Aggregate all unique features from the cache
+      const aggregated: Record<string, number> = {};
+      const uniqueFeatureIds = new Set<string>();
+
+      accumulatedFeaturesRef.current.forEach((features) => {
+        features.forEach((f) => {
+          const rawName =
+            f.properties?.district_name ||
+            f.properties?.NAME ||
+            f.properties?.name ||
+            f.properties?.District_N;
+          const id = rawName ? normalizeName(rawName) : null;
+          if (id && !uniqueFeatureIds.has(id)) {
+            uniqueFeatureIds.add(id);
+            const props = f.properties;
+            if (!props) return;
+            Object.keys(props).forEach((key) => {
+              if (key.startsWith('lulc_')) {
+                aggregated[key] =
+                  (aggregated[key] || 0) + (Number(props[key]) || 0);
+              }
+            });
+          }
+        });
+      });
+      setDistrictLulcData(
+        Object.keys(aggregated).length > 0 ? aggregated : null,
+      );
+    } else {
+      const feature = findFeature(targetDistrict);
+      if (feature && feature.properties) {
+        setDistrictLulcData(feature.properties);
+      }
+    }
+  }, [targetDistrict, isLoaded, cacheVersion]);
+
+  // Sync timeline height to adjust sidebar
+  useEffect(() => {
+    if (timelineCardRef.current) {
+      const resizeObserver = new ResizeObserver((entries) => {
+        for (let entry of entries) {
+          setTimelineHeight(entry.target.clientHeight);
+        }
+      });
+      resizeObserver.observe(timelineCardRef.current);
+      return () => resizeObserver.disconnect();
+    }
+  }, [isLoaded]);
+
+  const chartData = useMemo(() => {
+    if (!districtLulcData) return [];
+    return QUARTERS.map((q) => {
+      const item: any = {
+        name: q.label,
+        shortLabel: q.label.charAt(0) + q.year.toString().slice(-2),
+        year: q.year,
+        q: q.q,
+      };
+      LULC_LEGEND.forEach((cat) => {
+        const attrKey = `lulc_${q.year}_q${q.q}_clipped_${cat.key}`;
+        item[cat.key] = districtLulcData[attrKey] || 0;
+      });
+      return item;
+    });
+  }, [districtLulcData]);
+
   useEffect(() => {
     if (!mapContainerRef.current) return;
     const map = new maplibregl.Map({
@@ -465,18 +611,14 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
           {
             id: 'background',
             type: 'background',
-            paint: { 'background-color': '#0f1923' },
+            paint: { 'background-color': '#FFFFFF' },
           },
         ],
       },
       center: ODISHA_CENTER,
       zoom: 6.2,
-      minZoom: 5,
-      maxZoom: 14,
-      maxBounds: [
-        [79.277344, 16.232218],
-        [90.0, 24.058806],
-      ],
+      minZoom: 2,
+      maxZoom: 18,
       attributionControl: false,
     });
 
@@ -504,7 +646,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
           source: 'district-source-quarterly',
           'source-layer': 'zcta',
           paint: {
-            'fill-color': '#FEFEFE',
+            'fill-color': '#FFFFFF',
             'fill-opacity': 0,
           },
         },
@@ -537,7 +679,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         source: 'points-source',
         paint: {
           'circle-radius': 7,
-          'circle-color': '#F96000',
+          'circle-color': '#F76000',
           'circle-stroke-width': 2,
           'circle-stroke-color': '#FFFFFF',
           'circle-opacity': 1,
@@ -727,7 +869,9 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         chunks.push(QUARTERS.slice(i, i + 4));
       }
       for (const chunk of chunks) {
-        await Promise.all(chunk.map((q) => getOrCreateMosaicUrl(q)));
+        await Promise.all(
+          chunk.map((q) => getOrCreateMosaicUrl(q, ODISHA_BBOX)),
+        );
       }
     };
     preRegisterAll();
@@ -758,18 +902,17 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
     }
 
     const lulcYear = currentQuarter.year;
-    const baseLulcUrl = `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc/odisha_lulc_${lulcYear}.tif`;
+    const lulcQ = currentQuarter.q;
+    const baseLulcUrl = `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc_quarterly/raster/lulc_${lulcYear}_q${lulcQ}.tif`;
     setColorFunction(baseLulcUrl, (pixel: any, color: any, metadata: any) => {
       const val = pixel[0];
-      if (val === metadata.noData || val < 1 || val > 11) {
+      if (val === metadata.noData || val < 0 || val > 7) {
         color.set([0, 0, 0, 0]);
         return;
       }
       const rgba = [...(LULC_RGBA[val] || [0, 0, 0, 0])];
       let isVisible = selectedLulcCategory === 'all';
-      if (selectedLulcCategory === 'merged-bare-range')
-        isVisible = val === 8 || val === 11;
-      else if (typeof selectedLulcCategory === 'number')
+      if (typeof selectedLulcCategory === 'number')
         isVisible = val === selectedLulcCategory;
       if (!isVisible) rgba[3] = 0;
       color.set(rgba);
@@ -855,11 +998,10 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         <div>
           <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
             <Satellite className="w-6 h-6" />
-            Satellite Timelapse – Quarterly
+            Land Use Change Analysis – {targetDistrict}
           </h2>
           <p className="text-[13px] text-gray-500 mt-1 font-medium ">
-            Sentinel-2 True Color (TCI) imagery for March, June, September, and
-            December (2018–2024).
+            Analyze temporal shifts in landscape categories.
           </p>
         </div>
         <div className="flex items-center gap-3 bg-gray-50/50 p-1.5 px-3 rounded-lg border border-gray-100 relative">
@@ -870,7 +1012,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
             <span className="flex items-center gap-2">
               <span
                 className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: qColors[currentQuarter.q] }}
+                style={{ backgroundColor: '#F76000' }}
               />
               {currentQuarter.label}
             </span>
@@ -896,12 +1038,12 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                           setSelectedIdx(originalIdx);
                           setIsDropdownOpen(false);
                         }}
-                        className={`w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center justify-between rounded-lg ${selectedIdx === originalIdx ? 'bg-orange-50 text-[#F96000]' : 'text-gray-600'}`}
+                        className={`w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center justify-between rounded-lg ${selectedIdx === originalIdx ? 'bg-orange-50 text-[#F76000]' : 'text-gray-600'}`}
                       >
                         <span className="flex items-center gap-2">
                           <span
                             className="w-1.5 h-1.5 rounded-full"
-                            style={{ backgroundColor: qColors[q.q] }}
+                            style={{ backgroundColor: '#F76000' }}
                           />
                           <span className="text-[11px] font-bold">
                             {q.label}
@@ -920,54 +1062,77 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         <div ref={mapContainerRef} className="w-full h-full" />
 
         {isLoaded && (
-          <div className="absolute top-8 left-8 bottom-8 w-[300px] text-gray-900 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 p-6 shadow-2xl z-[60] flex flex-col gap-6 overflow-y-auto custom-scrollbar">
-            <button
-              onClick={() => setShowLulc(!showLulc)}
-              className={`w-full py-2.5 rounded-lg text-xs font-black tracking-widest uppercase transition-all flex items-center justify-center gap-2 border ${showLulc ? 'bg-[#F96000] text-white border-orange-600 shadow-lg' : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'}`}
-            >
-              <Satellite className="w-4 h-4" />
-              {showLulc ? 'Hide LULC Data' : 'Show LULC Data'}
-            </button>
+          <div
+            className={`absolute top-8 left-8 w-[300px] h-fit transition-all duration-300 text-gray-900 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 p-6 shadow-2xl z-[60] flex flex-col gap-6 overflow-y-auto custom-scrollbar`}
+            style={{ maxHeight: `calc(100% - ${timelineHeight + 100}px)` }}
+          >
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">
+                Sentinel-2 TCI (RGB)
+              </p>
+            </div>
 
             <div className="flex-1 transition-all">
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 border-b border-gray-100 pb-2 flex justify-between items-center">
                 Land Categories
-                <span
-                  className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${showLulc ? 'bg-orange-100 text-[#F96000]' : 'bg-gray-100 text-gray-400'}`}
-                >
-                  Year: {currentQuarter.year}
-                </span>
+                {/* <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${showLulc ? 'bg-orange-100 text-[#F76000]' : 'bg-gray-100 text-gray-400'}`}>
+                                    Year: {currentQuarter.year}
+                                </span> */}
               </p>
               <div className="flex flex-col gap-1.5">
                 <button
-                  onClick={() => setSelectedLulcCategory('all')}
-                  className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${selectedLulcCategory === 'all' ? 'bg-orange-50 border-[#F96000] text-[#F96000]' : 'bg-white border-gray-100 text-gray-500 hover:bg-gray-50'}`}
+                  onClick={() =>
+                    setSelectedLulcCategory((prev) =>
+                      prev === 'all' ? null : 'all',
+                    )
+                  }
+                  className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${selectedLulcCategory === 'all' ? 'bg-orange-50 border-[#F76000] shadow-sm' : 'bg-white border-gray-100 text-gray-500 hover:bg-gray-50'}`}
                 >
-                  <span className="text-[10px] font-black uppercase">
-                    All Classes
-                  </span>
-                  {selectedLulcCategory === 'all' && (
-                    <div className="w-2 h-2 rounded-full bg-[#F96000]" />
-                  )}
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center transition-all ${selectedLulcCategory === 'all' ? 'border-[#F76000]' : 'border-gray-200'}`}
+                    >
+                      {selectedLulcCategory === 'all' && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#F76000]" />
+                      )}
+                    </div>
+                    <span
+                      className={`text-[10px] font-black uppercase ${selectedLulcCategory === 'all' ? 'text-[#F76000]' : 'text-gray-600'}`}
+                    >
+                      All Classes
+                    </span>
+                  </div>
                 </button>
                 {LULC_LEGEND.map((item) => (
                   <button
                     key={item.label}
-                    onClick={() => setSelectedLulcCategory(item.value)}
-                    className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${selectedLulcCategory === item.value ? 'bg-orange-50 border-[#F96000] text-[#F96000]' : 'bg-white border-gray-100 text-gray-500 hover:bg-gray-50'}`}
+                    onClick={() =>
+                      setSelectedLulcCategory((prev) =>
+                        prev === item.value ? null : item.value,
+                      )
+                    }
+                    className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${selectedLulcCategory === item.value ? 'bg-orange-50 border-[#F76000] shadow-sm' : 'bg-white border-gray-100 text-gray-500 hover:bg-gray-50'}`}
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-3 h-3 rounded-sm ring-1 ring-gray-200"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="text-[10px] font-bold capitalize">
-                        {item.label}
-                      </span>
+                        className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center transition-all ${selectedLulcCategory === item.value ? 'border-[#F76000]' : 'border-gray-200'}`}
+                      >
+                        {selectedLulcCategory === item.value && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#F76000]" />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2.5 h-2.5 rounded-sm ring-1 ring-gray-100"
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span
+                          className={`text-[10px] font-bold capitalize ${selectedLulcCategory === item.value ? 'text-[#F76000]' : 'text-gray-600'}`}
+                        >
+                          {item.label}
+                        </span>
+                      </div>
                     </div>
-                    {selectedLulcCategory === item.value && (
-                      <div className="w-2 h-2 rounded-full bg-[#F96000]" />
-                    )}
                   </button>
                 ))}
               </div>
@@ -976,16 +1141,25 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         )}
 
         {isLoaded && (
-          <div className="absolute bottom-8 left-[352px] right-8 z-50 flex items-center gap-4">
+          <div
+            className={`absolute bottom-8 left-8 z-50 flex items-center gap-4 transition-all duration-500 ease-in-out ${
+              selectedPoint
+                ? 'right-[calc(100%+32px)] md:right-[calc(45%+32px)] lg:right-[calc(35%+32px)]'
+                : 'right-8'
+            }`}
+          >
             {/* Timeline Slider */}
-            <div className="flex-1 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 p-5 px-6 shadow-2xl flex items-center gap-6">
+            <div
+              ref={timelineCardRef}
+              className="flex-1 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 p-5 px-6 shadow-2xl flex items-center gap-6"
+            >
               <div className="flex gap-2 shrink-0">
                 <button
                   onClick={() =>
                     setSelectedIdx((prev) => Math.max(0, prev - 1))
                   }
                   disabled={selectedIdx === 0}
-                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#F96000] text-white shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all font-black"
+                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#F76000] text-white shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all font-black"
                   title="Previous Quarter"
                 >
                   <ChevronLeft className="w-6 h-6" />
@@ -997,7 +1171,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                     )
                   }
                   disabled={selectedIdx === QUARTERS.length - 1}
-                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#F96000] text-white shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all font-black"
+                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#F76000] text-white shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all font-black"
                   title="Next Quarter"
                 >
                   <ChevronRight className="w-6 h-6" />
@@ -1009,7 +1183,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                     <span className="text-gray-400">Timeline Control</span>
                   </div>
                   <div className="text-right flex items-center gap-2">
-                    <span className="text-[#F96000] text-lg font-mono font-bold leading-none">
+                    <span className="text-[#F76000] text-lg font-mono font-bold leading-none">
                       {currentQuarter.label.split(' ')[0]}
                     </span>
                     <span className="text-gray-700 text-sm font-mono font-bold">
@@ -1017,6 +1191,109 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                     </span>
                   </div>
                 </div>
+                {/* LULC Chart - Only visible when chart is on */}
+                {showChart && chartData.length > 0 && (
+                  <div className="h-24 w-full mt-2 mb-8 transition-all animate-in fade-in slide-in-from-bottom-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={chartData}
+                        margin={{ top: 5, right: 5, left: 5, bottom: 0 }}
+                      >
+                        <XAxis dataKey="name" hide />
+                        <YAxis hide />
+                        <Tooltip
+                          position={{ y: -50 }}
+                          content={({ active, payload, label }) => {
+                            if (active && payload && payload.length) {
+                              return (
+                                <div className="bg-white/95 backdrop-blur-md border border-gray-200 p-2.5 rounded-lg shadow-xl text-[10px]">
+                                  <p className="font-black text-gray-900 mb-1 border-b pb-1">
+                                    {label}
+                                  </p>
+                                  {payload.map((p: any) => (
+                                    <div
+                                      key={p.dataKey}
+                                      className="flex items-center justify-between gap-4 py-0.5"
+                                    >
+                                      <div className="flex items-center gap-1.5">
+                                        <div
+                                          className="w-1.5 h-1.5 rounded-full"
+                                          style={{ backgroundColor: p.color }}
+                                        />
+                                        <span className="font-bold text-gray-600 capitalize">
+                                          {p.name.replace('_', ' ')}
+                                        </span>
+                                      </div>
+                                      <span className="font-mono font-black text-[#F76000]">
+                                        {Number(p.value).toFixed(1)}{' '}
+                                        <span className="text-[8px] opacity-60">
+                                          sqkm
+                                        </span>
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        {selectedLulcCategory === 'all' ? (
+                          LULC_LEGEND.map((cat) => (
+                            <Line
+                              key={cat.key}
+                              type="monotone"
+                              dataKey={cat.key}
+                              stroke={cat.color}
+                              strokeWidth={2}
+                              dot={false}
+                              isAnimationActive={false}
+                            />
+                          ))
+                        ) : (
+                          <Line
+                            type="monotone"
+                            dataKey={
+                              LULC_LEGEND.find(
+                                (c) => c.value === selectedLulcCategory,
+                              )?.key || ''
+                            }
+                            stroke={
+                              LULC_LEGEND.find(
+                                (c) => c.value === selectedLulcCategory,
+                              )?.color || '#F76000'
+                            }
+                            strokeWidth={3}
+                            dot={(props: any) => {
+                              const { cx, cy, index } = props;
+                              if (index === selectedIdx) {
+                                return (
+                                  <Dot
+                                    cx={cx}
+                                    cy={cy}
+                                    r={4}
+                                    fill="#F76000"
+                                    stroke="#FFFFFF"
+                                    strokeWidth={2}
+                                  />
+                                );
+                              }
+                              return null;
+                            }}
+                            isAnimationActive={false}
+                          />
+                        )}
+                        {/* Active Marker */}
+                        <ReferenceLine
+                          x={currentQuarter.label}
+                          stroke="#F76000"
+                          strokeWidth={2}
+                          strokeDasharray="3 3"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
                 <div className="relative group/track py-1">
                   {/* Background Track with Tick Scale */}
                   <div className="relative h-2 bg-gray-100 rounded-full overflow-visible">
@@ -1024,7 +1301,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                       className="absolute h-full rounded-full transition-all duration-300"
                       style={{
                         width: `${(selectedIdx / (QUARTERS.length - 1)) * 100}%`,
-                        backgroundColor: qColors[currentQuarter.q],
+                        backgroundColor: '#F76000',
                       }}
                     />
 
@@ -1036,7 +1313,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                           className="relative flex flex-col items-center"
                         >
                           <div
-                            className={`w-[2px] h-3 rounded-full mb-1 transition-all ${idx === selectedIdx ? 'bg-orange-500 h-4' : 'bg-gray-300'}`}
+                            className={`w-[2px] h-3 rounded-full mb-1 transition-all ${idx === selectedIdx ? 'bg-[#F76000] h-4' : 'bg-gray-300'}`}
                           />
 
                           {/* Year Indicator Above (Only on Q1) */}
@@ -1051,7 +1328,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                           {/* Month Initials Below */}
                           <div className="absolute -bottom-5">
                             <span
-                              className={`text-[8px] font-bold transition-all ${idx === selectedIdx ? 'text-[#F96000] scale-110' : 'text-gray-400 opacity-60'}`}
+                              className={`text-[8px] font-bold transition-all ${idx === selectedIdx ? 'text-[#F76000] scale-110' : 'text-gray-400 opacity-60'}`}
                             >
                               {q.label.charAt(0)}
                             </span>
@@ -1077,34 +1354,45 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
               </div>
               <div className="flex flex-col gap-2 items-center">
                 <button
-                  onClick={() => setSelectedIdx(0)}
-                  className="text-gray-300 hover:text-[#F96000] transition-colors p-1"
-                  title="Reset Timeline"
+                  onClick={() => setShowChart(!showChart)}
+                  disabled={!showLulc}
+                  className={`transition-all p-2 rounded-lg ${showChart ? 'bg-orange-100 text-[#F76000]' : showLulc ? 'text-gray-400 hover:text-[#F76000]' : 'text-gray-200 cursor-not-allowed'}`}
+                  title={
+                    !showLulc
+                      ? 'Select a category first'
+                      : showChart
+                        ? 'Hide Chart'
+                        : 'Show Chart'
+                  }
                 >
-                  <RotateCcw className="w-5 h-5" />
+                  {showChart ? (
+                    <X className="w-5 h-5" />
+                  ) : (
+                    <LucideLineChart className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
 
-            {/* Zoom Controls */}
-            <div className="flex flex-col gap-2 shrink-0">
+            {/* Zoom Controls - Aligned with the timeline bar bottom */}
+            <div className="flex flex-col gap-2 shrink-0 self-end pb-1">
               <button
                 onClick={handleReset}
-                className="bg-white/90 backdrop-blur-md w-9 h-9 flex items-center justify-center rounded-xl shadow-lg border border-gray-100 text-gray-600 hover:text-[#F96000] hover:border-[#F96000] transition-all active:scale-90"
+                className="bg-white/90 backdrop-blur-md w-9 h-9 flex items-center justify-center rounded-xl shadow-lg border border-gray-100 text-gray-600 hover:text-[#F76000] hover:border-[#F76000] transition-all active:scale-90"
                 title="Reset View"
               >
                 <Home className="w-4 h-4" />
               </button>
               <button
                 onClick={() => mapRef.current?.zoomIn()}
-                className="bg-white/90 backdrop-blur-md w-9 h-9 flex items-center justify-center rounded-xl shadow-lg border border-gray-100 text-gray-600 hover:text-[#F96000] hover:border-[#F96000] transition-all active:scale-90"
+                className="bg-white/90 backdrop-blur-md w-9 h-9 flex items-center justify-center rounded-xl shadow-lg border border-gray-100 text-gray-600 hover:text-[#F76000] hover:border-[#F76000] transition-all active:scale-90"
                 title="Zoom In"
               >
                 <Plus className="w-4 h-4" />
               </button>
               <button
                 onClick={() => mapRef.current?.zoomOut()}
-                className="bg-white/90 backdrop-blur-md w-9 h-9 flex items-center justify-center rounded-xl shadow-lg border border-gray-100 text-gray-600 hover:text-[#F96000] hover:border-[#F96000] transition-all active:scale-90"
+                className="bg-white/90 backdrop-blur-md w-9 h-9 flex items-center justify-center rounded-xl shadow-lg border border-gray-100 text-gray-600 hover:text-[#F76000] hover:border-[#F76000] transition-all active:scale-90"
                 title="Zoom Out"
               >
                 <Minus className="w-4 h-4" />
@@ -1120,8 +1408,8 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
             <div className="flex flex-col items-center gap-4">
               <div className="relative w-14 h-14">
                 <div className="absolute inset-0 border-4 border-gray-100 rounded-full" />
-                <div className="absolute inset-0 border-4 border-[#F96000] border-t-transparent rounded-full animate-spin" />
-                {/* <Satellite className="absolute inset-0 m-auto w-6 h-6 text-[#F96000] animate-pulse" /> */}
+                <div className="absolute inset-0 border-4 border-[#F76000] border-t-transparent rounded-full animate-spin" />
+                {/* <Satellite className="absolute inset-0 m-auto w-6 h-6 text-[#F76000] animate-pulse" /> */}
               </div>
               <p className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">
                 {!isLoaded ? '' : ''}
@@ -1147,7 +1435,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                       <div
                         className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black border-2 transition-all duration-300 ${
                           activeModalTab === tab
-                            ? 'bg-[#F96000] border-[#F96000] text-white'
+                            ? 'bg-[#F76000] border-[#F76000] text-white'
                             : 'bg-gray-100 border-gray-200 text-gray-700 group-hover:border-gray-400 group-hover:text-gray-600'
                         }`}
                       >
@@ -1184,7 +1472,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                   }
                   prePointClickState.current = null;
                 }}
-                className="w-8 h-8 flex items-center justify-center bg-white border border-gray-200 hover:bg-orange-100 hover:text-[#F96000] text-gray-400 rounded-full transition-colors group shrink-0"
+                className="w-8 h-8 flex items-center justify-center bg-white border border-gray-200 hover:bg-orange-100 hover:text-[#F76000] text-gray-400 rounded-full transition-colors group shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1211,7 +1499,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
 
                     <div className="flex items-center gap-2 text-[11px] text-gray-500 mb-2 font-mono">
                       <Calendar
-                        className="w-3.5 h-3.5 text-[#F96000]"
+                        className="w-3.5 h-3.5 text-[#F76000]"
                         strokeWidth={2.5}
                       />
                       <span>{currentContent.place}</span>
@@ -1225,7 +1513,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                           return (
                             <h4
                               key={idx}
-                              className="text-sm font-black text-gray-900 mb-3 mt-2 border-l-4 border-[#F96000] pl-2"
+                              className="text-sm font-black text-gray-900 mb-3 mt-2 border-l-4 border-[#F76000] pl-2"
                             >
                               {block.value}
                             </h4>

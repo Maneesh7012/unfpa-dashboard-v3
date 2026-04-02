@@ -16,7 +16,7 @@ export interface InfrastructureMetric {
   iconType: 'water' | 'electricity' | 'health';
 }
 
-export type LayerType = 'density' | 'pop' | 'deg_rural' | 'deg_city' | 'deg_town' | 'growth' | 'population' | 'lulc' | 'nightlight' | 'buildup' | 'urbansprawl';
+export type LayerType = 'density' | 'pop' | 'deg_urbanisation' | 'growth' | 'population' | 'lulc' | 'nightlight' | 'buildup' | 'urbansprawl';
 
 export interface DistrictRanking {
   rank: number;
