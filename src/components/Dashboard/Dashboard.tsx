@@ -225,9 +225,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
     const layers = [
         { id: 'density', label: 'Population Density', minYear: 2011, maxYear: 2035 },
         { id: 'pop', label: 'Total Population', minYear: 2011, maxYear: 2035 },
-        { id: 'deg_rural', label: 'Degree of Urbanisation - Rural', minYear: 2015, maxYear: 2035 },
-        { id: 'deg_town', label: 'Degree of Urbanisation - Town', minYear: 2015, maxYear: 2035 },
-        { id: 'deg_city', label: 'Degree of Urbanisation - City', minYear: 2015, maxYear: 2035 }
+        { id: 'deg_urbanisation', label: 'Degree of Urbanisation', minYear: 2015, maxYear: 2035 }
     ];
 
     useEffect(() => {
@@ -405,7 +403,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
 
         if (name === 'All Districts' || name === 'Odisha') return DEFAULTS;
 
-        const litKeyBase = districtData[`Literacy_${yearSuffix}`] !== undefined ? `Literacy_${yearSuffix}` : `literacy_${yearSuffix}`;
+        const litKeyBase = districtData?.[`Literacy_${yearSuffix}`] !== undefined ? `Literacy_${yearSuffix}` : `literacy_${yearSuffix}`;
 
         // Exact logic from StateDetails Regional Performance Matrix
         let latestPop = getPopForYear(name, yearSuffix, 'sum') as number;
@@ -455,11 +453,11 @@ export const MapSection: React.FC<MapSectionProps> = ({
         return {
             name: name,
             pop: latestPop > 0 ? formatNumber(latestPop) : DEFAULTS.pop,
-            area: districtData['Shape_Area'] || districtData['AREA'] || districtData['Area'] || districtData['area'] || 0,
+            area: districtData?.['Shape_Area'] || districtData?.['AREA'] || districtData?.['Area'] || districtData?.['area'] || 0,
             density: typeof densityValue === 'number'
                 ? (densityValue % 1 === 0 ? densityValue : densityValue.toFixed(2))
                 : densityValue,
-            literacy: districtData[litKeyBase] !== undefined ? districtData[litKeyBase] + '%' : DEFAULTS.literacy,
+            literacy: districtData?.[litKeyBase] !== undefined ? districtData[litKeyBase] + '%' : DEFAULTS.literacy,
             male: exactMalePercent.toFixed(1) + '%',
             female: exactFemalePercent.toFixed(1) + '%',
             maleCount: formatNumber(malePop),
@@ -727,7 +725,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                                 {/* Divider */}
                                 <div className="w-full mx-auto h-px bg-gray-200 shrink-0"></div>
 
-                                <div className="w-full">
+                                <div className={`w-full ${activeLayer === 'deg_urbanisation' ? 'opacity-50 pointer-events-none grayscale-[0.5]' : ''}`}>
                                     <span className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-70 block">Gender</span>
                                     <div className="flex items-center gap-2">
                                         {genders.map(g => (
@@ -761,7 +759,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                                     return Math.round(v).toString();
                                 };
 
-                                const unit = activeLayer === 'growth' ? '%' : (activeLayer === 'density' ? ' P / sq.km' : (activeLayer?.startsWith('deg_') ? ' sq.km' : ''));
+                                const unit = activeLayer === 'growth' ? '%' : (activeLayer === 'density' ? ' P / sq.km' : (activeLayer === 'deg_urbanisation' ? ' sq.km' : ''));
 
                                 const labels = [
                                     `${formatNum(steps[0])} - ${formatNum(steps[1])} ${unit}`,
@@ -776,8 +774,13 @@ export const MapSection: React.FC<MapSectionProps> = ({
                                         <h4 className="text-[10px] font-bold text-gray-500 uppercase mb-2 tracking-wide">
                                             {layers.find(l => l.id === activeLayer)?.label || 'Legend'}
                                         </h4>
-                                        <div className="flex flex-col gap-1.5">
-                                            {[
+                                        <div className="flex flex-col gap-1.5 font-semibold">
+                                            {activeLayer === 'deg_urbanisation' ? (
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-6 h-3 rounded-full bg-[#D3D3D3]"></div>
+                                                    <span className="text-[11px] text-gray-800 font-medium tracking-wide">Urbanisation Distribution</span>
+                                                </div>
+                                            ) : [
                                                 { color: '#f0f9e8', label: labels[0] },
                                                 { color: '#bae4bc', label: labels[1] },
                                                 { color: '#7bccc4', label: labels[2] },

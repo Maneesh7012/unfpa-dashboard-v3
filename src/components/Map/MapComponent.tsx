@@ -24,23 +24,19 @@ interface MapComponentProps {
     showSubdistrict?: boolean;
 }
 
-const PMTILES_URL = 'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/od_district_pop_total_2036.pmtiles';
-const SUBDISTRICT_URL = 'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/od_subdistrict_pop_total_2036.pmtiles';
+const PMTILES_URL = 'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/population_data/od_district_pop_total_2036_corrected.pmtiles';
+const SUBDISTRICT_URL = 'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/population_data/od_subdistrict_pop_total_2036.pmtiles';
 
 // Static scales for map legends — district-level vs subdistrict-level ranges differ significantly
 export const LAYER_SCALES: Record<string, number[]> = {
     density: [0, 200, 400, 800, 1500],
     pop: [0, 500000, 1000000, 2000000, 4000000],
-    deg_rural: [500, 2125, 3750, 5875, 8000],   // 500 – 8000 sq.km
-    deg_town: [100, 825, 1550, 2275, 3000],   // 100 – 3000 sq.km
-    deg_city: [0, 125, 250, 375, 500],   // 0 – 500 sq.km
+    deg_urbanisation: [0, 100, 250, 500, 1000],
     growth: [-2, 0, 1.2, 2.5, 5.0],
     // Subdistrict-specific (smaller administrative units)
     sub_density: [0, 200, 400, 800, 1500],
     sub_pop: [0, 20000, 50000, 100000, 250000],
-    sub_deg_rural: [0, 300, 600, 900, 1200],    // 0 – 1200 sq.km
-    sub_deg_town: [0, 100, 200, 300, 400],    // 0 – 400 sq.km
-    sub_deg_city: [0, 37, 75, 112, 150],    // 0 – 150 sq.km
+    sub_deg_urbanisation: [0, 100, 250, 500, 1000],
     sub_growth: [-2, 0, 1.2, 2.5, 5.0],
 };
 
@@ -472,21 +468,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                                 valFormat = formatNumber;
                                 color = '#F96000';
                                 break;
-                            case 'deg_rural':
-                                label = 'Rural';
-                                propKey = `deg_rural_${currentYear}`;
-                                valFormat = (v) => parseFloat(v).toFixed(1) + ' sq.km';
-                                color = '#F96000';
-                                break;
-                            case 'deg_town':
-                                label = 'Town';
-                                propKey = `deg_town_${currentYear}`;
-                                valFormat = (v) => parseFloat(v).toFixed(1) + ' sq.km';
-                                color = '#F96000';
-                                break;
-                            case 'deg_city':
-                            case 'deg_urban':
-                                label = 'City';
+                            case 'deg_urbanisation':
+                                label = 'Urbanisation';
                                 propKey = `deg_city_${currentYear}`;
                                 valFormat = (v) => parseFloat(v).toFixed(1) + ' sq.km';
                                 color = '#F96000';
@@ -516,26 +499,58 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                     if ((rawVal === undefined || rawVal === null) && currentGender !== 'All' && GENDER[canonicalDistName]) {
                         const genderKey = currentGender === 'Male' ? `${currentYear}_male` : `${currentYear}_female`;
                         rawVal = GENDER[canonicalDistName][genderKey];
-                         // Provide an estimate for subdistrict if only district data is available
+                        // Provide an estimate for subdistrict if only district data is available
                         if (rawVal !== undefined && rawVal !== null) {
                             // This is a rough estimation: dividing district pop by an assumed average number of subdistricts (e.g., 10)
                             // A real implementation would need actual subdistrict-level static data or a better apportionment logic.
                             // For visualization purposes as requested, we use the district value or a scaled down version.
                             // Assuming the user just wants the map to visually update, let's pass a scaled value.
-                            rawVal = Math.floor(rawVal / 8); 
+                            rawVal = Math.floor(rawVal / 8);
                         }
                     }
 
                     const valDisplay = (rawVal !== undefined && rawVal !== null) ? valFormat(rawVal) : '—';
 
-                    const content = `
-                        <div style="padding: 8px; font-family: sans-serif; min-width: 150px;">
-                            <div style="font-size: 14px; font-weight: 800; color: #1a202c; margin-bottom: 2px; text-transform: uppercase;">${subName}</div>
-                            <div style="font-size: 10px; font-weight: 600; color: #718096; margin-bottom: 8px; border-bottom: 1px solid #edf2f7; padding-bottom: 4px;">District: ${distName}</div>
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-size: 10px; color: #4a5568;">${label}:</span>
-                                <span style="font-size: 10px; font-weight: 700; color: ${color};">${valDisplay}</span>
+                    let tooltipRows = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 10px; color: #4a5568;">${label}:</span>
+                            <span style="font-size: 10px; font-weight: 700; color: ${color};">${valDisplay}</span>
+                        </div>
+                    `;
+
+                    if (currentLayer === 'deg_urbanisation' && currentGender === 'All') {
+                        const cityVal = props[`deg_urban_city_${currentYear}`] || props[`deg_city_${currentYear}`] || 0;
+                        const townVal = props[`deg_urban_town_${currentYear}`] || props[`deg_town_${currentYear}`] || 0;
+                        const ruralVal = props[`deg_urban_rural_${currentYear}`] || props[`deg_rural_${currentYear}`] || 0;
+
+                        const formatPct = (v: any) => {
+                            const num = parseFloat(v);
+                            return isNaN(num) ? '0.0%' : num.toFixed(1) + '%';
+                        };
+
+                        tooltipRows = `
+                            <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                                    <span style="font-size: 10px; color: #4a5568; font-weight: 600;">City:</span>
+                                    <span style="font-size: 10px; font-weight: 800; color: #F96000;">${formatPct(cityVal)}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                                    <span style="font-size: 10px; color: #4a5568; font-weight: 600;">Town:</span>
+                                    <span style="font-size: 10px; font-weight: 800; color: #F96000;">${formatPct(townVal)}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                                    <span style="font-size: 10px; color: #4a5568; font-weight: 600;">Rural:</span>
+                                    <span style="font-size: 10px; font-weight: 800; color: #F96000;">${formatPct(ruralVal)}</span>
+                                </div>
                             </div>
+                        `;
+                    }
+
+                    const content = `
+                        <div style="padding: 10px; font-family: 'Inter', sans-serif; min-width: 160px; border-radius: 12px;">
+                            <div style="font-size: 13px; font-weight: 900; color: #0f172a; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.025em;">${subName}</div>
+                            <div style="font-size: 10px; font-weight: 700; color: #64748b; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">District: ${distName}</div>
+                            ${tooltipRows}
                         </div>
                     `;
 
@@ -733,11 +748,9 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     // Handle Year/Gender/Layer change visualization
     useEffect(() => {
         const updateColors = () => {
-            if (!mapRef.current?.getLayer('districts-fill')) return;
+            const map = mapRef.current;
+            if (!map?.getLayer('districts-fill')) return;
 
-            // Resolve the correct property name for district and subdistrict layers.
-            // Gender overrides only apply to Male/Female population fields.
-            // Layer-specific keys take priority when gender === 'All'.
             let propName: string;
             let subPropName: string;
 
@@ -748,22 +761,12 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                 propName = `female_${selectedYear}`;
                 subPropName = `female_${selectedYear}`;
             } else {
-                // gender === 'All' — use the active layer to determine the field
                 switch (activeLayer) {
                     case 'pop':
                         propName = `pop_${selectedYear}_sum`;
                         subPropName = `pop_${selectedYear}_sum`;
                         break;
-                    case 'deg_rural':
-                        propName = `deg_rural_${selectedYear}`;
-                        subPropName = `deg_rural_${selectedYear}`;
-                        break;
-                    case 'deg_town':
-                        propName = `deg_town_${selectedYear}`;
-                        subPropName = `deg_town_${selectedYear}`;
-                        break;
-                    case 'deg_city':
-                    case 'deg_urban':
+                    case 'deg_urbanisation':
                         propName = `deg_city_${selectedYear}`;
                         subPropName = `deg_city_${selectedYear}`;
                         break;
@@ -779,82 +782,70 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                 }
             }
 
-            // Force a quick query if ref is empty to avoid "flat" first render
-            if (showSubdistrict && accumulatedSubdistrictFeaturesRef.current.size === 0) {
-                const map = mapRef.current;
-                const features = map.querySourceFeatures('subdistrict-source', { sourceLayer: 'zcta' });
-                features.forEach((f: any) => {
-                    const name = f.properties?.subdistrict_name || f.properties?.SUBDIST_NAM || f.properties?.fid;
-                    if (name) accumulatedSubdistrictFeaturesRef.current.set(name, f);
-                });
-            }
-
-            // --- District scale ---
-            // If showing gendered data, always use the population scale regardless of activeLayer
             const effectiveLayer = gender !== 'All' ? 'pop' : (activeLayer ?? 'pop');
             const scaleValues = LAYER_SCALES[effectiveLayer] ?? [0, 25, 50, 75, 100];
-
             const nameExpr = ['coalesce', ['get', 'district_name'], ['get', 'DIST_NAME'], ['get', 'NAME'], ['get', 'name']];
             const genderKey = gender === 'Male' ? `${selectedYear}_male` : `${selectedYear}_female`;
 
-            // Build a match expression as a fallback if the PMTiles attribute is missing
+            // Build match expressions for GENDER data fallbacks
             const valueMatch: any[] = ['match', nameExpr];
+            const sValueMatch: any[] = ['match', nameExpr];
+
             ALLOWED_DISTRICTS.forEach(distName => {
                 const val = GENDER[distName]?.[genderKey] || 0;
                 valueMatch.push(distName, val);
                 valueMatch.push(distName.toUpperCase(), val);
+
+                const sVal = Math.floor(val / 8);
+                sValueMatch.push(distName, sVal);
+                sValueMatch.push(distName.toUpperCase(), sVal);
             });
             valueMatch.push(0);
+            sValueMatch.push(0);
 
-            mapRef.current.setPaintProperty('districts-fill', 'fill-color', [
-                'interpolate', ['linear'],
-                ['coalesce', ['get', propName], valueMatch],
-                scaleValues[0], '#f0f9e8',
-                scaleValues[1], '#bae4bc',
-                scaleValues[2], '#7bccc4',
-                scaleValues[3], '#43a2ca',
-                scaleValues[4], '#0868ac'
-            ]);
-
-            // --- Subdistrict scale (different range than districts) ---
-            if (showSubdistrict && mapRef.current?.getLayer('subdistricts-fill')) {
-                const sScale = getSubScale(effectiveLayer);
-
-                // Build same fallback for subdistricts if needed
-                const sValueMatch: any[] = ['match', nameExpr];
-                ALLOWED_DISTRICTS.forEach(distName => {
-                    let val = GENDER[distName]?.[genderKey] || 0;
-                    val = Math.floor(val / 8); 
-                    sValueMatch.push(distName, val);
-                    sValueMatch.push(distName.toUpperCase(), val);
-                });
-                sValueMatch.push(0);
-
-                mapRef.current.setPaintProperty('subdistricts-fill', 'fill-color', [
+            // 1. Districts Layer
+            const districtColorExp = activeLayer === 'deg_urbanisation'
+                ? '#D3D3D3'
+                : [
                     'interpolate', ['linear'],
-                    ['coalesce', ['get', subPropName], sValueMatch],
-                    sScale[0], '#f0f9e8',
-                    sScale[1], '#bae4bc',
-                    sScale[2], '#7bccc4',
-                    sScale[3], '#43a2ca',
-                    sScale[4], '#0868ac'
-                ]);
-                mapRef.current.setPaintProperty('subdistricts-fill', 'fill-opacity', 1);
-            } else if (mapRef.current?.getLayer('subdistricts-fill')) {
-                mapRef.current.setPaintProperty('subdistricts-fill', 'fill-opacity', 0);
+                    ['coalesce', ['get', propName], valueMatch],
+                    scaleValues[0], '#f0f9e8',
+                    scaleValues[1], '#bae4bc',
+                    scaleValues[2], '#7bccc4',
+                    scaleValues[3], '#43a2ca',
+                    scaleValues[4], '#0868ac'
+                ];
+
+            map.setPaintProperty('districts-fill', 'fill-color', districtColorExp as any);
+
+            // 2. Subdistrict Layer
+            if (map.getLayer('subdistricts-fill')) {
+                const sScale = getSubScale(effectiveLayer);
+                const subColorExp = activeLayer === 'deg_urbanisation'
+                    ? '#E5E7EB'
+                    : [
+                        'interpolate', ['linear'],
+                        ['coalesce', ['get', subPropName], sValueMatch],
+                        sScale[0], '#f0f9e8',
+                        sScale[1], '#bae4bc',
+                        sScale[2], '#7bccc4',
+                        sScale[3], '#43a2ca',
+                        sScale[4], '#0868ac'
+                    ];
+
+                map.setPaintProperty('subdistricts-fill', 'fill-color', subColorExp as any);
+                map.setPaintProperty('subdistricts-fill', 'fill-opacity', showSubdistrict ? 0.9 : 0);
             }
 
-            // Notify parent (static scale)
             if (onLegendDataUpdate) {
                 onLegendDataUpdate(scaleValues[0], scaleValues[4]);
             }
         };
 
-        // Delay slightly to wait for data load if needed
         updateColors();
         const timeout = setTimeout(updateColors, 500);
         return () => clearTimeout(timeout);
-    }, [selectedYear, gender, activeLayer, lastDataStringRef.current, showSubdistrict, subdistrictDataLoaded, onLegendDataUpdate, activeBasemap, styleLoadedCount]);
+    }, [selectedYear, gender, activeLayer, showSubdistrict, subdistrictDataLoaded, onLegendDataUpdate, activeBasemap, styleLoadedCount]);
 
     // Handle Layer visibility separately for performance
     useEffect(() => {

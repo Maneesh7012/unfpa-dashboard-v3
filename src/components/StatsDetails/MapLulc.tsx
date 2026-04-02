@@ -12,8 +12,8 @@ let protocol = new pmtiles.Protocol();
 // Global guard for protocols
 let protocolsAdded = false;
 
-const PMTILES_URL = 'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/od_district_pop_total_2036.pmtiles';
-const SUBDISTRICT_URL = 'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/od_subdistrict_pop_total_2036.pmtiles';
+const PMTILES_URL = 'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/population_data/od_district_pop_total_2036_corrected.pmtiles';
+const SUBDISTRICT_URL = 'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/population_data/od_subdistrict_pop_total_2036.pmtiles';
 
 const LULC_LEGEND = [
     { label: 'Water', color: '#419BDF' },

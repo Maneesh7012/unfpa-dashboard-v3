@@ -23,7 +23,7 @@ interface MultiMapCompareProps {
     onDistrictSelect?: (district: string) => void;
 }
 
-const PMTILES_URL = 'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/od_district_pop_total_2036.pmtiles';
+const PMTILES_URL = 'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/population_data/od_district_pop_total_2036_corrected.pmtiles';
 const SUBDISTRICT_URL = 'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/odisha_subdistrict.pmtiles';
 
 const PC_MOSAIC_REGISTER = 'https://planetarycomputer.microsoft.com/api/data/v1/mosaic/register';

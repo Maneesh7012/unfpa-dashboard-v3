@@ -18,7 +18,7 @@ import {
     Label,
 } from 'recharts';
 
-const PMTILES_URL = 'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/od_district_pop_total_2036.pmtiles';
+const PMTILES_URL = 'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/population_data/od_district_pop_total_2036_corrected.pmtiles';
 const SUBDISTRICT_URL = 'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/odisha_subdistrict.pmtiles';
 
 const ODISHA_BOUNDS: maplibregl.LngLatBoundsLike = [[81.3883675665129118, 17.8124511673802353], [87.4770036487483651, 22.5674384683253209]];
@@ -1554,13 +1554,13 @@ export default function MapCompare({
     const getLulcStat = (dist: string, year: string, layerKey: string) => {
         const category = lulcStatMap[layerKey];
         if (!category) return null;
-        
+
         const distData = LULC_STATS[dist] || (DISTRICT_NAME_VARIANTS[dist] ? LULC_STATS[DISTRICT_NAME_VARIANTS[dist]] : null) || LULC_STATS['Odisha'];
         if (!distData) return null;
-        
+
         const yearData = distData[year];
         if (!yearData) return null;
-        
+
         const val = yearData[category];
         if (val === undefined || val === null) return null;
 
@@ -1573,7 +1573,7 @@ export default function MapCompare({
         if (val < 110 && dist !== 'Odisha') { // Heuristic: likely a percentage
             return { sqKm: (totalArea * val) / 100, percent: val };
         }
-        
+
         return { sqKm: val, percent: (val / totalArea) * 100 };
     };
 

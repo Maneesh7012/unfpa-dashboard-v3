@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import { DISTRICT_NAMES, DISTRICT_NAME_VARIANTS, DISTRICT_DEMOGRAPHICS, DEMOGRAPHIC_STATS, CENSUS_PROJECTION_DATA, MODEL_PROJECTION_DATA, GENDER } from '../../data/comparativeData';
 import type { LayerType } from '../../../types';
-import MapLulc from './MapLulc';
+// import MapLulc from './MapLulc';
 // import { ChangeAnalysis } from './ChangeAnalysis';
 import MapCompare from '../MapCompare/MapCompare';
 import { MultiMapCompare } from '../MapCompare/MultiMapCompare';
@@ -742,7 +742,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({ selectedDistrict = '
 
                 {isDistrictSelected && (
                     <>
-                        <MapLulc selectedDistrict={selectedDistrict} onDistrictSelect={onDistrictSelect} />
+                        {/* <MapLulc selectedDistrict={selectedDistrict} onDistrictSelect={onDistrictSelect} /> */}
 
                         {/* Quarterly Sentinel-2 TCI Timelapse */}
                         <div className="w-full mb-8">
