@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Header } from './components/Header/Header';
 import { Footer } from './components/Footer/Footer';
@@ -20,17 +20,17 @@ const Dashboard: React.FC = () => {
   const [allDistrictsData, setAllDistrictsData] = useState<any[]>([]);
 
   // Debugging Logs: Track state changes in structured objects
-  useEffect(() => {
-    console.log('--- Dashboard State Update ---');
-    console.log({ currentView });
-    console.log({ selectedDistrict });
-    console.log({ selectedData });
-    console.log({
-      allDistrictsLength: allDistrictsData.length,
-      allDistrictsData,
-    });
-    console.log('------------------------------');
-  }, [currentView, selectedDistrict, selectedData, allDistrictsData]);
+  // useEffect(() => {
+  //   console.log('--- Dashboard State Update ---');
+  //   console.log({ currentView });
+  //   console.log({ selectedDistrict });
+  //   console.log({ selectedData });
+  //   console.log({
+  //     allDistrictsLength: allDistrictsData.length,
+  //     allDistrictsData,
+  //   });
+  //   console.log('------------------------------');
+  // }, [currentView, selectedDistrict, selectedData, allDistrictsData]);
 
   return (
     <>
