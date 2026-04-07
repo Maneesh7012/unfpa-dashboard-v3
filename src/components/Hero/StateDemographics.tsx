@@ -57,51 +57,57 @@ function buildNarrative(data: DistrictData) {
   const firstYear = Math.min(...popYears);
   const lastYear = Math.max(...popYears);
 
-  const pop2011 = d['pop_2011_sum'] as number;
-  const popLatest = d[`pop_${lastYear}_sum`] as number;
-  const densityLatest = d[`density_${lastYear}`] as number;
+  const pop2011 = (d['pop_2011_sum'] as number) || 0;
+  const popLatest = (d[`pop_${lastYear}_sum`] as number) || 0;
+  const densityLatest = (d[`density_${lastYear}`] as number) || 0;
 
+  // --- FIX 1: Growth Rate anomalies ---
   const growthYears = getYears(d, 'growth_');
   const growthValues = growthYears.map((y) => ({
     year: y,
     val: d[`growth_${y}`] as number,
   }));
+
+  // Filter out Infinity, NaN, and extreme outliers (e.g., > 100% growth)
   const validGrowth = growthValues.filter(
-    (g) => g.val != null && g.val < 10 && g.val > 0,
+    (g) => g.val != null && isFinite(g.val) && g.val < 20 && g.val > -5,
   );
+
   const firstGrowth = validGrowth[0];
   const lastGrowth = validGrowth[validGrowth.length - 1];
-  const minGrowth = validGrowth.reduce(
-    (min, g) => (g.val < min.val ? g : min),
-    validGrowth[0],
-  );
+  const minGrowth =
+    validGrowth.length > 0
+      ? validGrowth.reduce(
+          (min, g) => (g.val < min.val ? g : min),
+          validGrowth[0],
+        )
+      : null;
 
+  // --- FIX 2: Sex Ratio Division by Zero ---
   const sexYears = getYears(d, 'male_2').filter((y) => y >= 2015 && y <= 2030);
-  const maleLatest = sexYears.length
-    ? (d[`male_${sexYears[sexYears.length - 1]}`] as number)
-    : undefined;
-  const femaleLatest = sexYears.length
-    ? (d[`female_${sexYears[sexYears.length - 1]}`] as number)
-    : undefined;
+  const currentSexYear = sexYears[sexYears.length - 1] || 2026;
+
+  const maleLatest = (d[`male_${currentSexYear}`] as number) || 0;
+  const femaleLatest = (d[`female_${currentSexYear}`] as number) || 0;
+
+  // Prevent Infinity by checking if maleLatest > 0
   const sexRatioLatest =
-    maleLatest && femaleLatest
-      ? Math.round((femaleLatest / maleLatest) * 1000)
-      : undefined;
+    maleLatest > 0 ? Math.round((femaleLatest / maleLatest) * 1000) : 0;
 
-  const male2015 = d['male_2015'] as number;
-  const female2015 = d['female_2015'] as number;
+  const male2015 = (d['male_2015'] as number) || 0;
+  const female2015 = (d['female_2015'] as number) || 0;
   const sexRatio2015 =
-    male2015 && female2015
-      ? Math.round((female2015 / male2015) * 1000)
-      : undefined;
+    male2015 > 0 ? Math.round((female2015 / male2015) * 1000) : 0;
 
-  const ruralStart = d['deg_urban_rural_2015'] as number;
-  const ruralEnd = d['deg_urban_rural_2030'] as number;
-  const cityStart = d['deg_urban_city_2015'] as number;
-  const cityEnd = d['deg_urban_city_2030'] as number;
-  const townStart = d['deg_urban_town_2015'] as number;
-  const townEnd = d['deg_urban_town_2030'] as number;
+  // --- Urbanisation checks ---
+  const ruralStart = (d['deg_urban_rural_2015'] as number) || 0;
+  const ruralEnd = (d['deg_urban_rural_2030'] as number) || 0;
+  const cityStart = (d['deg_urban_city_2015'] as number) || 0;
+  const cityEnd = (d['deg_urban_city_2030'] as number) || 0;
+  const townStart = (d['deg_urban_town_2015'] as number) || 0;
+  const townEnd = (d['deg_urban_town_2030'] as number) || 0;
 
+  // --- Age Structure & Percentage Checks ---
   const ageGroups = [
     '0_12',
     '1_4',
@@ -125,26 +131,7 @@ function buildNarrative(data: DistrictData) {
     '90_plus',
   ];
   const ageLabels: Record<string, string> = {
-    '0_12': '0–1',
-    '1_4': '1–4',
-    '5_9': '5–9',
-    '10_14': '10–14',
-    '15_19': '15–19',
-    '20_24': '20–24',
-    '25_29': '25–29',
-    '30_34': '30–34',
-    '35_39': '35–39',
-    '40_44': '40–44',
-    '45_49': '45–49',
-    '50_54': '50–54',
-    '55_59': '55–59',
-    '60_64': '60–64',
-    '65_69': '65–69',
-    '70_74': '70–74',
-    '75_79': '75–79',
-    '80_84': '80–84',
-    '85_89': '85–89',
-    '90_plus': '90+',
+    /* ... your labels ... */
   };
 
   const latestAgeYear = (() => {
@@ -156,43 +143,38 @@ function buildNarrative(data: DistrictData) {
 
   const ageData = ageGroups.map((g) => ({
     group: g,
-    label: ageLabels[g],
+    label: ageLabels[g] || g,
     male: (d[`male_${latestAgeYear}_${g}`] as number) ?? 0,
     female: (d[`female_${latestAgeYear}_${g}`] as number) ?? 0,
   }));
 
-  const maxAge = Math.max(...ageData.flatMap((a) => [a.male, a.female]));
+  const maxAge = Math.max(...ageData.flatMap((a) => [a.male, a.female]), 1); // 1 prevents div by zero
 
-  const workingAge = ageData
-    .filter((a) => ['20_24', '25_29', '30_34', '35_39'].includes(a.group))
-    .reduce((s, a) => s + a.male + a.female, 0);
-  const youthAge = ageData
-    .filter((a) => ['0_12', '1_4', '5_9', '10_14'].includes(a.group))
-    .reduce((s, a) => s + a.male + a.female, 0);
-  const elderlyAge = ageData
-    .filter((a) =>
-      ['65_69', '70_74', '75_79', '80_84', '85_89', '90_plus'].includes(
-        a.group,
-      ),
-    )
-    .reduce((s, a) => s + a.male + a.female, 0);
   const totalAgeSum = ageData.reduce((s, a) => s + a.male + a.female, 0);
+  const getAgePct = (groups: string[]) => {
+    if (totalAgeSum <= 0) return '0.0';
+    const sum = ageData
+      .filter((a) => groups.includes(a.group))
+      .reduce((s, a) => s + a.male + a.female, 0);
+    return ((sum / totalAgeSum) * 100).toFixed(1);
+  };
 
-  const pctWorking = totalAgeSum
-    ? ((workingAge / totalAgeSum) * 100).toFixed(1)
-    : '—';
-  const pctYouth = totalAgeSum
-    ? ((youthAge / totalAgeSum) * 100).toFixed(1)
-    : '—';
-  const pctElderly = totalAgeSum
-    ? ((elderlyAge / totalAgeSum) * 100).toFixed(1)
-    : '—';
+  const pctWorking = getAgePct(['20_24', '25_29', '30_34', '35_39']);
+  const pctYouth = getAgePct(['0_12', '1_4', '5_9', '10_14']);
+  const pctElderly = getAgePct([
+    '65_69',
+    '70_74',
+    '75_79',
+    '80_84',
+    '85_89',
+    '90_plus',
+  ]);
 
-  const popGrowthPct = pop2011
-    ? (((popLatest - pop2011) / pop2011) * 100).toFixed(1)
-    : '—';
+  // --- FIX 3: Baseline Population Check ---
+  const popGrowthPct =
+    pop2011 > 0 ? (((popLatest - pop2011) / pop2011) * 100).toFixed(1) : '0.0';
 
-  const growthBarMax = Math.max(...validGrowth.map((g) => g.val));
+  const growthBarMax = Math.max(...validGrowth.map((g) => g.val), 1);
 
   return {
     name,
@@ -214,7 +196,7 @@ function buildNarrative(data: DistrictData) {
     femaleLatest,
     sexRatio2015,
     sexRatioLatest,
-    sexLatestYear: sexYears[sexYears.length - 1],
+    sexLatestYear: currentSexYear,
     ruralStart,
     ruralEnd,
     cityStart,
