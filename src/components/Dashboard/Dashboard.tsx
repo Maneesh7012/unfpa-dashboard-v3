@@ -1,8 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+
 import {
   ChevronDown,
   ChevronsDown,
@@ -61,7 +62,7 @@ const InfoTooltip = ({
   source?: string;
 }) => (
   // const InfoTooltip = ({ text, position = 'top', source = 'UNFPA AI/ML Model v1' }: { text: string; position?: 'top' | 'bottom'; source?: string }) => (
-  <span className="group/info inline-block ml-2 align-middle z-[100]">
+  <span className="group/info inline-block ml-2 align-middle z-100">
     <Info className="w-3.5 h-3.5 text-gray-400 group-hover/info:text-[#F96000] transition-colors cursor-help" />
     <span
       className={`absolute left-0 right-0 px-1 hidden group-hover/info:block animate-in fade-in zoom-in-95 duration-200 pointer-events-none z-[110] 
@@ -1820,12 +1821,32 @@ export const MapSection: React.FC<MapSectionProps> = ({
       </div>
 
       {/* Scroll Indication Animation */}
-      {showScrollHint && (
+      {/* {showScrollHint && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-bounce pointer-events-none">
           <div className="text-black p-2 w-10 h-10 flex items-center justify-center">
             <ChevronsDown className="w-5 h-5" />
           </div>
         </div>
+      )} */}
+
+      {showScrollHint && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-bounce pointer-events-auto cursor-pointer"
+          onClick={() => {
+            window.scrollBy({
+              top: window.innerHeight * 0.8, // Scrolls down exactly 20vh
+              behavior: 'smooth',
+            });
+          }}
+        >
+          {/* Default state: no background. Hover state: rounded circle background */}
+          <div className="text-black p-2 w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 hover:bg-black/5 hover:backdrop-blur-sm">
+            <ChevronsDown className="w-5 h-5" />
+          </div>
+        </motion.div>
       )}
     </div>
   );
