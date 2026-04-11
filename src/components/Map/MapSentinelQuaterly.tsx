@@ -1,3 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, {
   useEffect,
   useRef,
@@ -344,6 +347,9 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
             ]
           : ODISHA_BBOX;
         const tileUrl = await getOrCreateMosaicUrl(q, bboxToUse);
+        // const tileUrl =
+        //   'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/sentinel%C2%A0%202_tci/Anugul/Anugul_2018_q1.tif';
+
         if (!tileUrl) {
           setTileStatus('error');
           return;
@@ -354,7 +360,8 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
 
         map.addSource(sourceId, {
           type: 'raster',
-          tiles: [tileUrl],
+          // tiles: [tileUrl],
+          url: 'cog://https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/sentinel%C2%A0%202_tci/Anugul/Anugul_2018_q1.tif',
           tileSize: 256,
           minzoom: 0,
           maxzoom: 14,
@@ -389,6 +396,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
           setTileStatus('ready');
         });
       } catch (err) {
+        console.log('err', err);
         setTileStatus('error');
       }
     },
@@ -573,7 +581,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
   useEffect(() => {
     if (timelineCardRef.current) {
       const resizeObserver = new ResizeObserver((entries) => {
-        for (let entry of entries) {
+        for (const entry of entries) {
           setTimelineHeight(entry.target.clientHeight);
         }
       });
@@ -704,6 +712,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
       map.on('click', 'points-layer', (e) => {
         if (e.features && e.features.length > 0) {
           const props = e.features[0].properties;
+          console.log('props', props);
           if (props) {
             setSelectedPoint(Number(props.id));
             setActiveModalTab('What');

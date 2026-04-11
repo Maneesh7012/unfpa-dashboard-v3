@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
@@ -10,8 +11,12 @@ import {
   Minus,
   Home,
   Satellite,
+  Calendar,
+  X,
+  ChevronRight,
 } from 'lucide-react';
 import * as pmtiles from 'pmtiles';
+import { TAB_CONTENT, Points_Data } from '../MapCompare/pointData';
 
 // Set up PMTiles protocol
 const protocol = new pmtiles.Protocol();
@@ -67,6 +72,16 @@ export const MapSentinel: React.FC<MapSentinelProps> = ({
   const [pmtilesBounds, setPmtilesBounds] =
     useState<maplibregl.LngLatBoundsLike | null>(null);
 
+  /**States for Points_Data */
+  const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
+  const [lastSelectedPoint, setLastSelectedPoint] = useState<number | null>(
+    null,
+  );
+  const [activeModalTab, setActiveModalTab] = useState<'What' | 'How' | 'Why'>(
+    'What',
+  );
+  const prePointClickState = useRef<{ center: any; zoom: number } | null>(null);
+
   const getTileUrl = (year: string) => {
     const { layer } = YEAR_LAYER_MAP[year];
     return `${EOX_BASE}/${layer}/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg`;
@@ -88,6 +103,9 @@ export const MapSentinel: React.FC<MapSentinelProps> = ({
 
   useEffect(() => {
     if (!mapRef.current || !isLoaded) return;
+
+    if (selectedPoint !== null) return;
+
     const map = mapRef.current;
 
     if (targetBounds) {
@@ -204,6 +222,155 @@ export const MapSentinel: React.FC<MapSentinelProps> = ({
         },
       });
 
+      /**ADDING POINTS */
+      const pointsGeoJSON = {
+        type: 'FeatureCollection' as const,
+        features: Points_Data.map((item: any) => ({
+          type: 'Feature' as const,
+          geometry: {
+            type: 'Point' as const,
+            coordinates: [item.cord[1], item.cord[0]], // lng, lat
+          },
+          properties: {
+            id: item.id,
+          },
+        })),
+      };
+
+      map.addSource('points-source', {
+        type: 'geojson',
+        data: pointsGeoJSON,
+      });
+
+      // --- MAIN POINT LAYER ---
+      map.addLayer({
+        id: 'points-layer',
+        type: 'circle',
+        source: 'points-source',
+        paint: {
+          'circle-radius': 7,
+          'circle-color': '#F76000',
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#FFFFFF',
+        },
+      });
+
+      // --- HIGHLIGHT LAYER ---
+      map.addLayer({
+        id: 'points-layer-highlight',
+        type: 'circle',
+        source: 'points-source',
+        paint: {
+          'circle-radius': 6,
+          'circle-color': 'transparent',
+          'circle-stroke-width': 4,
+          'circle-stroke-color': '#0868ac',
+        },
+        filter: ['==', 'id', -999],
+      });
+
+      const popup = new maplibregl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        className: 'map-tooltip',
+      });
+
+      // Tooltip handler
+      const showPointTooltip = (e: any) => {
+        const feature = e.features?.[0];
+        if (!feature) return;
+
+        const pointId = Number(feature.properties.id);
+
+        // ✅ Get point coords
+        const pointData = Points_Data.find((p) => p.id === pointId);
+        if (!pointData) return;
+
+        // ✅ Get category + title from TAB_CONTENT.What
+        const meta = TAB_CONTENT.What.find((item: any) => item.id === pointId);
+        const rawTitle = meta?.title || '';
+        const cleanTitle = rawTitle.split(':')[0];
+
+        map.getCanvas().style.cursor = 'pointer';
+
+        const lat = pointData.cord[0].toFixed(4);
+        const lng = pointData.cord[1].toFixed(4);
+
+        const content = `
+          <div style="
+            padding: 10px 12px;
+            min-width: 170px;
+            font-family: system-ui;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+          ">
+            
+            <!-- CATEGORY (PRIMARY LABEL) -->
+            <div style="
+              font-size: 12px;
+              font-weight: 800;
+              color: #F76000;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+            ">
+              ${meta?.category || 'Observation'}
+            </div>
+
+            <!-- TITLE (optional but looks great) -->
+            <div style="
+              font-size: 11px;
+              font-weight: 700;
+              color: #1a202c;
+              line-height: 1.3;
+            ">
+              ${cleanTitle || ''}
+            </div>
+
+            <!-- DISTRICT -->
+            <div style="
+              font-size: 9px;
+              font-weight: 600;
+              color: #718096;
+              text-transform: uppercase;
+            ">
+              ${targetDistrict}
+            </div>
+
+            <!-- DIVIDER -->
+            <div style="
+              width: 100%;
+              height: 1px;
+              background: #e2e8f0;
+              margin: 2px 0;
+            "></div>
+
+            <!-- COORDINATES -->
+            <div style="
+              font-size: 10px;
+              font-weight: 600;
+              color: #2d3748;
+            ">
+              ${lat}° N, ${lng}° E
+            </div>
+
+          </div>
+        `;
+
+        popup
+          .setLngLat([pointData.cord[1], pointData.cord[0]]) // snap to point
+          .setHTML(content)
+          .addTo(map);
+      };
+
+      const hideTooltip = () => {
+        map.getCanvas().style.cursor = '';
+        popup.remove();
+      };
+
+      map.on('mousemove', 'points-layer', showPointTooltip);
+      map.on('mouseleave', 'points-layer', hideTooltip);
+
       try {
         const p = new pmtiles.PMTiles(PMTILES_URL);
         const header = await p.getHeader();
@@ -223,6 +390,23 @@ export const MapSentinel: React.FC<MapSentinelProps> = ({
       }
 
       setIsLoaded(true);
+    });
+
+    map.on('click', 'points-layer', (e) => {
+      if (e.features && e.features.length > 0) {
+        const props = e.features[0].properties;
+        if (props) {
+          setSelectedPoint(Number(props.id));
+          setActiveModalTab('What');
+        }
+      }
+    });
+
+    map.on('mouseenter', 'points-layer', () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', 'points-layer', () => {
+      map.getCanvas().style.cursor = '';
     });
 
     // Collect features for zooming
@@ -304,6 +488,42 @@ export const MapSentinel: React.FC<MapSentinelProps> = ({
     if (!isLoaded) return;
     switchLayer(selectedYear);
   }, [selectedYear, isLoaded, switchLayer]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+
+    if (map.getLayer('points-layer-highlight')) {
+      map.setFilter('points-layer-highlight', [
+        '==',
+        'id',
+        selectedPoint !== null ? selectedPoint : -999,
+      ]);
+    }
+
+    if (selectedPoint !== null && selectedPoint !== lastSelectedPoint) {
+      if (prePointClickState.current === null) {
+        prePointClickState.current = {
+          center: map.getCenter(),
+          zoom: map.getZoom(),
+        };
+      }
+
+      const point = Points_Data.find((p) => p.id === selectedPoint);
+      if (point && point.cord) {
+        map.flyTo({
+          center: [point.cord[1], point.cord[0]],
+          zoom: 14,
+          duration: 1500,
+          padding: { right: window.innerWidth * 0.35 } as any,
+        });
+      }
+
+      setLastSelectedPoint(selectedPoint);
+    } else if (selectedPoint === null) {
+      setLastSelectedPoint(null);
+    }
+  }, [selectedPoint, lastSelectedPoint]);
 
   // const yearInfo = YEAR_LAYER_MAP[selectedYear];
   return (
@@ -484,6 +704,147 @@ export const MapSentinel: React.FC<MapSentinelProps> = ({
               <p className="text-xs font-black text-white/60 uppercase tracking-widest">
                 Loading Sentinel Imagery...
               </p>
+            </div>
+          </div>
+        )}
+
+        {selectedPoint && (
+          <div className="absolute top-0 right-0 h-full w-full md:w-[45%] lg:w-[35%] bg-white border-l border-gray-200 shadow-2xl z-[150] flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+            {/* Header Tabs & Close */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+              <div className="flex items-center flex-1 mr-4">
+                {(['What', 'How', 'Why'] as const).map((tab, index) => (
+                  <div
+                    key={tab}
+                    className="flex-1 flex items-center justify-center relative"
+                  >
+                    <button
+                      onClick={() => setActiveModalTab(tab)}
+                      className="flex items-center cursor-pointer justify-center space-x-3 py-2 w-full transition-all group"
+                    >
+                      <div
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black border-2 transition-all duration-300 ${
+                          activeModalTab === tab
+                            ? 'bg-[#F76000] border-[#F76000] text-white'
+                            : 'bg-gray-100 border-gray-200 text-gray-700 group-hover:border-gray-400 group-hover:text-gray-600'
+                        }`}
+                      >
+                        {index + 1}
+                      </div>
+                      <span
+                        className={`text-[11px] font-black uppercase tracking-widest transition-colors ${
+                          activeModalTab === tab
+                            ? 'text-black'
+                            : 'text-gray-400 group-hover:text-gray-600'
+                        }`}
+                      >
+                        {tab}
+                      </span>
+                    </button>
+                    {index < 2 && (
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 text-gray-600 z-10">
+                        <ChevronRight className="w-4 h-4" strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedPoint(null);
+                  if (prePointClickState.current && mapRef.current) {
+                    mapRef.current.flyTo({
+                      center: prePointClickState.current.center,
+                      zoom: prePointClickState.current.zoom,
+                      duration: 1500,
+                      padding: { right: 0 } as any,
+                    });
+                  }
+                  prePointClickState.current = null;
+                }}
+                className="w-8 h-8 flex items-center justify-center bg-white border border-gray-200 hover:bg-orange-100 hover:text-[#F76000] text-gray-400 rounded-full transition-colors group shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Sidebar Body */}
+            <div className="flex flex-col flex-1 overflow-y-auto p-5 custom-scrollbar">
+              {(() => {
+                const currentContent = (TAB_CONTENT as any)[
+                  activeModalTab
+                ]?.find((c: any) => c.id === selectedPoint);
+                if (!currentContent)
+                  return (
+                    <p className="text-gray-400 p-4">
+                      No data available for this point.
+                    </p>
+                  );
+
+                return (
+                  <div className="flex flex-col w-full text-gray-800">
+                    <h3 className="text-lg font-black text-gray-900 mb-2 tracking-tight leading-tight uppercase font-mono">
+                      {currentContent.title}
+                    </h3>
+
+                    <div className="flex items-center gap-2 text-[11px] text-gray-500 mb-2 font-mono">
+                      <Calendar
+                        className="w-3.5 h-3.5 text-[#F76000]"
+                        strokeWidth={2.5}
+                      />
+                      <span>{currentContent.place}</span>
+                    </div>
+
+                    <div className="w-full h-px bg-gray-100 my-4" />
+
+                    {currentContent.content ? (
+                      currentContent.content.map((block: any, idx: number) => {
+                        if (block.type === 'heading') {
+                          return (
+                            <h4
+                              key={idx}
+                              className="text-sm font-black text-gray-900 mb-3 mt-2 border-l-4 border-[#F76000] pl-2"
+                            >
+                              {block.value}
+                            </h4>
+                          );
+                        } else if (block.type === 'text') {
+                          return (
+                            <div
+                              key={idx}
+                              className="text-[13px] leading-relaxed text-gray-600 mb-6 bg-gray-50/30 p-3 rounded-lg"
+                            >
+                              {block.value}
+                            </div>
+                          );
+                        } else if (block.type === 'image') {
+                          return (
+                            <div key={idx} className="mb-6">
+                              <div className="relative w-full rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm">
+                                <img
+                                  src={block.url}
+                                  alt=""
+                                  className="w-full h-auto"
+                                />
+                              </div>
+                              {block.desc && (
+                                <p className="text-[10px] text-gray-500 italic mt-2">
+                                  {block.desc}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        }
+                        return null;
+                      })
+                    ) : (
+                      <div className="text-[13px] leading-relaxed text-gray-600">
+                        {currentContent.desc}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}

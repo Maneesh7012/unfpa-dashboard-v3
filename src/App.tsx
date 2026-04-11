@@ -86,3 +86,10 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+/**
+ * Degree of Urbanisation: popup percentage will change -> layer update
+ * Urban/Rural
+ *
+ *
+ */
