@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/set-state-in-effect */
 import React, {
   useEffect,
   useRef,
@@ -662,70 +661,70 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
       );
 
       // points GeoJSON
-      const pointsGeoJSON = {
-        type: 'FeatureCollection' as const,
-        features: Points_Data.map((item: any) => ({
-          type: 'Feature' as const,
-          geometry: {
-            type: 'Point' as const,
-            coordinates: [item.cord[1], item.cord[0]],
-          },
-          properties: {
-            id: item.id,
-          },
-        })),
-      };
+      // const pointsGeoJSON = {
+      //   type: 'FeatureCollection' as const,
+      //   features: Points_Data.map((item: any) => ({
+      //     type: 'Feature' as const,
+      //     geometry: {
+      //       type: 'Point' as const,
+      //       coordinates: [item.cord[1], item.cord[0]],
+      //     },
+      //     properties: {
+      //       id: item.id,
+      //     },
+      //   })),
+      // };
 
-      map.addSource('points-source', {
-        type: 'geojson',
-        data: pointsGeoJSON,
-      });
+      // map.addSource('points-source', {
+      //   type: 'geojson',
+      //   data: pointsGeoJSON,
+      // });
 
-      map.addLayer({
-        id: 'points-layer',
-        type: 'circle',
-        source: 'points-source',
-        paint: {
-          'circle-radius': 7,
-          'circle-color': '#F76000',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#FFFFFF',
-          'circle-opacity': 1,
-          'circle-stroke-opacity': 1,
-        },
-      });
+      // map.addLayer({
+      //   id: 'points-layer',
+      //   type: 'circle',
+      //   source: 'points-source',
+      //   paint: {
+      //     'circle-radius': 7,
+      //     'circle-color': '#F76000',
+      //     'circle-stroke-width': 2,
+      //     'circle-stroke-color': '#FFFFFF',
+      //     'circle-opacity': 1,
+      //     'circle-stroke-opacity': 1,
+      //   },
+      // });
 
-      map.addLayer({
-        id: 'points-layer-highlight',
-        type: 'circle',
-        source: 'points-source',
-        paint: {
-          'circle-radius': 6,
-          'circle-color': 'transparent',
-          'circle-stroke-width': 4,
-          'circle-stroke-color': '#0868ac',
-          'circle-stroke-opacity': 1,
-        },
-        filter: ['==', 'id', -999],
-      });
+      // map.addLayer({
+      //   id: 'points-layer-highlight',
+      //   type: 'circle',
+      //   source: 'points-source',
+      //   paint: {
+      //     'circle-radius': 6,
+      //     'circle-color': 'transparent',
+      //     'circle-stroke-width': 4,
+      //     'circle-stroke-color': '#0868ac',
+      //     'circle-stroke-opacity': 1,
+      //   },
+      //   filter: ['==', 'id', -999],
+      // });
 
-      map.on('click', 'points-layer', (e) => {
-        if (e.features && e.features.length > 0) {
-          const props = e.features[0].properties;
-          console.log('props', props);
-          if (props) {
-            setSelectedPoint(Number(props.id));
-            setActiveModalTab('What');
-          }
-        }
-      });
+      // map.on('click', 'points-layer', (e) => {
+      //   if (e.features && e.features.length > 0) {
+      //     const props = e.features[0].properties;
+      //     console.log('props', props);
+      //     if (props) {
+      //       setSelectedPoint(Number(props.id));
+      //       setActiveModalTab('What');
+      //     }
+      //   }
+      // });
 
-      map.on('mouseenter', 'points-layer', () => {
-        map.getCanvas().style.cursor = 'pointer';
-      });
-      map.on('mouseleave', 'points-layer', () => {
-        map.getCanvas().style.cursor = '';
-      });
+      // map.on('mouseenter', 'points-layer', () => {
+      //   map.getCanvas().style.cursor = 'pointer';
+      // });
+      // map.on('mouseleave', 'points-layer', () => {
+      //   map.getCanvas().style.cursor = '';
+      // });
 
       map.addLayer({
         id: 'district-hover-layer',
