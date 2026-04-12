@@ -11,7 +11,8 @@ import AnalyticsPage from './pages/Analytics/Analytics';
 import DataCatalogPage from './pages/DataCatalog/DataCatalog';
 import type { ViewType } from '../types';
 import { HeroSection } from './components/Hero/HeroSection';
-import { StateDemographics_v2 } from './components/Hero/StateDemographics_v2';
+// import { StateDemographics_v2 } from './components/Hero/StateDemographics_v2';
+import { StateDemographics_v3 } from './components/Hero/StateDemographics_v3';
 
 const Dashboard: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewType>('Demographics');
@@ -47,7 +48,7 @@ const Dashboard: React.FC = () => {
       />
 
       <div className="px-4 md:px-6 lg:px-8 mt-6">
-        <StateDemographics_v2
+        <StateDemographics_v3
           selectedDistrict={selectedDistrict}
           selectedData={selectedData}
           allDistrictsData={allDistrictsData}
