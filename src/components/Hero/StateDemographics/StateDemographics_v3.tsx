@@ -3,8 +3,9 @@
 
 import { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { type DistrictData } from './shared';
+import { type DistrictData } from '../shared';
 import { TrendingUpDown } from 'lucide-react';
+import { MiniDistrictMap } from './MiniDistrictMap';
 
 type Props = {
   selectedDistrict?: string;
@@ -156,7 +157,9 @@ export function StateDemographics_v3({
       {/* 2 COLUMN LAYOUT */}
       <div className="grid grid-cols-5 gap-6">
         {/* LEFT - 40% */}
-        <div className="col-span-2 bg-gray-100 rounded-xl min-h-[400px]" />
+        <div className="col-span-2 min-h-100">
+          <MiniDistrictMap targetDistrict={selectedDistrict} />
+        </div>
 
         {/* RIGHT - 60% */}
         <div className="col-span-3 space-y-5 text-sm text-gray-700 leading-relaxed">

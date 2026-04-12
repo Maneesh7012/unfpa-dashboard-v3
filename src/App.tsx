@@ -12,7 +12,7 @@ import DataCatalogPage from './pages/DataCatalog/DataCatalog';
 import type { ViewType } from '../types';
 import { HeroSection } from './components/Hero/HeroSection';
 // import { StateDemographics_v2 } from './components/Hero/StateDemographics_v2';
-import { StateDemographics_v3 } from './components/Hero/StateDemographics_v3';
+import { StateDemographics_v3 } from './components/Hero/StateDemographics/StateDemographics_v3';
 
 const Dashboard: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewType>('Demographics');

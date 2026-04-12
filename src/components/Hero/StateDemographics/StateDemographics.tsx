@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { type DistrictData } from './shared';
+import { type DistrictData } from '../shared';
 
 type Props = {
   selectedDistrict?: string;
