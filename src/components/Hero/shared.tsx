@@ -56,24 +56,36 @@ export function generateSummary(data?: DistrictData) {
 
 // ======================= UI COMPONENTS =======================
 
-export function StatCard({
-  label,
-  value,
-  sub,
-}: {
+type Props = {
   label: string;
   value: string;
-  sub: string;
-}) {
+  sub?: string;
+  transparent?: boolean;
+};
+
+export function StatCard({ label, value, sub, transparent }: Props) {
   return (
-    <div className="bg-muted rounded-lg p-3.5">
-      <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">
+    <div
+      className={`flex flex-col ${
+        transparent
+          ? 'bg-transparent border-none shadow-none'
+          : 'bg-white border rounded-xl p-3'
+      }`}
+    >
+      {/* Label */}
+      <span className="text-sm md:text-[15px] text-white/70 uppercase tracking-wide">
         {label}
-      </p>
-      <p className="text-xl font-medium text-foreground leading-tight">
+      </span>
+
+      {/* Value (slightly larger for emphasis) */}
+      <span className="text-2xl md:text-3xl font-bold text-white leading-tight">
         {value}
-      </p>
-      <p className="text-[11px] text-muted-foreground mt-1">{sub}</p>
+      </span>
+
+      {/* Subtext */}
+      {sub && (
+        <span className="text-sm md:text-[15px] text-white/70">{sub}</span>
+      )}
     </div>
   );
 }

@@ -10,9 +10,8 @@ import MethodologyPage from './pages/Methodology/Methodology';
 import AnalyticsPage from './pages/Analytics/Analytics';
 import DataCatalogPage from './pages/DataCatalog/DataCatalog';
 import type { ViewType } from '../types';
-import { HeroSection } from './components/Hero/HeroSection';
-// import { StateDemographics_v2 } from './components/Hero/StateDemographics_v2';
 import { StateDemographics_v3 } from './components/Hero/StateDemographics/StateDemographics_v3';
+import { HeroSection_v2 } from './components/Hero/HeroSection_v2';
 
 const Dashboard: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewType>('Demographics');
@@ -35,8 +34,8 @@ const Dashboard: React.FC = () => {
 
   return (
     <>
-      <div className="px-4 md:px-6 lg:px-8 mt-6">
-        <HeroSection currentView={currentView} />
+      <div className="mb-0">
+        <HeroSection_v2 />
       </div>
       <MapSection
         currentView={currentView}
