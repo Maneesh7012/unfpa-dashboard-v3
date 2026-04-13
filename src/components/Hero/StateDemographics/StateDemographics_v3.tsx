@@ -155,14 +155,14 @@ export function StateDemographics_v3({
       </div>
 
       {/* 2 COLUMN LAYOUT */}
-      <div className="grid grid-cols-5 gap-6">
+      <div className="grid grid-cols-10 gap-2">
         {/* LEFT - 40% */}
-        <div className="col-span-2 min-h-100">
+        <div className="col-span-3 min-h-100">
           <MiniDistrictMap targetDistrict={selectedDistrict} />
         </div>
 
         {/* RIGHT - 60% */}
-        <div className="col-span-3 space-y-5 text-sm text-gray-700 leading-relaxed">
+        <div className="col-span-7 space-y-5 text-md text-gray-700 leading-relaxed">
           {/* Population */}
           <p>
             <strong>{n.name}</strong> district in {n.state} has experienced a

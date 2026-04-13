@@ -88,7 +88,7 @@ export const MiniDistrictMap = ({
         source: 'districts',
         'source-layer': 'zcta',
         paint: {
-          'fill-color': showBasemap ? '#e5e7eb' : '#f3f4f6',
+          'fill-color': showBasemap ? '#fff' : '#fff',
           'fill-opacity': showBasemap ? 0.4 : 0.7,
         },
       });
@@ -195,7 +195,7 @@ export const MiniDistrictMap = ({
   return (
     <div
       ref={containerRef}
-      className={`w-full h-full rounded-xl ${className || ''}`}
+      className={`w-full h-full rounded-xl  ${className || ''}`}
     />
   );
 };

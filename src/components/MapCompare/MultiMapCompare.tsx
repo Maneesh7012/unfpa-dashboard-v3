@@ -59,6 +59,36 @@ const BASE_URL =
   'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3';
 
 // ----------------------
+// ✅ NIGHTLIGHT QUARTERLY CONFIG
+// ----------------------
+// Quarter labels shown in the dropdown → mapped to q1/q2/q3/q4 in the URL
+// Format: "YYYY March" = q1, "YYYY June" = q2, "YYYY September" = q3, "YYYY December" = q4
+const NTL_QUARTER_LABEL_MAP: Record<string, string> = {
+  March: 'q1',
+  June: 'q2',
+  September: 'q3',
+  December: 'q4',
+};
+
+const NTL_QUARTER_MONTHS = ['March', 'June', 'September', 'December'];
+const NTL_YEARS = Array.from({ length: 2026 - 2018 + 1 }, (_, i) =>
+  (2018 + i).toString(),
+);
+
+// All dropdown options for nightlight: ["2018 March", "2018 June", ..., "2026 December"]
+const NTL_YEAR_OPTIONS: string[] = NTL_YEARS.flatMap((year) =>
+  NTL_QUARTER_MONTHS.map((month) => `${year} ${month}`),
+);
+
+// Build the nightlight URL given the dropdown value (e.g. "2018 March") and district name
+const buildNtlUrl = (yearLabel: string, district: string): string => {
+  const [year, month] = yearLabel.split(' ');
+  const quarter = NTL_QUARTER_LABEL_MAP[month] || 'q1';
+  const districtName = district || 'Anugul';
+  return `${BASE_URL}/ntl/${districtName}/${districtName}_${year}_${quarter}_ntl.tif`;
+};
+
+// ----------------------
 // ✅ YEAR GENERATORS
 // ----------------------
 const generateYears = (start: number, end: number) =>
@@ -82,7 +112,7 @@ const buildYearlyUrls = (
 // ✅ YEAR RANGES
 // ----------------------
 const YEARS = {
-  nightlight: generateYears(2012, 2024),
+  // nightlight no longer uses static urls — handled dynamically via buildNtlUrl
   roads: generateYears(2014, 2025),
   builtup: generateYears(2017, 2025),
 };
@@ -93,10 +123,13 @@ const YEARS = {
 const LAYER_CONFIGS: any = {
   nightlight: {
     label: 'Nightlight',
-    urls: buildYearlyUrls(`${BASE_URL}/ntl`, 'ntl', 'tif', YEARS.nightlight),
+    // urls are NOT used for nightlight anymore — built dynamically per district
+    // We keep a placeholder so year-validation logic knows available options
+    urls: Object.fromEntries(NTL_YEAR_OPTIONS.map((opt) => [opt, ''])),
     params:
       '#color:["#000000","#333333","#663300","#ccaa00","#ffff00"],0,200,c',
     type: 'raster',
+    isNightlight: true, // flag to trigger dynamic URL build
   },
 
   roads: {
@@ -107,7 +140,7 @@ const LAYER_CONFIGS: any = {
       'pmtiles',
       YEARS.roads,
     ),
-    params: '', // dynamic styling handled later
+    params: '',
     type: 'vector',
   },
 
@@ -123,99 +156,6 @@ const LAYER_CONFIGS: any = {
     type: 'raster',
   },
 };
-
-// const LAYER_CONFIGS: any = {
-//   nightlight: {
-//     label: 'Nightlight',
-//     urls: {
-//       '2012':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2012.tif',
-//       '2013':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2013.tif',
-//       '2014':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2014.tif',
-//       '2015':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2015.tif',
-//       '2016':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2016.tif',
-//       '2017':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2017.tif',
-//       '2018':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2018.tif',
-//       '2019':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2019.tif',
-//       '2020':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2020.tif',
-//       '2021':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2021.tif',
-//       '2022':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2022.tif',
-//       '2023':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2023.tif',
-//       '2024':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2024.tif',
-//     },
-//     params:
-//       '#color:["#000000","#333333","#663300","#ccaa00","#ffff00"],0,200,c',
-//     type: 'raster',
-//   },
-//   roads: {
-//     label: 'Road Network',
-//     urls: {
-//       '2014':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2014.pmtiles',
-//       '2015':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2015.pmtiles',
-//       '2016':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2016.pmtiles',
-//       '2017':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2017.pmtiles',
-//       '2018':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2018.pmtiles',
-//       '2019':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2019.pmtiles',
-//       '2020':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2020.pmtiles',
-//       '2021':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2021.pmtiles',
-//       '2022':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2022.pmtiles',
-//       '2023':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2023.pmtiles',
-//       '2024':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2024.pmtiles',
-//       '2025':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2025.pmtiles',
-//     },
-//     params: '', // Dynamic color based on panel
-//     type: 'vector',
-//   },
-//   builtup: {
-//     label: 'Built-up Area',
-//     urls: {
-//       '2017':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2017.tif',
-//       '2018':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2018.tif',
-//       '2019':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2019.tif',
-//       '2020':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2020.tif',
-//       '2021':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2021.tif',
-//       '2022':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2022.tif',
-//       '2023':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2023.tif',
-//       '2024':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2024.tif',
-//       '2025':
-//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2025.tif',
-//     },
-//     params: '7,7',
-//     type: 'raster',
-//   },
-// };
 
 const BASE_MAP_STYLE: any = {
   version: 8,
@@ -266,10 +206,8 @@ const BASE_MAP_STYLE: any = {
   ],
 };
 
-// Returns the universal style with all basemaps included
 const getEffectiveStyle = () => BASE_MAP_STYLE;
 
-// Shared initial bounds fetched once from PMTiles header
 const sharedInitialBoundsRef: { current: maplibregl.LngLatBoundsLike | null } =
   { current: null };
 let initialBoundsFetchStarted = false;
@@ -302,7 +240,6 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
     year: '2024',
   });
 
-  // Update existing maps if external layer changes
   useEffect(() => {
     if (propActiveLayer) {
       setMapConfigs((prev) =>
@@ -325,7 +262,6 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
       }
       protocolsAdded = true;
     }
-    // Prefetch PMTiles bounds once
     if (!initialBoundsFetchStarted) {
       initialBoundsFetchStarted = true;
       const p = new PMTiles(PMTILES_URL);
@@ -338,14 +274,10 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
             ];
           }
         })
-        .catch(() => {
-          /* use fallback */
-        });
+        .catch(() => {});
     }
   }, []);
 
-  // When targetBounds changes (polygon clicked in MapComponent), fit ALL map panels
-  // When targetBounds is null (reset to Odisha), restore to PMTiles-derived Odisha bounds
   useEffect(() => {
     const boundsToUse = targetBounds || sharedInitialBoundsRef.current;
     if (!boundsToUse) return;
@@ -461,7 +393,6 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
                 const allMaps = Array.from(mapInstances.current.values());
                 const firstMap = allMaps[0];
                 if (firstMap && firstMap !== map) {
-                  // New panel: sync position with the first panel
                   map.jumpTo({
                     center: firstMap.getCenter(),
                     zoom: firstMap.getZoom(),
@@ -469,10 +400,8 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
                     pitch: firstMap.getPitch(),
                   });
                 } else if (targetBounds) {
-                  // District already selected
                   map.fitBounds(targetBounds, { padding: 40, duration: 0 });
                 } else if (sharedInitialBoundsRef.current) {
-                  // Use PMTiles header bounds for initial fit
                   map.fitBounds(sharedInitialBoundsRef.current, {
                     padding: 40,
                     duration: 0,
@@ -489,10 +418,6 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
               <Plus className="w-8 h-8 text-[#F96000]" strokeWidth={2.5} />
             </div>
 
-            {/* <div className="text-center">
-                            <h4 className="text-lg font-black text-gray-900 tracking-tight uppercase">Configure New Map</h4>
-                        </div> */}
-
             <div className="w-full space-y-4">
               <div className="relative group">
                 <label className="text-[10px] font-black uppercase tracking-widest text-[#0868ac] mb-2 block">
@@ -504,7 +429,11 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
                     onChange={(e) => {
                       const layer = e.target.value;
                       const defaultYear =
-                        mapConfigs.length === 2 ? '01-01-2026' : '2024';
+                        mapConfigs.length === 2
+                          ? '01-01-2026'
+                          : layer === 'nightlight'
+                            ? '2018 March'
+                            : '2024';
                       setPendingConfig({ layer, year: defaultYear });
                     }}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-[13px] font-black text-gray-700 focus:ring-2 focus:ring-orange-500 transition-all outline-none appearance-none cursor-pointer"
@@ -540,13 +469,19 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
                             {y}
                           </option>
                         ))
-                      : Object.keys(
-                          LAYER_CONFIGS[pendingConfig.layer]?.urls || {},
-                        ).map((y) => (
-                          <option key={y} value={y}>
-                            {y}
-                          </option>
-                        ))}
+                      : pendingConfig.layer === 'nightlight'
+                        ? NTL_YEAR_OPTIONS.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))
+                        : Object.keys(
+                            LAYER_CONFIGS[pendingConfig.layer]?.urls || {},
+                          ).map((y) => (
+                            <option key={y} value={y}>
+                              {y}
+                            </option>
+                          ))}
                   </select>
                   <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none group-hover:text-orange-500 transition-colors" />
                 </div>
@@ -611,7 +546,6 @@ const MapItem = ({
 
     map.on('load', async () => {
       mapRef.current = map;
-      // Fit to PMTiles bounds if not already positioned by parent
       if (!sharedInitialBoundsRef.current) {
         try {
           const p = new PMTiles(PMTILES_URL);
@@ -623,11 +557,9 @@ const MapItem = ({
             ];
           }
         } catch (e) {
-          /* use fallback */
           console.log('e', e);
         }
       }
-      // Set initial basemap visibility
       map.setLayoutProperty(
         'base-grey',
         'visibility',
@@ -675,7 +607,6 @@ const MapItem = ({
     }
   }, [config.basemap]);
 
-  // Update Mask Layer whenever selectedDistrict or basemap changes
   useEffect(() => {
     applyMaskStatus();
   }, [selectedDistrict, config.basemap]);
@@ -685,7 +616,7 @@ const MapItem = ({
     if (!map || !map.isStyleLoaded() || !map.getLayer('districts-mask')) return;
     const getMaskColor = () => {
       if (config.basemap === 'satellite') return '#000000';
-      return '#ffffffff'; // White for grey/osm
+      return '#ffffffff';
     };
 
     map.setPaintProperty('districts-mask', 'fill-color', getMaskColor());
@@ -693,8 +624,6 @@ const MapItem = ({
   };
 
   useEffect(() => {
-    // Validation: Ensure the current year is supported by the selected layer.
-    // If not, automatically jump to the latest available year for that layer.
     const currentLayerConfig = LAYER_CONFIGS[config.layer];
     if (currentLayerConfig) {
       const isMonthlyRequest = panelIndex === 2;
@@ -703,6 +632,12 @@ const MapItem = ({
       if (isMonthlyRequest) {
         if (!MONTHLY_DATES.includes(config.year)) {
           onUpdate({ year: '01-01-2026' });
+          return;
+        }
+      } else if (config.layer === 'nightlight') {
+        // For nightlight, validate against NTL_YEAR_OPTIONS
+        if (!NTL_YEAR_OPTIONS.includes(config.year)) {
+          onUpdate({ year: '2018 March' });
           return;
         }
       } else {
@@ -717,12 +652,18 @@ const MapItem = ({
     refreshMapContent();
   }, [config.year, config.layer]);
 
+  // Re-render nightlight layer when selectedDistrict changes (URL depends on district)
+  useEffect(() => {
+    if (config.layer === 'nightlight') {
+      refreshMapContent();
+    }
+  }, [selectedDistrict]);
+
   const refreshMapContent = async () => {
     setIsLoading(true);
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
 
-    // Perform clean sweep of custom layers/sources
     const layersToClean = [
       'data-layer',
       'districts-mask',
@@ -743,12 +684,10 @@ const MapItem = ({
         if (map.getSource(id)) map.removeSource(id);
       });
 
-      // Re-add in strict order: Data Overlay -> Admin Boundaries
       await addDataOverlay(map);
       addVectorOutlines(map);
     } catch (err) {
       console.error('Error refreshing map content:', err);
-      // Fallback retry if it failed due to timing
       setTimeout(() => {
         if (mapRef.current && mapRef.current.isStyleLoaded()) {
           refreshMapContent();
@@ -881,31 +820,29 @@ const MapItem = ({
       return;
     }
 
-    const url =
-      currentConfig.urls[yearKey] ||
-      (Object.values(currentConfig.urls)[0] as string);
-
-    // Color mapping by panel index (1: Blue, 2: Red, 3: Orange)
     const panelColors = ['#0868ac', '#FF0000', '#F96000'];
     const activeColor = panelColors[panelIndex % panelColors.length];
 
-    // Palettes for light-to-dark variations (for Nightlight or gradients)
     const palettes = [
-      ['#f7fbff', '#4292c6', '#2171b5', '#053b81'], // Blue
-      ['#fff5f0', '#ef3b2c', '#cb181d', '#99000d'], // Red
-      ['#fff5eb', '#f16913', '#d94801', '#6c2202'], // Orange
+      ['#f7fbff', '#4292c6', '#2171b5', '#053b81'],
+      ['#fff5f0', '#ef3b2c', '#cb181d', '#99000d'],
+      ['#fff5eb', '#f16913', '#d94801', '#6c2202'],
     ];
     const activePalette = palettes[panelIndex % palettes.length];
 
     if (currentConfig.type === 'raster') {
       let rasterParams = currentConfig.params;
+      let url: string;
 
       if (config.layer === 'nightlight') {
-        // For nightlight, use the intensity gradient (0-200) with the panel's palette
+        // ✅ Build dynamic URL from district + quarterly label
+        url = buildNtlUrl(yearKey, selectedDistrict || 'Anugul');
         const colorStr = JSON.stringify(activePalette);
         rasterParams = `#color:${colorStr},0,200,c`;
       } else {
-        // For categorical rasters, use the specific panel color and respect the value range (e.g., 7,7 for builtup)
+        url =
+          currentConfig.urls[yearKey] ||
+          (Object.values(currentConfig.urls)[0] as string);
         const valRange = currentConfig.params || '1,1';
         rasterParams = `#color:["${activeColor}","${activeColor}"],${valRange}`;
       }
@@ -922,6 +859,9 @@ const MapItem = ({
         paint: { 'raster-opacity': 0.8 },
       });
     } else {
+      const url =
+        currentConfig.urls[yearKey] ||
+        (Object.values(currentConfig.urls)[0] as string);
       const httpUrl = url.replace('pmtiles://', '');
       try {
         const p = new PMTiles(httpUrl);
@@ -962,11 +902,17 @@ const MapItem = ({
     }
   };
 
+  // Compute dropdown options for the year selector in this panel
+  const getYearOptions = (): string[] => {
+    if (panelIndex === 2) return MONTHLY_DATES;
+    if (config.layer === 'nightlight') return NTL_YEAR_OPTIONS;
+    return Object.keys(LAYER_CONFIGS[config.layer]?.urls || {});
+  };
+
   return (
     <div className="relative h-[400px] bg-gray-100 rounded-2xl border border-gray-200 overflow-hidden group shadow-sm transition-all hover:shadow-md">
       <div ref={containerRef} className="w-full h-full" />
 
-      {/* Loading Spinner */}
       {isLoading && (
         <div className="absolute inset-0 z-[100] flex items-center justify-center bg-white/10 backdrop-blur-[1px]">
           <div className="loading-spinner"></div>
@@ -1017,7 +963,7 @@ const MapItem = ({
             )}
           </div>
 
-          {/* Year Selector */}
+          {/* Year / Quarter Selector */}
           <div className="relative">
             <button
               onClick={() => {
@@ -1036,30 +982,22 @@ const MapItem = ({
                 strokeWidth={3}
               />
             </button>
-            {isYearOpen &&
-              (() => {
-                const isMonthly = panelIndex === 2;
-                const options = isMonthly
-                  ? MONTHLY_DATES
-                  : Object.keys(LAYER_CONFIGS[config.layer]?.urls || {});
-
-                return (
-                  <div className="absolute top-full left-0 mt-2 w-32 bg-white rounded-xl shadow-2xl border border-gray-100 p-1 z-[120] animate-in fade-in slide-in-from-top-2 max-h-[300px] overflow-y-auto custom-scrollbar">
-                    {options.map((y) => (
-                      <button
-                        key={y}
-                        onClick={() => {
-                          onUpdate({ year: y });
-                          setIsYearOpen(false);
-                        }}
-                        className={`w-full px-3 py-2 text-left text-[11px] font-black rounded-lg transition-colors font-mono ${config.year === y ? 'bg-orange-50 text-[#F96000]' : 'text-gray-600 hover:bg-gray-50'}`}
-                      >
-                        {y}
-                      </button>
-                    ))}
-                  </div>
-                );
-              })()}
+            {isYearOpen && (
+              <div className="absolute top-full left-0 mt-2 w-40 bg-white rounded-xl shadow-2xl border border-gray-100 p-1 z-[120] animate-in fade-in slide-in-from-top-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                {getYearOptions().map((y) => (
+                  <button
+                    key={y}
+                    onClick={() => {
+                      onUpdate({ year: y });
+                      setIsYearOpen(false);
+                    }}
+                    className={`w-full px-3 py-2 text-left text-[11px] font-black rounded-lg transition-colors font-mono ${config.year === y ? 'bg-orange-50 text-[#F96000]' : 'text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    {y}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Layer Selector */}
@@ -1087,7 +1025,13 @@ const MapItem = ({
                   <button
                     key={key}
                     onClick={() => {
-                      onUpdate({ layer: key });
+                      // When switching to nightlight, default to first quarterly option
+                      const defaultYear =
+                        key === 'nightlight' ? '2018 March' : '2024';
+                      onUpdate({
+                        layer: key,
+                        year: key === 'nightlight' ? defaultYear : config.year,
+                      });
                       setIsLayerOpen(false);
                     }}
                     className={`w-full px-3 py-2 text-left text-[11px] font-black uppercase tracking-tight rounded-lg transition-colors ${config.layer === key ? 'bg-orange-50 text-[#F96000]' : 'text-gray-600 hover:bg-gray-50'}`}
