@@ -141,12 +141,16 @@ export function StateDemographics_v3({
   console.log('selectedData', selectedData);
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+    <motion.div
+      className="mx-auto px-4 lg:px-6 py-10 space-y-12"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
       {/* HEADER */}
-      <div className="pb-5">
+      <div className="pb-0">
         <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
           <TrendingUpDown className="w-6 h-6 text-black" />
-          Demographic Analysis: {n.name}
+          District Overview - {n.name}
         </h3>
         <p className="text-sm text-gray-500 mt-1 font-medium">
           A comprehensive synthesis of population dynamics and demographic
@@ -155,14 +159,10 @@ export function StateDemographics_v3({
       </div>
 
       {/* 2 COLUMN LAYOUT */}
-      <div className="grid grid-cols-10 gap-2">
-        {/* LEFT - 40% */}
-        <div className="col-span-3 min-h-100">
-          <MiniDistrictMap targetDistrict={selectedDistrict} />
-        </div>
+      <div className="grid grid-cols-10 gap-2 -mt-4">
+        {/* LEFT - 60% */}
 
-        {/* RIGHT - 60% */}
-        <div className="col-span-7 space-y-5 text-md text-gray-700 leading-relaxed">
+        <div className="col-span-7 space-y-3 text-md text-gray-700 leading-relaxed ">
           {/* Population */}
           <p>
             <strong>{n.name}</strong> district in {n.state} has experienced a
@@ -221,6 +221,10 @@ export function StateDemographics_v3({
             trends suggest a transition toward a more mature and structurally
             balanced population profile.
           </p>
+        </div>
+        {/* RIGHT - 40% */}
+        <div className="col-span-3 min-h-100">
+          <MiniDistrictMap targetDistrict={selectedDistrict} />
         </div>
       </div>
     </motion.div>

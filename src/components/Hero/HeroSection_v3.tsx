@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { StatCard } from './shared';
+// import { StatCard } from './shared';
 
 import bg from '../../assets/images/odisha-bg.svg';
 
@@ -23,7 +23,7 @@ export function HeroSection_v3() {
           className="absolute inset-0"
           style={{
             background:
-              'linear-gradient(90deg, #235E83 0%, rgba(35,94,131,0.85) 25%, rgba(249,96,0,0.7) 50%, rgba(249,96,0,0.4) 75%, rgba(0,0,0,0.2) 100%)',
+              'linear-gradient(90deg, #235E83 0%, rgba(35,94,131,0.85) 40%, rgba(249,96,0,0.7) 65%, rgba(249,96,0,0.4) 75%, rgba(0,0,0,0.2) 100%)',
           }}
         />
       </div>
@@ -31,17 +31,17 @@ export function HeroSection_v3() {
       {/* ---------- CONTENT ---------- */}
       <div className="relative z-10 px-6 md:px-10 py-10 text-white">
         {/* Heading */}
-        <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-[1.1] max-w-4xl">
-          Enabling Insights into{' '}
+        <h1 className="text-4xl md:text-4xl font-black tracking-tight leading-[1.1] max-w-4xl">
+          Insights into Odisha’s{' '}
           <span className="text-white/90">
-            Odisha’s Evolving Demographic Landscape
+            <br /> Evolving Demographic Landscape
           </span>
         </h1>
 
         {/*  FLEX CONTAINER (TEXT + STATS SIDE BY SIDE) */}
         <div className="mt-6 flex flex-col lg:flex-row gap-15 items-start lg:items-center">
           {/* LEFT → TEXT */}
-          <div className="text-justify max-w-4xl space-y-4 text-sm md:text-[15px] leading-relaxed text-white flex-1">
+          <div className="max-w-5xl space-y-4 text-md md:text-[16px] leading-relaxed text-white flex-1">
             <p>
               Odisha, one of India's eastern coastal states, has witnessed
               steady population growth over the past several decades, rising
@@ -56,7 +56,7 @@ export function HeroSection_v3() {
               and opportunities.
             </p>
 
-            <p>
+            {/* <p>
               The demographic landscape of Odisha is also shaped by its rich
               ethnic and tribal diversity, with Scheduled Tribes comprising
               nearly 22.8% of the total population — one of the highest
@@ -69,11 +69,11 @@ export function HeroSection_v3() {
               infrastructure development, employment generation, and equitable
               social welfare across Odisha's diverse urban and rural
               communities.
-            </p>
+            </p> */}
           </div>
 
           {/* RIGHT → STAT CARDS */}
-          <div className="grid grid-cols-2 gap-6 w-full max-w-md pl-10">
+          {/* <div className="grid grid-cols-2 gap-6 w-full max-w-md pl-10">
             <StatCard
               label="Districts"
               value="30"
@@ -98,7 +98,7 @@ export function HeroSection_v3() {
               sub="Satellite + Admin"
               transparent
             />
-          </div>
+          </div> */}
         </div>
       </div>
     </motion.div>

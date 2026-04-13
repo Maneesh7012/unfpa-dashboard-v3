@@ -1120,7 +1120,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
         {/* <ChangeAnalysis /> */}
 
         {showSentinel && (
-          <div className="w-full mb-8">
+          <div className="w-full mb-14">
             <MapSentinel
               targetDistrict={selectedDistrict}
               targetBounds={mapBounds}

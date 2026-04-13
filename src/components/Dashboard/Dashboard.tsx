@@ -682,12 +682,12 @@ export const MapSection: React.FC<MapSectionProps> = ({
   };
 
   return (
-    <div className="flex flex-col bg-[#F8FAFC] pt-6 pb-2">
+    <div className="flex flex-col bg-[#F8FAFC] mx-auto py-10 space-y-12">
       {/* BOTTOM SECTION: CONTENT AREA */}
-      <div className="flex-1 pb-4">
+      <div className="flex-1">
         <div className="w-full mx-auto px-4 lg:px-6 flex flex-col lg:flex-row gap-4">
           {/* ----------------- CENTER: MAP AREA ----------------- */}
-          <div className="w-full h-[450px] lg:flex-1 relative overflow-hidden lg:h-[80vh] bg-white rounded-lg shadow-sm border border-gray-100 group">
+          <div className="w-full h-112.5 lg:flex-1 relative overflow-hidden lg:h-[80vh] bg-white rounded-lg shadow-sm border border-gray-100 group">
             <MapComponent
               activeLayer={appliedFilters.layer}
               selectedYear={appliedFilters.year}
@@ -724,7 +724,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
             <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#000000_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.03] group-hover:opacity-[0.05] transition-opacity"></div>
 
             {/* Floating Control Panel (Top Left) */}
-            <div className="absolute top-5 bottom-5 left-5 z-[60] bg-white/90 backdrop-blur-md rounded-lg shadow-sm border border-gray-100 w-[260px] max-w-[calc(100%-40px)] transition-all hover:shadow-md flex flex-col overflow-hidden">
+            <div className="absolute top-5 bottom-5 left-5 z-60 bg-white/90 backdrop-blur-md rounded-lg shadow-sm border border-gray-100 w-[260px] max-w-[calc(100%-40px)] transition-all hover:shadow-md flex flex-col overflow-hidden">
               <style
                 dangerouslySetInnerHTML={{
                   __html: `
@@ -757,7 +757,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                 }}
               />
               {/* Sticky Header */}
-              <div className="p-5 pb-4 sticky top-0 bg-white/90 backdrop-blur-md z-[70] shrink-0 border-b border-gray-200">
+              <div className="p-5 pb-4 sticky top-0 bg-white/90 backdrop-blur-md z-70 shrink-0 border-b border-gray-200">
                 <h3 className="text-[16px] font-bold text-gray-900 leading-tightt mb-2 uppercase">
                   Filter / Selection
                 </h3>
@@ -848,7 +848,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                     </button>
                   </div>
                   {openDropdown === 'district' && (
-                    <div className="absolute left-0 top-full mt-2 max-h-[300px] overflow-y-auto custom-scrollbar bg-white/95 backdrop-blur-md rounded-lg shadow-xl border border-gray-100 p-2 z-[50] animate-in fade-in slide-in-from-top-2">
+                    <div className="absolute left-0 top-full mt-2 max-h-75 overflow-y-auto custom-scrollbar bg-white/95 backdrop-blur-md rounded-lg shadow-xl border border-gray-100 p-2 z-[50] animate-in fade-in slide-in-from-top-2">
                       <button
                         onClick={() => {
                           setSelectedDistrictName('All Districts');
@@ -983,7 +983,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                   </span>
                   <button
                     onClick={() => setShowSubdistrict(!showSubdistrict)}
-                    className={`relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${showSubdistrict ? 'bg-[#F76000]' : 'bg-gray-200'}`}
+                    className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${showSubdistrict ? 'bg-[#F76000]' : 'bg-gray-200'}`}
                   >
                     <span
                       aria-hidden="true"
@@ -1262,7 +1262,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                   return (
                     <div className="flex w-full bg-white p-4 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all group/stat items-center justify-between gap-2 relative">
                       <div className="w-1/4 flex items-center justify-center">
-                        <UsersRound className="w-[30px] h-[30px] text-[#F96000]" />
+                        <UsersRound className="w-7.5 h-7.5 text-[#F96000]" />
                       </div>
 
                       <div className="w-3/4">
@@ -1837,7 +1837,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
           className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-bounce pointer-events-auto cursor-pointer"
           onClick={() => {
             window.scrollBy({
-              top: window.innerHeight * 0.8, // Scrolls down exactly 20vh
+              top: window.innerHeight * 0.4, // Scrolls down exactly 20vh
               behavior: 'smooth',
             });
           }}

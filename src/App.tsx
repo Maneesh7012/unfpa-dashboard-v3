@@ -47,13 +47,11 @@ const Dashboard: React.FC = () => {
         targetDistrict={selectedDistrict}
       />
 
-      <div className="px-4 md:px-6 lg:px-8 mt-6">
-        <StateDemographics_v3
-          selectedDistrict={selectedDistrict}
-          selectedData={selectedData}
-          allDistrictsData={allDistrictsData}
-        />
-      </div>
+      <StateDemographics_v3
+        selectedDistrict={selectedDistrict}
+        selectedData={selectedData}
+        allDistrictsData={allDistrictsData}
+      />
 
       <StatsDetails
         selectedDistrict={selectedDistrict}

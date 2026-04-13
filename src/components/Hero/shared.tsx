@@ -73,18 +73,18 @@ export function StatCard({ label, value, sub, transparent }: Props) {
       }`}
     >
       {/* Label */}
-      <span className="text-sm md:text-[15px] text-white/70 uppercase tracking-wide">
+      <span className="text-sm md:text-[16px] text-white/90 uppercase tracking-wide">
         {label}
       </span>
 
       {/* Value (slightly larger for emphasis) */}
-      <span className="text-2xl md:text-3xl font-bold text-white leading-tight">
+      <span className="text-3xl md:text-4xl font-bold text-white leading-tight">
         {value}
       </span>
 
       {/* Subtext */}
       {sub && (
-        <span className="text-sm md:text-[15px] text-white/70">{sub}</span>
+        <span className="text-sm md:text-[16px] text-white/70">{sub}</span>
       )}
     </div>
   );
