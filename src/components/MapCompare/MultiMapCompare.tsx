@@ -75,10 +75,12 @@ const NTL_YEARS = Array.from({ length: 2026 - 2018 + 1 }, (_, i) =>
   (2018 + i).toString(),
 );
 
-// All dropdown options for nightlight: ["2018 March", "2018 June", ..., "2026 December"]
-const NTL_YEAR_OPTIONS: string[] = NTL_YEARS.flatMap((year) =>
-  NTL_QUARTER_MONTHS.map((month) => `${year} ${month}`),
-);
+// All dropdown options for nightlight: ["2018 March", "2018 June", ..., "2026 March"]
+// Note: 2026 only has q1 data (March), so other quarters are excluded for that year
+const NTL_YEAR_OPTIONS: string[] = NTL_YEARS.flatMap((year) => {
+  const months = year === '2026' ? ['March'] : NTL_QUARTER_MONTHS;
+  return months.map((month) => `${year} ${month}`);
+});
 
 // Build the nightlight URL given the dropdown value (e.g. "2018 March") and district name
 const buildNtlUrl = (yearLabel: string, district: string): string => {
@@ -413,7 +415,7 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
         ))}
 
         {isAddingMap && (
-          <div className="min-w-[450px] max-w-[450px] h-[440px] bg-white rounded-2xl border-2 border-dashed border-orange-100 p-8 flex flex-col items-center justify-center gap-6 animate-in fade-in zoom-in duration-300">
+          <div className="min-w-[450px] max-w-[450px] h-[400px] bg-white rounded-2xl border-2 border-dashed border-orange-100 p-8 flex flex-col items-center justify-center gap-6 animate-in fade-in zoom-in duration-300">
             <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-2">
               <Plus className="w-8 h-8 text-[#F96000]" strokeWidth={2.5} />
             </div>
@@ -432,7 +434,7 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
                         mapConfigs.length === 2
                           ? '01-01-2026'
                           : layer === 'nightlight'
-                            ? '2018 March'
+                            ? '2026 March'
                             : '2024';
                       setPendingConfig({ layer, year: defaultYear });
                     }}
@@ -637,7 +639,7 @@ const MapItem = ({
       } else if (config.layer === 'nightlight') {
         // For nightlight, validate against NTL_YEAR_OPTIONS
         if (!NTL_YEAR_OPTIONS.includes(config.year)) {
-          onUpdate({ year: '2018 March' });
+          onUpdate({ year: '2026 March' });
           return;
         }
       } else {
@@ -1025,9 +1027,9 @@ const MapItem = ({
                   <button
                     key={key}
                     onClick={() => {
-                      // When switching to nightlight, default to first quarterly option
+                      // When switching to nightlight, default to latest available quarter
                       const defaultYear =
-                        key === 'nightlight' ? '2018 March' : '2024';
+                        key === 'nightlight' ? '2026 March' : '2024';
                       onUpdate({
                         layer: key,
                         year: key === 'nightlight' ? defaultYear : config.year,
