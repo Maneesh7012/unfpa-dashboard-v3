@@ -52,98 +52,170 @@ const SENTINEL_DATE_MAP: any = {
 };
 const MONTHLY_DATES = Object.keys(SENTINEL_DATE_MAP);
 
+// ----------------------
+// ✅ BASE CONFIG
+// ----------------------
+const BASE_URL =
+  'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3';
+
+// ----------------------
+// ✅ YEAR GENERATORS
+// ----------------------
+const generateYears = (start: number, end: number) =>
+  Array.from({ length: end - start + 1 }, (_, i) => (start + i).toString());
+
+// ----------------------
+// ✅ URL GENERATOR
+// ----------------------
+const buildYearlyUrls = (
+  basePath: string,
+  prefix: string,
+  extension: string,
+  years: string[],
+) => {
+  return Object.fromEntries(
+    years.map((year) => [year, `${basePath}/${prefix}_${year}.${extension}`]),
+  );
+};
+
+// ----------------------
+// ✅ YEAR RANGES
+// ----------------------
+const YEARS = {
+  nightlight: generateYears(2012, 2024),
+  roads: generateYears(2014, 2025),
+  builtup: generateYears(2017, 2025),
+};
+
+// ----------------------
+// ✅ LAYER CONFIGS (AUTOMATED)
+// ----------------------
 const LAYER_CONFIGS: any = {
   nightlight: {
     label: 'Nightlight',
-    urls: {
-      '2012':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2012.tif',
-      '2013':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2013.tif',
-      '2014':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2014.tif',
-      '2015':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2015.tif',
-      '2016':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2016.tif',
-      '2017':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2017.tif',
-      '2018':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2018.tif',
-      '2019':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2019.tif',
-      '2020':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2020.tif',
-      '2021':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2021.tif',
-      '2022':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2022.tif',
-      '2023':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2023.tif',
-      '2024':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2024.tif',
-    },
+    urls: buildYearlyUrls(`${BASE_URL}/ntl`, 'ntl', 'tif', YEARS.nightlight),
     params:
       '#color:["#000000","#333333","#663300","#ccaa00","#ffff00"],0,200,c',
     type: 'raster',
   },
+
   roads: {
     label: 'Road Network',
-    urls: {
-      '2014':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2014.pmtiles',
-      '2015':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2015.pmtiles',
-      '2016':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2016.pmtiles',
-      '2017':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2017.pmtiles',
-      '2018':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2018.pmtiles',
-      '2019':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2019.pmtiles',
-      '2020':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2020.pmtiles',
-      '2021':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2021.pmtiles',
-      '2022':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2022.pmtiles',
-      '2023':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2023.pmtiles',
-      '2024':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2024.pmtiles',
-      '2025':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2025.pmtiles',
-    },
-    params: '', // Dynamic color based on panel
+    urls: buildYearlyUrls(
+      `${BASE_URL}/roads`,
+      'district_0_roads',
+      'pmtiles',
+      YEARS.roads,
+    ),
+    params: '', // dynamic styling handled later
     type: 'vector',
   },
+
   builtup: {
     label: 'Built-up Area',
-    urls: {
-      '2017':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2017.tif',
-      '2018':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2018.tif',
-      '2019':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2019.tif',
-      '2020':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2020.tif',
-      '2021':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2021.tif',
-      '2022':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2022.tif',
-      '2023':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2023.tif',
-      '2024':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2024.tif',
-      '2025':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2025.tif',
-    },
+    urls: buildYearlyUrls(
+      `${BASE_URL}/builtup`,
+      'builtup',
+      'tif',
+      YEARS.builtup,
+    ),
     params: '7,7',
     type: 'raster',
   },
 };
+
+// const LAYER_CONFIGS: any = {
+//   nightlight: {
+//     label: 'Nightlight',
+//     urls: {
+//       '2012':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2012.tif',
+//       '2013':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2013.tif',
+//       '2014':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2014.tif',
+//       '2015':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2015.tif',
+//       '2016':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2016.tif',
+//       '2017':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2017.tif',
+//       '2018':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2018.tif',
+//       '2019':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2019.tif',
+//       '2020':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2020.tif',
+//       '2021':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2021.tif',
+//       '2022':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2022.tif',
+//       '2023':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2023.tif',
+//       '2024':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/ntl/ntl_2024.tif',
+//     },
+//     params:
+//       '#color:["#000000","#333333","#663300","#ccaa00","#ffff00"],0,200,c',
+//     type: 'raster',
+//   },
+//   roads: {
+//     label: 'Road Network',
+//     urls: {
+//       '2014':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2014.pmtiles',
+//       '2015':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2015.pmtiles',
+//       '2016':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2016.pmtiles',
+//       '2017':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2017.pmtiles',
+//       '2018':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2018.pmtiles',
+//       '2019':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2019.pmtiles',
+//       '2020':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2020.pmtiles',
+//       '2021':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2021.pmtiles',
+//       '2022':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2022.pmtiles',
+//       '2023':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2023.pmtiles',
+//       '2024':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2024.pmtiles',
+//       '2025':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads/district_0_roads_2025.pmtiles',
+//     },
+//     params: '', // Dynamic color based on panel
+//     type: 'vector',
+//   },
+//   builtup: {
+//     label: 'Built-up Area',
+//     urls: {
+//       '2017':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2017.tif',
+//       '2018':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2018.tif',
+//       '2019':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2019.tif',
+//       '2020':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2020.tif',
+//       '2021':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2021.tif',
+//       '2022':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2022.tif',
+//       '2023':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2023.tif',
+//       '2024':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2024.tif',
+//       '2025':
+//         'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/builtup/builtup_2025.tif',
+//     },
+//     params: '7,7',
+//     type: 'raster',
+//   },
+// };
 
 const BASE_MAP_STYLE: any = {
   version: 8,
