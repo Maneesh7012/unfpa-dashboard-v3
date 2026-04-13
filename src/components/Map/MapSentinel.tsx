@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-hooks/refs */
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState, useCallback } from 'react';
@@ -18,9 +20,24 @@ import {
 import * as pmtiles from 'pmtiles';
 import { TAB_CONTENT, Points_Data } from '../MapCompare/pointData';
 
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
+import { point } from '@turf/helpers';
+
 // Set up PMTiles protocol
 const protocol = new pmtiles.Protocol();
 maplibregl.addProtocol('pmtiles', protocol.tile);
+
+const isPointInDistrict = (pointCoords: [number, number], features: any[]) => {
+  const pt = point(pointCoords);
+
+  return features.some((feature) => {
+    try {
+      return booleanPointInPolygon(pt, feature);
+    } catch {
+      return false;
+    }
+  });
+};
 
 // -----------------------------------------------------------
 // EOX Sentinel-2 Cloudless WMTS (free, no API key needed)
@@ -100,6 +117,47 @@ export const MapSentinel: React.FC<MapSentinelProps> = ({
       }
     });
   }, []);
+
+  /** TO SHOW POINTS ONLY INSIDE TARGET DISTRICT ---- START */
+  const filteredPoints = React.useMemo(() => {
+    if (!targetDistrict || targetDistrict.toLowerCase() === 'odisha') {
+      return Points_Data;
+    }
+
+    const districtFeatures =
+      accumulatedFeaturesRef.current.get(targetDistrict.toLowerCase()) || [];
+
+    if (!districtFeatures.length) return [];
+
+    return Points_Data.filter(
+      (p) => isPointInDistrict([p.cord[1], p.cord[0]], districtFeatures), // lng, lat
+    );
+  }, [targetDistrict, cacheVersion]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.getSource('points-source')) return;
+
+    const geojson = {
+      type: 'FeatureCollection' as const,
+      features: filteredPoints.map((item: any) => ({
+        type: 'Feature' as const,
+        geometry: {
+          type: 'Point' as const,
+          coordinates: [item.cord[1], item.cord[0]],
+        },
+        properties: {
+          id: item.id,
+        },
+      })),
+    };
+
+    (map.getSource('points-source') as maplibregl.GeoJSONSource).setData(
+      geojson,
+    );
+  }, [filteredPoints]);
+
+  /** TO SHOW POINTS ONLY INSIDE TARGET DISTRICT ----- END */
 
   useEffect(() => {
     if (!mapRef.current || !isLoaded) return;
@@ -545,7 +603,7 @@ export const MapSentinel: React.FC<MapSentinelProps> = ({
           <div className="relative flex items-center gap-1.5 group">
             <div
               onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-              className="px-4 py-1.5 text-[12px] font-black tracking-wide bg-white text-gray-600 border border-gray-400 rounded-md transition-all min-w-[70px] flex items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-gray-400"
+              className="px-4 py-1.5 text-[12px] font-black tracking-wide bg-white text-gray-600 border border-gray-400 rounded-md transition-all min-w-17.5 flex items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-gray-400"
             >
               <span className="font-mono">{selectedYear}</span>
             </div>
@@ -562,10 +620,10 @@ export const MapSentinel: React.FC<MapSentinelProps> = ({
             {isYearDropdownOpen && (
               <>
                 <div
-                  className="fixed inset-0 z-[190]"
+                  className="fixed inset-0 z-190"
                   onClick={() => setIsYearDropdownOpen(false)}
                 />
-                <div className="absolute right-0 top-full mt-3 bg-white rounded-md shadow-xl border border-gray-100 p-3 z-[200] animate-in fade-in slide-in-from-top-2 min-w-[120px] transition-all">
+                <div className="absolute right-0 top-full mt-3 bg-white rounded-md shadow-xl border border-gray-100 p-3 z-200 animate-in fade-in slide-in-from-top-2 min-w-30 transition-all">
                   {YEARS.map((y) => (
                     <button
                       key={y}
@@ -590,12 +648,21 @@ export const MapSentinel: React.FC<MapSentinelProps> = ({
       </div>
 
       {/* Map */}
-      <section className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xl h-[600px] relative">
+      <section className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xl h-150 relative">
         <div ref={mapContainerRef} className="w-full h-full" />
 
         {/* Playback Controls & Timeline (Floating at Bottom) */}
         {isLoaded && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 w-[90%] md:w-[600px] bg-gray-900/80 backdrop-blur-md rounded-2xl border border-white/20 p-4 shadow-2xl flex items-center gap-6 group transition-all hover:bg-gray-900">
+          <div
+            className={`absolute bottom-6 z-40 w-[90%] md:w-150 bg-gray-900/80 backdrop-blur-md rounded-2xl border border-white/20 p-4 shadow-2xl flex items-center gap-6 group transition-all duration-300
+              ${
+                selectedPoint
+                  ? 'left-[40%] -translate-x-[50%] md:left-[38%] lg:left-[35%]'
+                  : 'left-1/2 -translate-x-1/2'
+              }
+            `}
+            //className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 w-[90%] md:w-[600px] bg-gray-900/80 backdrop-blur-md rounded-2xl border border-white/20 p-4 shadow-2xl flex items-center gap-6 group transition-all hover:bg-gray-900"
+          >
             {/* Play/Pause Button */}
             <button
               onClick={() => setIsPlaying(!isPlaying)}
@@ -671,7 +738,7 @@ export const MapSentinel: React.FC<MapSentinelProps> = ({
         )}
 
         {/* Custom Controls (Bottom Right) */}
-        <div className="absolute bottom-5 right-5 flex flex-col gap-2 z-[60]">
+        <div className="absolute bottom-5 right-5 flex flex-col gap-2 z-60">
           {/* Zoom Controls */}
           <button
             onClick={handleResetView}
@@ -709,7 +776,7 @@ export const MapSentinel: React.FC<MapSentinelProps> = ({
         )}
 
         {selectedPoint && (
-          <div className="absolute top-0 right-0 h-full w-full md:w-[45%] lg:w-[35%] bg-white border-l border-gray-200 shadow-2xl z-[150] flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+          <div className="absolute top-0 right-0 h-full w-full md:w-[45%] lg:w-[35%] bg-white border-l border-gray-200 shadow-2xl z-150 flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
             {/* Header Tabs & Close */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50">
               <div className="flex items-center flex-1 mr-4">
