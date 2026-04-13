@@ -138,7 +138,7 @@ export function StateDemographics_v3({
 
   if (!selectedData || !n) return null;
 
-  console.log('selectedData', selectedData);
+  // console.log('selectedData', selectedData);
 
   return (
     <motion.div

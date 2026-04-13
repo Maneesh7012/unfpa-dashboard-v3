@@ -1,6 +1,4 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react-hooks/refs */
-/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import maplibregl from 'maplibre-gl';
@@ -591,10 +589,11 @@ export const MapSentinel: React.FC<MapSentinelProps> = ({
         <div>
           <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
             <Satellite className="w-6 h-6" />
-            Satellite Timelapse
+            What, How and Why
           </h2>
           <p className="text-[13px] text-gray-500 mt-1 font-medium leading-relaxed">
-            High-resolution Sentinel 2 satellite imagery.
+            Analyze what changed, how it changed, and why using high-resolution
+            Sentinel-2 data.
           </p>
         </div>
 

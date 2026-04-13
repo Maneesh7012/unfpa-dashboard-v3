@@ -430,16 +430,26 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
                     value={pendingConfig.layer}
                     onChange={(e) => {
                       const layer = e.target.value;
+
                       const defaultYear =
                         mapConfigs.length === 2
                           ? '01-01-2026'
                           : layer === 'nightlight'
                             ? '2026 March'
-                            : '2024';
+                            : layer === 'degree_urbanization'
+                              ? '2024' // 👈 set whatever default you want
+                              : '2024';
+
                       setPendingConfig({ layer, year: defaultYear });
                     }}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-[13px] font-black text-gray-700 focus:ring-2 focus:ring-orange-500 transition-all outline-none appearance-none cursor-pointer"
                   >
+                    {/* ✅ Custom option */}
+                    <option value="degree_urbanization">
+                      Degree of Urbanization
+                    </option>
+
+                    {/* Existing options */}
                     {Object.entries(LAYER_CONFIGS).map(([id, cfg]: any) => (
                       <option key={id} value={id}>
                         {cfg.label}

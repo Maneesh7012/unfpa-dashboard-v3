@@ -1006,13 +1006,13 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         <div>
           <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
             <Satellite className="w-6 h-6" />
-            Land Use Change Analysis – {targetDistrict}
+            Land Use Analysis – {targetDistrict}
           </h2>
           <p className="text-[13px] text-gray-500 mt-1 font-medium ">
             Analyze temporal shifts in landscape categories.
           </p>
         </div>
-        <div className="flex items-center gap-3 bg-gray-50/50 p-1.5 px-3 rounded-lg border border-gray-100 relative">
+        <div className="hidden items-center gap-3 bg-gray-50/50 p-1.5 px-3 rounded-lg border border-gray-100 relative">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="px-4 py-1.5 text-[11px] font-black tracking-wide bg-white text-gray-600 border border-gray-400 rounded-md transition-all min-w-[130px] flex items-center justify-between shadow-sm cursor-pointer"
@@ -1071,7 +1071,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
 
         {isLoaded && (
           <div
-            className={`absolute top-8 left-8 w-[300px] h-fit transition-all duration-300 text-gray-900 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 p-6 shadow-2xl z-[60] flex flex-col gap-6 overflow-y-auto custom-scrollbar`}
+            className={`absolute top-8 left-8 w-75 h-fit transition-all duration-300 text-gray-900 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 p-6 shadow-2xl z-[60] flex flex-col gap-6 overflow-y-auto custom-scrollbar`}
             style={{ maxHeight: `calc(100% - ${timelineHeight + 100}px)` }}
           >
             <div>
