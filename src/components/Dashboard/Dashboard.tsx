@@ -850,7 +850,12 @@ export const MapSection: React.FC<MapSectionProps> = ({
                   {openDropdown === 'district' && (
                     <div className="absolute left-0 top-full mt-2 max-h-75 overflow-y-auto custom-scrollbar bg-white/95 backdrop-blur-md rounded-lg shadow-xl border border-gray-100 p-2 z-[50] animate-in fade-in slide-in-from-top-2">
                       <button
+                        // onClick={() => {
+                        //   setSelectedDistrictName('All Districts');
+                        //   setOpenDropdown(null);
+                        // }}
                         onClick={() => {
+                          setDistrictData(null); // 🔥 most important
                           setSelectedDistrictName('All Districts');
                           setOpenDropdown(null);
                         }}
