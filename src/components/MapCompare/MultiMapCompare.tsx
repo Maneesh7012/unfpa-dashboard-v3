@@ -545,6 +545,22 @@ const MapItem = ({
   const [isBasemapOpen, setIsBasemapOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const NTL_CLASSES = [
+    { label: '< 5', min: 0, max: 5 },
+    { label: '5 - 25', min: 5, max: 25 },
+    { label: '26 - 200', min: 26, max: 200 },
+    { label: '> 200', min: 200, max: 9999 },
+    { label: 'No Data', noData: true },
+  ];
+
+  const palettes = [
+    ['#f7fbff', '#4292c6', '#2171b5', '#053b81'],
+    ['#fff5f0', '#ef3b2c', '#cb181d', '#99000d'],
+    ['#fff5eb', '#f16913', '#d94801', '#6c2202'],
+  ];
+
+  const activePalette = palettes[panelIndex % palettes.length];
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -1065,6 +1081,46 @@ const MapItem = ({
           </button>
         </div>
       </div>
+
+      {config.layer === 'nightlight' && (
+        <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-[120] w-[170px]">
+          {/* Title + Unit */}
+          <div className="flex flex-col mb-2">
+            <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
+              Nightlight Intensity
+            </span>
+            <span className="text-[9px] text-gray-400 font-medium">
+              <span className="text-gray-700">Unit : </span>nW·cm⁻²·sr⁻¹
+            </span>
+          </div>
+
+          {/* Legend Items */}
+          <div className="space-y-1.5">
+            {NTL_CLASSES.map((cls, idx) => {
+              const color = cls.noData
+                ? '#e5e7eb'
+                : activePalette[Math.min(idx, activePalette.length - 1)];
+
+              return (
+                <div
+                  key={cls.label}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-sm border border-gray-200"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span className="text-[10px] font-medium text-gray-700">
+                      {cls.label}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
