@@ -357,10 +357,37 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         if (map.getLayer(layerId)) map.removeLayer(layerId);
         if (map.getSource(sourceId)) map.removeSource(sourceId);
 
+        const formatDistrictName = (name: string) =>
+          name.replace(/\s+/g, '').trim();
+
+        const formattedDistrict = formatDistrictName(targetDistrict);
+
+        const year = q.year;
+        const quarter = q.q;
+
+        // Handle Odisha fallback (same pattern as LULC)
+        const isOdisha =
+          !targetDistrict || targetDistrict.toLowerCase() === 'odisha';
+
+        //  dynamic Sentinel URL
+        const sentinelUrl = isOdisha
+          ? null // keep existing mosaic logic for Odisha
+          : `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/sentinel%C2%A0%202_tci/${formattedDistrict}/${formattedDistrict}_${year}_q${quarter}.tif`;
+
+        // map.addSource(sourceId, {
+        //   type: 'raster',
+        //   tiles: [tileUrl],
+        //   tileSize: 256,
+        //   minzoom: 0,
+        //   maxzoom: 14,
+        //   bounds: bboxToUse as any,
+        //   attribution:
+        //     'Sentinel-2 L2A © ESA / Copernicus via Microsoft Planetary Computer',
+        // });
+
         map.addSource(sourceId, {
           type: 'raster',
-          // tiles: [tileUrl],
-          url: 'cog://https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/sentinel%C2%A0%202_tci/Anugul/Anugul_2018_q1.tif',
+          url: sentinelUrl ? `cog://${sentinelUrl}` : tileUrl, // fallback to existing planetary computer logic
           tileSize: 256,
           minzoom: 0,
           maxzoom: 14,
@@ -965,7 +992,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
     } catch {
       setLulcStatus('error');
     }
-  }, [isLoaded, showLulc, selectedIdx, selectedLulcCategory]);
+  }, [isLoaded, showLulc, selectedIdx, selectedLulcCategory, targetDistrict]);
 
   // Removed load-aware playback logic
 
