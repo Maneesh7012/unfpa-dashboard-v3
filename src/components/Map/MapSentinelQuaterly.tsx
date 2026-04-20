@@ -911,7 +911,19 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
 
     const lulcYear = currentQuarter.year;
     const lulcQ = currentQuarter.q;
-    const baseLulcUrl = `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc_quarterly/raster/lulc_${lulcYear}_q${lulcQ}.tif`;
+    // const baseLulcUrl = `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc_quarterly/raster/lulc_${lulcYear}_q${lulcQ}.tif`;
+
+    const formatDistrictName = (name: string) =>
+      name.replace(/\s+/g, '').trim();
+
+    const formattedDistrict = formatDistrictName(targetDistrict);
+
+    const isOdisha = targetDistrict.toLowerCase() === 'odisha';
+
+    const baseLulcUrl = isOdisha
+      ? `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc_quarterly/raster/lulc_${lulcYear}_q${lulcQ}.tif`
+      : `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc/${formattedDistrict}/${formattedDistrict}_${lulcYear}_q${lulcQ}_lulc.tif`;
+
     setColorFunction(baseLulcUrl, (pixel: any, color: any, metadata: any) => {
       const val = pixel[0];
       if (val === metadata.noData || val < 0 || val > 7) {
