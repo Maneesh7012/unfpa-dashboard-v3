@@ -1122,11 +1122,28 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
       </div>
 
       <section className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xl h-[700px] relative">
-        <div ref={mapContainerRef} className="w-full h-full" />
+        <div className="w-full h-full relative z-0">
+          <div ref={mapContainerRef} className="w-full h-full" />
+          {(!isLoaded ||
+            tileStatus === 'loading' ||
+            lulcStatus === 'loading') && (
+            <div className="absolute inset-0 bg-white/60 backdrop-blur-md flex items-center justify-center z-[100]">
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative w-14 h-14">
+                  <div className="absolute inset-0 border-4 border-gray-100 rounded-full" />
+                  <div className="absolute inset-0 border-4 border-[#F76000] border-t-transparent rounded-full animate-spin" />
+                  {/* <Satellite className="absolute inset-0 m-auto w-6 h-6 text-[#F76000] animate-pulse" /> */}
+                </div>
+                <p className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">
+                  {!isLoaded ? '' : ''}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
 
-        {isLoaded && (
-          <div
-            className={`absolute top-8 left-8 w-75 h-fit transition-all duration-300 text-gray-900 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 p-6 shadow-2xl z-[60] flex flex-col gap-6 overflow-y-auto custom-scrollbar`}
+        <div
+          className={`absolute top-8 left-8 w-75 h-fit transition-all duration-300 text-gray-900 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 p-6 shadow-2xl z-[60] flex flex-col gap-6 overflow-y-auto custom-scrollbar`}
             style={{ maxHeight: `calc(100% - ${timelineHeight + 100}px)` }}
           >
             <div>
@@ -1201,11 +1218,9 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
               </div>
             </div>
           </div>
-        )}
 
-        {isLoaded && (
-          <div
-            className={`absolute bottom-8 left-8 z-50 flex items-center gap-4 transition-all duration-500 ease-in-out ${
+        <div
+          className={`absolute bottom-8 left-8 z-50 flex items-center gap-4 transition-all duration-500 ease-in-out ${
               selectedPoint
                 ? 'right-[calc(100%+32px)] md:right-[calc(45%+32px)] lg:right-[calc(35%+32px)]'
                 : 'right-8'
@@ -1492,24 +1507,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
               </button>
             </div>
           </div>
-        )}
 
-        {(!isLoaded ||
-          tileStatus === 'loading' ||
-          lulcStatus === 'loading') && (
-          <div className="absolute inset-0 bg-white/60 backdrop-blur-md flex items-center justify-center z-[100]">
-            <div className="flex flex-col items-center gap-4">
-              <div className="relative w-14 h-14">
-                <div className="absolute inset-0 border-4 border-gray-100 rounded-full" />
-                <div className="absolute inset-0 border-4 border-[#F76000] border-t-transparent rounded-full animate-spin" />
-                {/* <Satellite className="absolute inset-0 m-auto w-6 h-6 text-[#F76000] animate-pulse" /> */}
-              </div>
-              <p className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">
-                {!isLoaded ? '' : ''}
-              </p>
-            </div>
-          </div>
-        )}
         {/* Point Analysis Sidebar */}
         {selectedPoint && (
           <div className="absolute top-0 right-0 h-full w-full md:w-[45%] lg:w-[35%] bg-white border-l border-gray-200 shadow-2xl z-[150] flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
