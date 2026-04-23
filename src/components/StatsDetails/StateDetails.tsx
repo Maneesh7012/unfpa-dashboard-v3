@@ -1339,7 +1339,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                                     display: none;
                                 }
                             `}</style>
-              <div className="bg-white p-4 rounded-lg border-t border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
+              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
                 <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
                   Coal‑ and power‑led industrialisation deepening
                 </h4>
