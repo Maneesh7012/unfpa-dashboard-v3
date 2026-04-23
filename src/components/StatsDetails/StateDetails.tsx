@@ -102,36 +102,67 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     }
   }, [compareLayer]);
 
-  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-  const [showLeftScroll, setShowLeftScroll] = useState(false);
-  const [showRightScroll, setShowRightScroll] = useState(false);
+  const devScrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const [showDevLeftScroll, setShowDevLeftScroll] = useState(false);
+  const [showDevRightScroll, setShowDevRightScroll] = useState(false);
 
-  const checkScroll = React.useCallback(() => {
-    if (scrollContainerRef.current) {
+  const checkDevScroll = React.useCallback(() => {
+    if (devScrollContainerRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } =
-        scrollContainerRef.current;
-      setShowLeftScroll(scrollLeft > 0);
-      setShowRightScroll(Math.ceil(scrollLeft) < scrollWidth - clientWidth);
+        devScrollContainerRef.current;
+      setShowDevLeftScroll(scrollLeft > 0);
+      setShowDevRightScroll(Math.ceil(scrollLeft) < scrollWidth - clientWidth);
+    }
+  }, []);
+
+  const insightsScrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const [showInsightsLeftScroll, setShowInsightsLeftScroll] = useState(false);
+  const [showInsightsRightScroll, setShowInsightsRightScroll] = useState(false);
+
+  const checkInsightsScroll = React.useCallback(() => {
+    if (insightsScrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } =
+        insightsScrollContainerRef.current;
+      setShowInsightsLeftScroll(scrollLeft > 0);
+      setShowInsightsRightScroll(Math.ceil(scrollLeft) < scrollWidth - clientWidth);
     }
   }, []);
 
   React.useEffect(() => {
-    const timeout = setTimeout(checkScroll, 100);
-    window.addEventListener('resize', checkScroll);
+    const timeout = setTimeout(() => {
+      checkDevScroll();
+      checkInsightsScroll();
+    }, 100);
+    const handleResize = () => {
+      checkDevScroll();
+      checkInsightsScroll();
+    };
+    window.addEventListener('resize', handleResize);
     return () => {
       clearTimeout(timeout);
-      window.removeEventListener('resize', checkScroll);
+      window.removeEventListener('resize', handleResize);
     };
-  }, [checkScroll]);
+  }, [checkDevScroll, checkInsightsScroll]);
 
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
+  const scrollDev = (direction: 'left' | 'right') => {
+    if (devScrollContainerRef.current) {
       const scrollAmount = 400;
-      scrollContainerRef.current.scrollBy({
+      devScrollContainerRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth',
       });
-      setTimeout(checkScroll, 350);
+      setTimeout(checkDevScroll, 350);
+    }
+  };
+
+  const scrollInsights = (direction: 'left' | 'right') => {
+    if (insightsScrollContainerRef.current) {
+      const scrollAmount = 400;
+      insightsScrollContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+      setTimeout(checkInsightsScroll, 350);
     }
   };
   // const [rankingFilter, setRankingFilter] = useState<string>('Density');
@@ -1312,25 +1343,25 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
           </div>
 
           <section className="bg-white border border-gray-200 rounded-lg p-6 md:p-8 relative">
-            {showLeftScroll && (
+            {showDevLeftScroll && (
               <button
-                onClick={() => scroll('left')}
+                onClick={() => scrollDev('left')}
                 className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 border border-gray-200 text-gray-700 hover:text-[#ffffff] hover:bg-[#F96000] transition-colors"
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
             )}
-            {showRightScroll && (
+            {showDevRightScroll && (
               <button
-                onClick={() => scroll('right')}
+                onClick={() => scrollDev('right')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 border border-gray-200 text-gray-700 hover:text-[#ffffff] hover:bg-[#F96000] transition-colors"
               >
                 <ChevronRight className="w-6 h-6" />
               </button>
             )}
             <div
-              ref={scrollContainerRef}
-              onScroll={checkScroll}
+              ref={devScrollContainerRef}
+              onScroll={checkDevScroll}
               className="flex  overflow-x-auto gap-6 pb-2 snap-x snap-mandatory no-scrollbar"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
@@ -1429,25 +1460,25 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
           </div>
 
           <section className="bg-white border border-gray-200 rounded-lg p-6 md:p-8 relative">
-            {showLeftScroll && (
+            {showInsightsLeftScroll && (
               <button
-                onClick={() => scroll('left')}
+                onClick={() => scrollInsights('left')}
                 className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 border border-gray-200 text-gray-700 hover:text-[#ffffff] hover:bg-[#F96000] transition-colors"
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
             )}
-            {showRightScroll && (
+            {showInsightsRightScroll && (
               <button
-                onClick={() => scroll('right')}
+                onClick={() => scrollInsights('right')}
                 className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 border border-gray-200 text-gray-700 hover:text-[#ffffff] hover:bg-[#F96000] transition-colors"
               >
                 <ChevronRight className="w-6 h-6" />
               </button>
             )}
             <div
-              ref={scrollContainerRef}
-              onScroll={checkScroll}
+              ref={insightsScrollContainerRef}
+              onScroll={checkInsightsScroll}
               className="flex  overflow-x-auto gap-6 pb-2 snap-x snap-mandatory no-scrollbar"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
