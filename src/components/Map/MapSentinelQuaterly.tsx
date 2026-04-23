@@ -82,7 +82,7 @@ const LULC_RGBA: Record<number, number[]> = {
   7: [165, 155, 143, 255], // Bare (#A59B8F)
 };
 
-type LulcCategory = number | 'all';
+type LulcCategory = number | 'all' | 'vegetation';
 
 interface LulcLegendItem {
   label: string;
@@ -111,6 +111,13 @@ const LULC_LEGEND: LulcLegendItem[] = [
   { label: 'Built area', color: '#C4281B', value: 6, key: 'built' },
   { label: 'Bare', color: '#A59B8F', value: 7, key: 'bare' },
 ];
+
+const UI_LULC_LEGEND = [
+  LULC_LEGEND.find((c) => c.value === 0),
+  { label: 'Vegetation', color: '#397D49', value: 'vegetation', key: 'vegetation' },
+  LULC_LEGEND.find((c) => c.value === 6),
+  LULC_LEGEND.find((c) => c.value === 7),
+].filter(Boolean) as any[];
 
 interface Quarter {
   key: string;
@@ -975,8 +982,11 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
       }
       const rgba = [...(LULC_RGBA[val] || [0, 0, 0, 0])];
       let isVisible = selectedLulcCategory === 'all';
-      if (typeof selectedLulcCategory === 'number')
+      if (typeof selectedLulcCategory === 'number') {
         isVisible = val === selectedLulcCategory;
+      } else if (selectedLulcCategory === 'vegetation') {
+        isVisible = [1, 2, 3, 4, 5].includes(val);
+      }
       if (!isVisible) rgba[3] = 0;
       color.set(rgba);
     });
@@ -1183,7 +1193,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                     </span>
                   </div>
                 </button>
-                {LULC_LEGEND.map((item) => (
+                {UI_LULC_LEGEND.map((item) => (
                   <button
                     key={item.label}
                     onClick={() =>
@@ -1318,6 +1328,28 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                         />
                         {selectedLulcCategory === 'all' ? (
                           LULC_LEGEND.map((cat) => (
+                            <React.Fragment key={cat.key}>
+                              <Line
+                                type="monotone"
+                                dataKey={cat.key}
+                                stroke={cat.color}
+                                strokeWidth={2}
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey={`${cat.key}_trend`}
+                                stroke={cat.color}
+                                strokeWidth={1.5}
+                                strokeDasharray="4 4"
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                            </React.Fragment>
+                          ))
+                        ) : selectedLulcCategory === 'vegetation' ? (
+                          LULC_LEGEND.filter(c => typeof c.value === 'number' && [1, 2, 3, 4, 5].includes(c.value)).map((cat) => (
                             <React.Fragment key={cat.key}>
                               <Line
                                 type="monotone"
