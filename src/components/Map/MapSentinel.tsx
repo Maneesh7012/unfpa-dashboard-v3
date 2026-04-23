@@ -41,7 +41,7 @@ const isPointInDistrict = (pointCoords: [number, number], features: any[]) => {
 // EOX Sentinel-2 Cloudless WMTS (free, no API key needed)
 // Layer format: s2cloudless-{year}_3857
 // URL:  https://tiles.maps.eox.at/wmts/1.0.0/{layer}/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg
-// Available: 2017–2024. 2025 uses 2024 data with a notice.
+// Available: 2017–2024. 2025 and 2026 use 2024 data.
 // -----------------------------------------------------------
 
 const EOX_BASE = 'https://tiles.maps.eox.at/wmts/1.0.0';
@@ -54,6 +54,8 @@ const YEAR_LAYER_MAP: Record<string, { layer: string; label: string }> = {
   '2022': { layer: 's2cloudless-2022_3857', label: '2022' },
   '2023': { layer: 's2cloudless-2023_3857', label: '2023' },
   '2024': { layer: 's2cloudless-2024_3857', label: '2024' },
+  '2025': { layer: 's2cloudless-2024_3857', label: '2025' },
+  '2026': { layer: 's2cloudless-2024_3857', label: '2026' },
 };
 
 const YEARS = Object.keys(YEAR_LAYER_MAP);
@@ -77,7 +79,7 @@ export const MapSentinel: React.FC<MapSentinelProps> = ({
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const [selectedYear, setSelectedYear] = useState('2024');
+  const [selectedYear, setSelectedYear] = useState('2026');
   const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
