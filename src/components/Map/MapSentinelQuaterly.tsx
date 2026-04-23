@@ -32,6 +32,8 @@ import {
   Dot,
 } from 'recharts';
 
+import { createTrend } from 'trendline';
+
 import { TAB_CONTENT, Points_Data } from '../MapCompare/pointData';
 
 // PMTiles protocol (safe to re-add; guard against duplicates)
@@ -618,19 +620,33 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
 
   const chartData = useMemo(() => {
     if (!districtLulcData) return [];
-    return QUARTERS.map((q) => {
+    const data = QUARTERS.map((q, index) => {
       const item: any = {
         name: q.label,
         shortLabel: q.label.charAt(0) + q.year.toString().slice(-2),
         year: q.year,
         q: q.q,
+        index: index,
       };
       LULC_LEGEND.forEach((cat) => {
         const attrKey = `lulc_${q.year}_q${q.q}_clipped_${cat.key}`;
-        item[cat.key] = districtLulcData[attrKey] || 0;
+        const rawVal = districtLulcData[attrKey];
+        item[cat.key] = typeof rawVal === 'string' ? parseFloat(rawVal) : (rawVal || 0);
       });
       return item;
     });
+
+    if (data.length > 0) {
+      LULC_LEGEND.forEach((cat) => {
+        const trend = createTrend(data, 'index', cat.key);
+        data.forEach((item, index) => {
+          item[`${cat.key}_trend`] = trend.calcY(index);
+          item[`${cat.key}_r2`] = trend.rSquared;
+        });
+      });
+    }
+
+    return data;
   }, [districtLulcData]);
 
   useEffect(() => {
@@ -1257,7 +1273,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                                   <p className="font-black text-gray-900 mb-1 border-b pb-1">
                                     {label}
                                   </p>
-                                  {payload.map((p: any) => (
+                                  {payload.filter((p: any) => !p.dataKey.endsWith('_trend')).map((p: any) => (
                                     <div
                                       key={p.dataKey}
                                       className="flex items-center justify-between gap-4 py-0.5"
@@ -1287,48 +1303,78 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                         />
                         {selectedLulcCategory === 'all' ? (
                           LULC_LEGEND.map((cat) => (
+                            <React.Fragment key={cat.key}>
+                              <Line
+                                type="monotone"
+                                dataKey={cat.key}
+                                stroke={cat.color}
+                                strokeWidth={2}
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey={`${cat.key}_trend`}
+                                stroke={cat.color}
+                                strokeWidth={1.5}
+                                strokeDasharray="4 4"
+                                dot={false}
+                                isAnimationActive={false}
+                              />
+                            </React.Fragment>
+                          ))
+                        ) : (
+                          <>
                             <Line
-                              key={cat.key}
                               type="monotone"
-                              dataKey={cat.key}
-                              stroke={cat.color}
+                              dataKey={
+                                LULC_LEGEND.find(
+                                  (c) => c.value === selectedLulcCategory,
+                                )?.key || ''
+                              }
+                              stroke={
+                                LULC_LEGEND.find(
+                                  (c) => c.value === selectedLulcCategory,
+                                )?.color || '#F76000'
+                              }
+                              strokeWidth={3}
+                              dot={(props: any) => {
+                                const { cx, cy, index } = props;
+                                if (index === selectedIdx) {
+                                  return (
+                                    <Dot
+                                      key={`dot-${index}`}
+                                      cx={cx}
+                                      cy={cy}
+                                      r={4}
+                                      fill="#F76000"
+                                      stroke="#FFFFFF"
+                                      strokeWidth={2}
+                                    />
+                                  );
+                                }
+                                return null;
+                              }}
+                              isAnimationActive={false}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey={`${
+                                LULC_LEGEND.find(
+                                  (c) => c.value === selectedLulcCategory,
+                                )?.key || ''
+                              }_trend`}
+                              stroke={
+                                LULC_LEGEND.find(
+                                  (c) => c.value === selectedLulcCategory,
+                                )?.color || '#F76000'
+                              }
                               strokeWidth={2}
+                              strokeDasharray="5 5"
                               dot={false}
                               isAnimationActive={false}
                             />
-                          ))
-                        ) : (
-                          <Line
-                            type="monotone"
-                            dataKey={
-                              LULC_LEGEND.find(
-                                (c) => c.value === selectedLulcCategory,
-                              )?.key || ''
-                            }
-                            stroke={
-                              LULC_LEGEND.find(
-                                (c) => c.value === selectedLulcCategory,
-                              )?.color || '#F76000'
-                            }
-                            strokeWidth={3}
-                            dot={(props: any) => {
-                              const { cx, cy, index } = props;
-                              if (index === selectedIdx) {
-                                return (
-                                  <Dot
-                                    cx={cx}
-                                    cy={cy}
-                                    r={4}
-                                    fill="#F76000"
-                                    stroke="#FFFFFF"
-                                    strokeWidth={2}
-                                  />
-                                );
-                              }
-                              return null;
-                            }}
-                            isAnimationActive={false}
-                          />
+                          </>
                         )}
                         {/* Active Marker */}
                         <ReferenceLine
