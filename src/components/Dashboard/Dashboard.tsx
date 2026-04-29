@@ -41,6 +41,7 @@ import {
   CENSUS_PROJECTION_DATA,
   CENSUS_URBAN_RURAL_DATA,
   CENSUS_STATS_DATA,
+  MODEL_DATA,
 } from '../../data/comparativeData';
 import { DEMOGRAPHIC_STATS } from '../../data/comparativeData';
 
@@ -407,6 +408,15 @@ export const MapSection: React.FC<MapSectionProps> = ({
         : gender === 'Male'
           ? `male_${year}`
           : `female_${year}`;
+
+    // Priority 0: Check MODEL_DATA for 'sum' population when in Model mode
+    if ((!isCensusSource || forceModel) && gender === 'sum') {
+      const name = DISTRICT_NAME_VARIANTS[districtName] || districtName;
+      const nameForLookup = name === 'All Districts' ? 'Odisha' : name;
+      const yearInt = parseInt(year);
+      const modelVal = MODEL_DATA[nameForLookup]?.[yearInt];
+      if (modelVal !== undefined && modelVal !== null) return modelVal;
+    }
 
     // Explicitly check static data for Odisha first to support 2011-2036 projections
     if (isAll && DISTRICT_DEMOGRAPHICS['Odisha']) {
