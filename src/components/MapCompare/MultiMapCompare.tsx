@@ -183,6 +183,13 @@ const LAYER_CONFIGS: any = {
   },
 };
 
+const ROAD_CATEGORIES = [
+  { label: 'National Highway', values: ['trunk', 'primary', 'trunk_link', 'primary_link'], color: '#ef4444', width: 2.5 },
+  { label: 'State Highway', values: ['secondary', 'secondary_link'], color: '#f59e0b', width: 2.0 },
+  { label: 'Major Roads', values: ['tertiary', 'tertiary_link'], color: '#10b981', width: 1.5 },
+  { label: 'Local Roads', values: ['residential', 'living_street', 'unclassified', 'road'], color: '#94a3b8', width: 1.0 },
+];
+
 const BASE_MAP_STYLE: any = {
   version: 8,
   glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
@@ -590,6 +597,8 @@ const MapItem = ({
   ];
 
   const activePalette = palettes[panelIndex % palettes.length];
+  const panelColors = ['#0868ac', '#FF0000', '#F96000'];
+  const activeColor = panelColors[panelIndex % panelColors.length];
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -878,16 +887,6 @@ const MapItem = ({
       return;
     }
 
-    const panelColors = ['#0868ac', '#FF0000', '#F96000'];
-    const activeColor = panelColors[panelIndex % panelColors.length];
-
-    const palettes = [
-      ['#f7fbff', '#4292c6', '#2171b5', '#053b81'],
-      ['#fff5f0', '#ef3b2c', '#cb181d', '#99000d'],
-      ['#fff5eb', '#f16913', '#d94801', '#6c2202'],
-    ];
-    const activePalette = palettes[panelIndex % palettes.length];
-
     if (currentConfig.type === 'raster') {
       let rasterParams = currentConfig.params;
       let url: string;
@@ -958,7 +957,25 @@ const MapItem = ({
             type: 'line',
             source: sourceId,
             'source-layer': sourceLayerName,
-            paint: { 'line-color': activeColor, 'line-width': 1.5 },
+            paint: {
+              'line-color': [
+                'match',
+                ['get', 'highway'],
+                ['trunk', 'primary', 'trunk_link', 'primary_link'], '#ef4444',
+                ['secondary', 'secondary_link'], '#f59e0b',
+                ['tertiary', 'tertiary_link'], '#10b981',
+                ['residential', 'living_street', 'unclassified', 'road'], '#94a3b8',
+                activeColor,
+              ],
+              'line-width': [
+                'match',
+                ['get', 'highway'],
+                ['trunk', 'primary'], 2.5,
+                ['secondary'], 2,
+                ['tertiary'], 1.5,
+                1,
+              ],
+            },
           });
         } else {
           map.addLayer({
@@ -973,6 +990,14 @@ const MapItem = ({
             },
           });
         }
+
+        // Add click listener to log features for built-up area only
+        map.on('click', (e) => {
+          if (config.layer === 'builtup') {
+            const features = map.queryRenderedFeatures(e.point, { layers: [layerId] });
+            console.log(`Built-up Area features at point:`, features.map(f => f.properties));
+          }
+        });
       } catch (e) {
         console.error('Vector load error', e);
       }
@@ -1194,6 +1219,48 @@ const MapItem = ({
                 </span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+      
+      {config.layer === 'roads' && (
+        <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-[120] w-[180px]">
+          <div className="flex flex-col mb-2">
+            <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
+              Road Network
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {ROAD_CATEGORIES.map((cat) => (
+              <div key={cat.label} className="flex items-center gap-2">
+                <div
+                  className="w-4 h-0.5 rounded-full"
+                  style={{ backgroundColor: cat.color }}
+                />
+                <span className="text-[10px] font-medium text-gray-700">
+                  {cat.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {config.layer === 'builtup' && (
+        <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-[120] w-[160px]">
+          <div className="flex flex-col mb-2">
+            <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
+              Built-up Area
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div
+              className="w-3 h-3 rounded-sm border border-gray-200"
+              style={{ backgroundColor: activeColor }}
+            />
+            <span className="text-[10px] font-medium text-gray-700">
+              Developed Area
+            </span>
           </div>
         </div>
       )}
