@@ -16,6 +16,7 @@ import {
   DISTRICT_DEMOGRAPHICS,
   ALLOWED_DISTRICTS,
   LULC_STATS,
+  LULC_STATS_v2,
 } from '../../data/comparativeData';
 import { X, ChevronRight, Calendar, Layers } from 'lucide-react';
 import {
@@ -1802,10 +1803,11 @@ export default function MapCompare({
     if (!category) return null;
 
     const distData =
+      LULC_STATS_v2[dist] ||
       LULC_STATS[dist] ||
-      (DISTRICT_NAME_VARIANTS[dist]
-        ? LULC_STATS[DISTRICT_NAME_VARIANTS[dist]]
-        : null) ||
+      (DISTRICT_NAME_VARIANTS[dist] &&
+        (LULC_STATS_v2[DISTRICT_NAME_VARIANTS[dist]] ||
+          LULC_STATS[DISTRICT_NAME_VARIANTS[dist]])) ||
       LULC_STATS['Odisha'];
     if (!distData) return null;
 

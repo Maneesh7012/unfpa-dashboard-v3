@@ -44,6 +44,7 @@ import MapCompare from '../MapCompare/MapCompare';
 import { MultiMapCompare } from '../MapCompare/MultiMapCompare';
 import { MapSentinel } from '../Map/MapSentinel';
 import { MapSentinelQuaterly } from '../Map/MapSentinelQuaterly';
+import { WhatHowWhy_v2 } from '../Map/WhatHowWhy_v2/WhatHowWhy_v2';
 // import Analysis from '../MapCompare/Analysis';
 interface StatsDetailsProps {
   selectedDistrict: string;
@@ -1155,8 +1156,15 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
         {/* <ChangeAnalysis /> */}
 
         {showSentinel && (
+          // <div className="w-full mb-14">
+          //   <MapSentinel
+          //     targetDistrict={selectedDistrict}
+          //     targetBounds={mapBounds}
+          //   />
+          // </div>
+
           <div className="w-full mb-14">
-            <MapSentinel
+            <WhatHowWhy_v2
               targetDistrict={selectedDistrict}
               targetBounds={mapBounds}
             />

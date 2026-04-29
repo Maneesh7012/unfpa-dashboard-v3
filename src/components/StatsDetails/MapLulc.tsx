@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import {
   LULC_STATS,
+  LULC_STATS_v2,
   DISTRICT_NAME_VARIANTS,
   ALLOWED_DISTRICTS,
 } from '../../data/comparativeData';
@@ -123,8 +124,12 @@ const MapLulc: React.FC<MapLulcProps> = ({
   const [selectedYearLulc, setSelectedYearLulc] = useState('2024');
   const [isYearDropdownOpenLulc, setIsYearDropdownOpenLulc] = useState(false);
 
-  const stats = LULC_STATS[selectedDistrict] || LULC_STATS['Odisha'] || {};
-  const years = [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024];
+  const stats =
+    LULC_STATS_v2[selectedDistrict] ||
+    LULC_STATS[selectedDistrict] ||
+    LULC_STATS['Odisha'] ||
+    {};
+  const years = [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
 
   // Registration logic
   useEffect(() => {
