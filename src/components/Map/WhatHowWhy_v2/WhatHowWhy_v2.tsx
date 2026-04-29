@@ -56,9 +56,6 @@ const isPointInDistrict = (pointCoords: [number, number], features: any[]) => {
 const EOX_BASE = 'https://tiles.maps.eox.at/wmts/1.0.0';
 
 const YEAR_LAYER_MAP: Record<string, { layer: string; label: string }> = {
-  '2016': { layer: 's2cloudless-2017_3857', label: '2017' },
-  '2017': { layer: 's2cloudless-2017_3857', label: '2017' },
-
   '2018': { layer: 's2cloudless-2018_3857', label: '2018' },
   '2019': { layer: 's2cloudless-2019_3857', label: '2019' },
   '2020': { layer: 's2cloudless-2020_3857', label: '2020' },
@@ -684,7 +681,7 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
                   onClick={() => setIsYearDropdownOpen(false)}
                 />
                 <div className="absolute right-0 top-full mt-3 bg-white rounded-md shadow-xl border border-gray-100 p-3 z-200 animate-in fade-in slide-in-from-top-2 min-w-30 transition-all">
-                  {YEARS.map((y) => (
+                  {[...YEARS].reverse().map((y) => (
                     <button
                       key={y}
                       onClick={() => {
@@ -782,7 +779,7 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
                 setIsPlaying(false);
               }}
               className="p-2 text-white/40 hover:text-white transition-colors"
-              title="Reset to 2017"
+              title={`Reset to ${YEARS[0]}`}
             >
               <RotateCcw className="w-4 h-4" />
             </button>
