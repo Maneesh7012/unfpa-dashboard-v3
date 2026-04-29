@@ -4,7 +4,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import { Protocol as PMTilesProtocol, PMTiles } from 'pmtiles';
-import { cogProtocol, setColorFunction } from '@geomatico/maplibre-cog-protocol';
+import {
+  cogProtocol,
+  setColorFunction,
+} from '@geomatico/maplibre-cog-protocol';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   Plus,
@@ -184,10 +187,30 @@ const LAYER_CONFIGS: any = {
 };
 
 const ROAD_CATEGORIES = [
-  { label: 'National Highway', values: ['trunk', 'primary', 'trunk_link', 'primary_link'], color: '#ef4444', width: 2.5 },
-  { label: 'State Highway', values: ['secondary', 'secondary_link'], color: '#f59e0b', width: 2.0 },
-  { label: 'Major Roads', values: ['tertiary', 'tertiary_link'], color: '#10b981', width: 1.5 },
-  { label: 'Local Roads', values: ['residential', 'living_street', 'unclassified', 'road'], color: '#94a3b8', width: 1.0 },
+  {
+    label: 'National Highway',
+    values: ['trunk', 'primary', 'trunk_link', 'primary_link'],
+    color: '#ef4444',
+    width: 2.5,
+  },
+  {
+    label: 'State Highway',
+    values: ['secondary', 'secondary_link'],
+    color: '#f59e0b',
+    width: 2.0,
+  },
+  {
+    label: 'Major Roads',
+    values: ['tertiary', 'tertiary_link'],
+    color: '#10b981',
+    width: 1.5,
+  },
+  {
+    label: 'Local Roads',
+    values: ['residential', 'living_street', 'unclassified', 'road'],
+    color: '#94a3b8',
+    width: 1.0,
+  },
 ];
 
 const BASE_MAP_STYLE: any = {
@@ -524,13 +547,13 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
                                 {y}
                               </option>
                             ))
-                        : Object.keys(
-                            LAYER_CONFIGS[pendingConfig.layer]?.urls || {},
-                          ).map((y) => (
-                            <option key={y} value={y}>
-                              {y}
-                            </option>
-                          ))}
+                          : Object.keys(
+                              LAYER_CONFIGS[pendingConfig.layer]?.urls || {},
+                            ).map((y) => (
+                              <option key={y} value={y}>
+                                {y}
+                              </option>
+                            ))}
                   </select>
                   <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none group-hover:text-orange-500 transition-colors" />
                 </div>
@@ -901,7 +924,7 @@ const MapItem = ({
         rasterParams = ''; // Colors handled by setColorFunction
 
         // Register color function for this specific COG URL
-        setColorFunction(url, (pixel: any, color: any, metadata: any) => {
+        setColorFunction(url, (pixel: any, color: any) => {
           const val = pixel[0];
           const cls = GHSL_CLASSES[val.toString()];
           if (cls) {
@@ -961,18 +984,25 @@ const MapItem = ({
               'line-color': [
                 'match',
                 ['get', 'highway'],
-                ['trunk', 'primary', 'trunk_link', 'primary_link'], '#ef4444',
-                ['secondary', 'secondary_link'], '#f59e0b',
-                ['tertiary', 'tertiary_link'], '#10b981',
-                ['residential', 'living_street', 'unclassified', 'road'], '#94a3b8',
+                ['trunk', 'primary', 'trunk_link', 'primary_link'],
+                '#ef4444',
+                ['secondary', 'secondary_link'],
+                '#f59e0b',
+                ['tertiary', 'tertiary_link'],
+                '#10b981',
+                ['residential', 'living_street', 'unclassified', 'road'],
+                '#94a3b8',
                 activeColor,
               ],
               'line-width': [
                 'match',
                 ['get', 'highway'],
-                ['trunk', 'primary'], 2.5,
-                ['secondary'], 2,
-                ['tertiary'], 1.5,
+                ['trunk', 'primary'],
+                2.5,
+                ['secondary'],
+                2,
+                ['tertiary'],
+                1.5,
                 1,
               ],
             },
@@ -994,8 +1024,13 @@ const MapItem = ({
         // Add click listener to log features for built-up area only
         map.on('click', (e) => {
           if (config.layer === 'builtup') {
-            const features = map.queryRenderedFeatures(e.point, { layers: [layerId] });
-            console.log(`Built-up Area features at point:`, features.map(f => f.properties));
+            const features = map.queryRenderedFeatures(e.point, {
+              layers: [layerId],
+            });
+            console.log(
+              `Built-up Area features at point:`,
+              features.map((f) => f.properties),
+            );
           }
         });
       } catch (e) {
@@ -1222,7 +1257,7 @@ const MapItem = ({
           </div>
         </div>
       )}
-      
+
       {config.layer === 'roads' && (
         <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-[120] w-[180px]">
           <div className="flex flex-col mb-2">
