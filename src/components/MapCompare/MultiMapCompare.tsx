@@ -113,7 +113,7 @@ const buildYearlyUrls = (
   );
 };
 
-const GHSL_YEARS = ['2010', '2016', '2020', '2025', '2030'];
+const GHSL_YEARS = ['2010', '2015', '2020', '2025', '2030'];
 const GHSL_CLASSES: any = {
   '10': { label: 'Water surface', color: '#4a90d9' },
   '11': { label: 'Very low density rural', color: '#d9d9b3' },
@@ -179,7 +179,7 @@ const LAYER_CONFIGS: any = {
   },
 
   ghsl: {
-    label: 'GHSL SMOD',
+    label: 'Settlement',
     urls: Object.fromEntries(GHSL_YEARS.map((y) => [y, ''])),
     type: 'raster',
     isGhsl: true,
@@ -498,11 +498,6 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
                     }}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-[13px] font-black text-gray-700 focus:ring-2 focus:ring-orange-500 transition-all outline-none appearance-none cursor-pointer"
                   >
-                    {/* ✅ Custom option */}
-                    <option value="degree_urbanization">
-                      Degree of Urbanization
-                    </option>
-
                     {/* Existing options */}
                     {Object.entries(LAYER_CONFIGS).map(([id, cfg]: any) => (
                       <option key={id} value={id}>
@@ -529,7 +524,7 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
                     }
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-[13px] font-black text-gray-700 focus:ring-2 focus:ring-orange-500 transition-all outline-none appearance-none cursor-pointer"
                   >
-                    {mapConfigs.length === 2
+                    {pendingConfig.layer === 'degree_urbanization'
                       ? MONTHLY_DATES.map((y) => (
                           <option key={y} value={y}>
                             {y}
@@ -1235,7 +1230,7 @@ const MapItem = ({
         <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-[120] w-[200px]">
           <div className="flex flex-col mb-2">
             <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
-              GHSL Settlement Model
+              Settlement
             </span>
             <span className="text-[9px] text-gray-400 font-medium">
               Source: GHS-SMOD R2023A
