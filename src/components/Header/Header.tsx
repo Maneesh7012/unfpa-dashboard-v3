@@ -11,16 +11,23 @@ export const Header: React.FC = () => {
     { label: 'Home', path: '/' },
     { label: 'About', path: '/about' },
     { label: 'Methodology', path: '/methodology' },
-    { label: 'Analytics', path: '/analytics' },
-    { label: 'Data Catalog', path: '/catalog' }
+    // { label: 'Analytics', path: '/analytics' },
+    { label: 'Data Catalog', path: '/catalog' },
   ];
 
   return (
     <header className="w-full h-16 relative z-50 bg-white border-b border-gray-200 shadow-sm flex items-center justify-between px-6">
       {/* Left: Logo + Title */}
       <div className="flex items-center gap-4">
-        <Link to="/" className="flex items-center gap-4 hover:opacity-90 transition-opacity">
-          <img src={undpLogo} alt="UNFPA Logo" className="h-8 w-auto object-contain" />
+        <Link
+          to="/"
+          className="flex items-center gap-4 hover:opacity-90 transition-opacity"
+        >
+          <img
+            src={undpLogo}
+            alt="UNFPA Logo"
+            className="h-8 w-auto object-contain"
+          />
           <div className="flex flex-col">
             <span className="font-bold text-[15px] text-gray-900 leading-tight tracking-tight">
               Odisha Demographic & Data Intelligence Platform
@@ -56,7 +63,11 @@ export const Header: React.FC = () => {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className={`p-2 rounded-lg transition-all relative z-[110] ${isMenuOpen ? 'text-[#26412C]' : 'text-gray-600 hover:bg-gray-100'}`}
           >
-            {isMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-6 h-6" />}
+            {isMenuOpen ? (
+              <X className="w-8 h-8" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
 
           {/* Full-Screen Menu Overlay (Mobile) */}

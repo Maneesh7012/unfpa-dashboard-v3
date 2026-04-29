@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import {
   LULC_STATS,
-  LULC_STATS_v2,
   DISTRICT_NAME_VARIANTS,
   ALLOWED_DISTRICTS,
 } from '../../data/comparativeData';
@@ -125,7 +124,6 @@ const MapLulc: React.FC<MapLulcProps> = ({
   const [isYearDropdownOpenLulc, setIsYearDropdownOpenLulc] = useState(false);
 
   const stats =
-    LULC_STATS_v2[selectedDistrict] ||
     LULC_STATS[selectedDistrict] ||
     LULC_STATS['Odisha'] ||
     {};
