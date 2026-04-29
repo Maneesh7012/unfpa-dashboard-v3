@@ -29,11 +29,11 @@ import {
 import {
   DISTRICT_NAMES,
   DISTRICT_NAME_VARIANTS,
-  DISTRICT_DEMOGRAPHICS,
+  // DISTRICT_DEMOGRAPHICS,
   ALLOWED_DISTRICTS,
   DEMOGRAPHIC_STATS,
   CENSUS_PROJECTION_DATA,
-  GENDER,
+  // GENDER,
 } from '../../data/comparativeData';
 import {
   MODEL_STATS_DATA,
@@ -373,15 +373,18 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
       }
 
       const latestPop = populationValue;
-      let malePop = 0;
-      let femalePop = 0;
+      // let malePop = 0;
+      // let femalePop = 0;
 
-      const yearInt = parseInt(yearForTable);
-      
+      // const yearInt = parseInt(yearForTable);
+
       // Use Urban/Rural data from MODEL_URBAN_RURAL_DATA
       let urbanPop = 0;
       let ruralPop = 0;
-      if (MODEL_URBAN_RURAL_DATA[name] && MODEL_URBAN_RURAL_DATA[name]['2025']) {
+      if (
+        MODEL_URBAN_RURAL_DATA[name] &&
+        MODEL_URBAN_RURAL_DATA[name]['2025']
+      ) {
         urbanPop = MODEL_URBAN_RURAL_DATA[name]['2025'].urban;
         ruralPop = MODEL_URBAN_RURAL_DATA[name]['2025'].rural;
       }

@@ -18,16 +18,16 @@ import {
   LULC_STATS,
 } from '../../data/comparativeData';
 import { Layers } from 'lucide-react';
-import {
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  Label,
-} from 'recharts';
+// import {
+//   XAxis,
+//   YAxis,
+//   CartesianGrid,
+//   Tooltip,
+//   ResponsiveContainer,
+//   LineChart,
+//   Line,
+//   Label,
+// } from 'recharts';
 
 const PMTILES_URL =
   'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/population_data/od_district_pop_total_2036_corrected.pmtiles';
@@ -39,12 +39,11 @@ const ODISHA_BOUNDS: maplibregl.LngLatBoundsLike = [
   [87.4770036487483651, 22.5674384683253209],
 ];
 
-const basemapOptions: { id: 'grey' | 'satellite' | 'osm'; label: string }[] =
-  [
-    { id: 'grey', label: 'Grey Canvas' },
-    { id: 'satellite', label: 'Satellite' },
-    { id: 'osm', label: 'OSM' },
-  ];
+const basemapOptions: { id: 'grey' | 'satellite' | 'osm'; label: string }[] = [
+  { id: 'grey', label: 'Grey Canvas' },
+  { id: 'satellite', label: 'Satellite' },
+  { id: 'osm', label: 'OSM' },
+];
 
 export const DATA_CONFIG_ANUGUL: any = {
   nightlight: {
@@ -283,10 +282,7 @@ export default function MapCompare({
   }, [activeLayer, activeLulcPixel, viewMode]);
 
   useEffect(() => {
-    if (
-      selectedLngLat &&
-      viewMode !== 'change_analysis'
-    ) {
+    if (selectedLngLat && viewMode !== 'change_analysis') {
       if (leftMapObj.current && !leftMarkerRef.current) {
         leftMarkerRef.current = new maplibregl.Marker({ color: '#ff0000ff' })
           .setLngLat(selectedLngLat)
@@ -1111,7 +1107,6 @@ export default function MapCompare({
       type,
       currentLayerKey,
     );
-
   }, [leftUrl, rightUrl, currentLayerKey, activeLulcPixel, viewMode]);
 
   useEffect(() => {
