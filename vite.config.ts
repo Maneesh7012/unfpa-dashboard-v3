@@ -5,7 +5,7 @@ import { defineConfig } from 'vite';
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/v5',
+  base: '/v5/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
