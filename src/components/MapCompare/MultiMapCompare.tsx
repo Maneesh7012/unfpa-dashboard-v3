@@ -1019,7 +1019,7 @@ const MapItem = ({
               />
             </button>
             {isBasemapOpen && (
-              <div className="absolute top-full left-0 mt-2 w-40 bg-white rounded-xl shadow-2xl border border-gray-100 p-1 z-[120] animate-in fade-in slide-in-from-top-2">
+              <div className="absolute top-full left-0 mt-2 w-40 bg-white rounded-xl shadow-2xl border border-gray-100 p-1 z-[150] animate-in fade-in slide-in-from-top-2">
                 {[
                   { id: 'grey', label: 'Grey Canvas' },
                   { id: 'satellite', label: 'Satellite' },
@@ -1060,7 +1060,7 @@ const MapItem = ({
               />
             </button>
             {isYearOpen && (
-              <div className="absolute top-full left-0 mt-2 w-40 bg-white rounded-xl shadow-2xl border border-gray-100 p-1 z-[120] animate-in fade-in slide-in-from-top-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+              <div className="absolute top-full left-0 mt-2 w-40 bg-white rounded-xl shadow-2xl border border-gray-100 p-1 z-[150] animate-in fade-in slide-in-from-top-2 max-h-[300px] overflow-y-auto custom-scrollbar">
                 {getYearOptions().map((y) => (
                   <button
                     key={y}
@@ -1097,7 +1097,7 @@ const MapItem = ({
               />
             </button>
             {isLayerOpen && (
-              <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 p-1 z-[120] animate-in fade-in slide-in-from-top-2">
+              <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 p-1 z-[150] animate-in fade-in slide-in-from-top-2">
                 {Object.keys(LAYER_CONFIGS).map((key) => (
                   <button
                     key={key}
