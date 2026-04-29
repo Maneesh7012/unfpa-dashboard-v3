@@ -689,7 +689,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                     tickLine={false}
                     tick={{ fontSize: 10, fontWeight: 700, fill: '#6B7280' }}
                     tickFormatter={(value: any) =>
-                      `${(value / 1000000).toFixed(1)}M`
+                      `${(value / 1000000).toFixed(2)}M`
                     }
                   />
                   <Tooltip

@@ -41,8 +41,12 @@ import {
   CENSUS_PROJECTION_DATA,
   CENSUS_URBAN_RURAL_DATA,
   CENSUS_STATS_DATA,
-  MODEL_DATA,
 } from '../../data/comparativeData';
+import {
+  MODEL_DATA,
+  MODEL_STATS_DATA,
+  MODEL_URBAN_RURAL_DATA,
+} from '../../data/modelStats';
 import { DEMOGRAPHIC_STATS } from '../../data/comparativeData';
 
 interface MapSectionProps {
@@ -225,7 +229,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
 
   const formatAgeTick = (tick: number) => {
     const val = Math.abs(tick);
-    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+    if (val >= 1000000) return (val / 1000000).toFixed(2) + 'M';
     if (val >= 1000) return (val / 1000).toFixed(0) + 'k';
     return val.toString();
   };
@@ -338,12 +342,12 @@ export const MapSection: React.FC<MapSectionProps> = ({
       maxYear: 2035,
     },
     { id: 'pop', label: 'Total Population', minYear: 2011, maxYear: 2035 },
-    {
-      id: 'deg_urbanisation',
-      label: 'Degree of Urbanisation',
-      minYear: 2015,
-      maxYear: 2035,
-    },
+    // {
+    //   id: 'deg_urbanisation',
+    //   label: 'Degree of Urbanisation',
+    //   minYear: 2015,
+    //   maxYear: 2035,
+    // },
   ];
 
   useEffect(() => {
@@ -582,7 +586,10 @@ export const MapSection: React.FC<MapSectionProps> = ({
       area: 155707,
       maleCount: formatNumber(mP),
       femaleCount: formatNumber(fP),
-      density: DEMOGRAPHIC_STATS['Odisha']?.[yearInt]?.density ?? '270',
+      density:
+        MODEL_STATS_DATA[nameForLookup]?.[yearSuffix]?.density.toString() ??
+        DEMOGRAPHIC_STATS['Odisha']?.[yearInt]?.density ??
+        '270',
     };
 
     if (name === 'All Districts' || name === 'Odisha') return DEFAULTS;
@@ -624,16 +631,25 @@ export const MapSection: React.FC<MapSectionProps> = ({
     const exactMalePercent = (malePop / (malePop + femalePop)) * 100 || 51;
     const exactFemalePercent = (femalePop / (malePop + femalePop)) * 100 || 49;
 
-    // Density calculation from PMTiles
+    // Density calculation (Model priority)
     const densityKey = `density_${yearSuffix}`;
     let densityValue: string | number = '—';
 
-    if (districtData?.[densityKey] !== undefined) {
-      densityValue = parseFloat(districtData[densityKey]);
-    } else if (districtsLookup.has(name)) {
-      const dData = districtsLookup.get(name);
-      if (dData?.[densityKey] !== undefined) {
-        densityValue = parseFloat(dData[densityKey]);
+    if (!isCensusSource) {
+      const modelStat = MODEL_STATS_DATA[name]?.[yearSuffix];
+      if (modelStat?.density !== undefined) {
+        densityValue = modelStat.density;
+      }
+    }
+
+    if (densityValue === '—') {
+      if (districtData?.[densityKey] !== undefined) {
+        densityValue = parseFloat(districtData[densityKey]);
+      } else if (districtsLookup.has(name)) {
+        const dData = districtsLookup.get(name);
+        if (dData?.[densityKey] !== undefined) {
+          densityValue = parseFloat(dData[densityKey]);
+        }
       }
     }
 
@@ -1084,7 +1100,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
 
                 const formatNum = (v: number) => {
                   if (Math.abs(v) >= 1000000)
-                    return (v / 1000000).toFixed(1) + 'M';
+                    return (v / 1000000).toFixed(2) + 'M';
                   if (Math.abs(v) >= 1000) return (v / 1000).toFixed(0) + 'k';
                   return Math.round(v).toString();
                 };
@@ -1353,53 +1369,79 @@ export const MapSection: React.FC<MapSectionProps> = ({
                                 ? 'Odisha'
                                 : stats.name;
 
+                            let growthValue: string | null = null;
+
                             if (isCensusSource) {
                               const censusStat =
                                 CENSUS_STATS_DATA[dName]?.[
                                   currentYear.toString()
                                 ];
-                              if (
-                                censusStat?.growth !== null &&
-                                censusStat?.growth !== undefined
-                              ) {
-                                return censusStat.growth.toFixed(2);
+                              if (censusStat?.growth === null)
+                                growthValue = '—';
+                              else if (censusStat?.growth !== undefined) {
+                                growthValue = censusStat.growth.toFixed(2);
                               }
                             }
 
-                            const popCurr = getPopForYear(
-                              dName,
-                              currentYear.toString(),
-                            );
-                            const popPrev = getPopForYear(
-                              dName,
-                              prevYear.toString(),
-                            );
+                            // Priority 1: Check MODEL_STATS_DATA for model growth
+                            if (!isCensusSource && growthValue === null) {
+                              const modelStat =
+                                MODEL_STATS_DATA[dName]?.[
+                                  currentYear.toString()
+                                ];
+                              if (modelStat?.growth === null) growthValue = '—';
+                              else if (modelStat?.growth !== undefined) {
+                                growthValue = modelStat.growth.toFixed(2);
+                              }
+                            }
 
-                            if (popCurr && popPrev && popPrev !== 0) {
-                              const growth =
-                                ((popCurr - popPrev) / popPrev) * 100;
-                              return growth.toFixed(2);
+                            if (growthValue === null) {
+                              const popCurr = getPopForYear(
+                                dName,
+                                currentYear.toString(),
+                              );
+                              const popPrev = getPopForYear(
+                                dName,
+                                prevYear.toString(),
+                              );
+
+                              if (popCurr && popPrev && popPrev !== 0) {
+                                growthValue = (
+                                  ((popCurr - popPrev) / popPrev) *
+                                  100
+                                ).toFixed(2);
+                              }
                             }
 
                             // Fallback: Check if growth is explicitly provided in data
-                            const pmtilesGrowthKey = `growth_${currentYear}`;
-                            let val =
-                              districtData?.[pmtilesGrowthKey] ||
-                              districtsLookup.get(dName)?.[pmtilesGrowthKey];
+                            if (growthValue === null) {
+                              const pmtilesGrowthKey = `growth_${currentYear}`;
+                              let val =
+                                districtData?.[pmtilesGrowthKey] ||
+                                districtsLookup.get(dName)?.[pmtilesGrowthKey];
 
-                            if (val === undefined || val === null) {
-                              val =
-                                DEMOGRAPHIC_STATS[dName]?.[currentYear]?.growth;
+                              if (val === undefined || val === null) {
+                                val =
+                                  DEMOGRAPHIC_STATS[dName]?.[currentYear]
+                                    ?.growth;
+                              }
+                              growthValue =
+                                typeof val === 'number'
+                                  ? val.toFixed(2)
+                                  : val || '—';
                             }
 
-                            return typeof val === 'number'
-                              ? val.toFixed(2)
-                              : val || '—';
+                            return (
+                              <>
+                                {growthValue}
+                                {growthValue !== '—' && (
+                                  <span className="text-[10px] font-bold text-gray-500 ml-1">
+                                    %
+                                  </span>
+                                )}
+                              </>
+                            );
                           })()}
-                        </span>
-                        <span className="text-[10px] font-bold text-gray-500">
-                          {' '}
-                          %
                         </span>
                       </div>
                     </span>
@@ -1444,7 +1486,8 @@ export const MapSection: React.FC<MapSectionProps> = ({
                         currentName,
                         appliedFilters.year,
                       ) as number)
-                  : demographicData.urban;
+                  : (MODEL_URBAN_RURAL_DATA[currentName]?.[appliedFilters.year]
+                      ?.urban ?? demographicData.urban);
                 const rural = isCensusSource
                   ? urbanData?.rural ||
                     0.4 *
@@ -1452,7 +1495,8 @@ export const MapSection: React.FC<MapSectionProps> = ({
                         currentName,
                         appliedFilters.year,
                       ) as number)
-                  : demographicData.rural;
+                  : (MODEL_URBAN_RURAL_DATA[currentName]?.[appliedFilters.year]
+                      ?.rural ?? demographicData.rural);
                 const total = urban + rural;
                 const urbanPercent = Math.round((urban / total) * 100);
                 const ruralPercent = 100 - urbanPercent;
