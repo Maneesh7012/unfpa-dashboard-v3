@@ -114,7 +114,12 @@ const LULC_LEGEND: LulcLegendItem[] = [
 
 const UI_LULC_LEGEND = [
   LULC_LEGEND.find((c) => c.value === 0),
-  { label: 'Vegetation', color: '#397D49', value: 'vegetation', key: 'vegetation' },
+  {
+    label: 'Vegetation',
+    color: '#397D49',
+    value: 'vegetation',
+    key: 'vegetation',
+  },
   LULC_LEGEND.find((c) => c.value === 6),
   LULC_LEGEND.find((c) => c.value === 7),
 ].filter(Boolean) as any[];
@@ -638,7 +643,8 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
       LULC_LEGEND.forEach((cat) => {
         const attrKey = `lulc_${q.year}_q${q.q}_clipped_${cat.key}`;
         const rawVal = districtLulcData[attrKey];
-        item[cat.key] = typeof rawVal === 'string' ? parseFloat(rawVal) : (rawVal || 0);
+        item[cat.key] =
+          typeof rawVal === 'string' ? parseFloat(rawVal) : rawVal || 0;
       });
       return item;
     });
@@ -1154,151 +1160,153 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
 
         <div
           className={`absolute top-8 left-8 w-75 h-fit transition-all duration-300 text-gray-900 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 p-6 shadow-2xl z-[60] flex flex-col gap-6 overflow-y-auto custom-scrollbar`}
-            style={{ maxHeight: `calc(100% - ${timelineHeight + 100}px)` }}
-          >
-            <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">
-                Sentinel-2 TCI (RGB)
-              </p>
-            </div>
+          style={{ maxHeight: `calc(100% - ${timelineHeight + 100}px)` }}
+        >
+          <div>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">
+              Sentinel-2 TCI (RGB)
+            </p>
+          </div>
 
-            <div className="flex-1 transition-all">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 border-b border-gray-100 pb-2 flex justify-between items-center">
-                Land Categories
-                {/* <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${showLulc ? 'bg-orange-100 text-[#F76000]' : 'bg-gray-100 text-gray-400'}`}>
+          <div className="flex-1 transition-all">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 border-b border-gray-100 pb-2 flex justify-between items-center">
+              Land Categories
+              {/* <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${showLulc ? 'bg-orange-100 text-[#F76000]' : 'bg-gray-100 text-gray-400'}`}>
                                     Year: {currentQuarter.year}
                                 </span> */}
-              </p>
-              <div className="flex flex-col gap-1.5">
+            </p>
+            <div className="flex flex-col gap-1.5">
+              <button
+                onClick={() =>
+                  setSelectedLulcCategory((prev) =>
+                    prev === 'all' ? null : 'all',
+                  )
+                }
+                className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${selectedLulcCategory === 'all' ? 'bg-orange-50 border-[#F76000] shadow-sm' : 'bg-white border-gray-100 text-gray-500 hover:bg-gray-50'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center transition-all ${selectedLulcCategory === 'all' ? 'border-[#F76000]' : 'border-gray-200'}`}
+                  >
+                    {selectedLulcCategory === 'all' && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#F76000]" />
+                    )}
+                  </div>
+                  <span
+                    className={`text-[10px] font-black uppercase ${selectedLulcCategory === 'all' ? 'text-[#F76000]' : 'text-gray-600'}`}
+                  >
+                    All Classes
+                  </span>
+                </div>
+              </button>
+              {UI_LULC_LEGEND.map((item) => (
                 <button
+                  key={item.label}
                   onClick={() =>
                     setSelectedLulcCategory((prev) =>
-                      prev === 'all' ? null : 'all',
+                      prev === item.value ? null : item.value,
                     )
                   }
-                  className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${selectedLulcCategory === 'all' ? 'bg-orange-50 border-[#F76000] shadow-sm' : 'bg-white border-gray-100 text-gray-500 hover:bg-gray-50'}`}
+                  className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${selectedLulcCategory === item.value ? 'bg-orange-50 border-[#F76000] shadow-sm' : 'bg-white border-gray-100 text-gray-500 hover:bg-gray-50'}`}
                 >
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center transition-all ${selectedLulcCategory === 'all' ? 'border-[#F76000]' : 'border-gray-200'}`}
+                      className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center transition-all ${selectedLulcCategory === item.value ? 'border-[#F76000]' : 'border-gray-200'}`}
                     >
-                      {selectedLulcCategory === 'all' && (
+                      {selectedLulcCategory === item.value && (
                         <div className="w-1.5 h-1.5 rounded-full bg-[#F76000]" />
                       )}
                     </div>
-                    <span
-                      className={`text-[10px] font-black uppercase ${selectedLulcCategory === 'all' ? 'text-[#F76000]' : 'text-gray-600'}`}
-                    >
-                      All Classes
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-2.5 h-2.5 rounded-sm ring-1 ring-gray-100"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span
+                        className={`text-[10px] font-bold capitalize ${selectedLulcCategory === item.value ? 'text-[#F76000]' : 'text-gray-600'}`}
+                      >
+                        {item.label}
+                      </span>
+                    </div>
                   </div>
                 </button>
-                {UI_LULC_LEGEND.map((item) => (
-                  <button
-                    key={item.label}
-                    onClick={() =>
-                      setSelectedLulcCategory((prev) =>
-                        prev === item.value ? null : item.value,
-                      )
-                    }
-                    className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${selectedLulcCategory === item.value ? 'bg-orange-50 border-[#F76000] shadow-sm' : 'bg-white border-gray-100 text-gray-500 hover:bg-gray-50'}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center transition-all ${selectedLulcCategory === item.value ? 'border-[#F76000]' : 'border-gray-200'}`}
-                      >
-                        {selectedLulcCategory === item.value && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-[#F76000]" />
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-2.5 h-2.5 rounded-sm ring-1 ring-gray-100"
-                          style={{ backgroundColor: item.color }}
-                        />
-                        <span
-                          className={`text-[10px] font-bold capitalize ${selectedLulcCategory === item.value ? 'text-[#F76000]' : 'text-gray-600'}`}
-                        >
-                          {item.label}
-                        </span>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
+              ))}
             </div>
           </div>
+        </div>
 
         <div
           className={`absolute bottom-8 left-8 z-50 flex items-center gap-4 transition-all duration-500 ease-in-out ${
-              selectedPoint
-                ? 'right-[calc(100%+32px)] md:right-[calc(45%+32px)] lg:right-[calc(35%+32px)]'
-                : 'right-8'
-            }`}
+            selectedPoint
+              ? 'right-[calc(100%+32px)] md:right-[calc(45%+32px)] lg:right-[calc(35%+32px)]'
+              : 'right-8'
+          }`}
+        >
+          {/* Timeline Slider */}
+          <div
+            ref={timelineCardRef}
+            className="flex-1 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 p-5 px-6 shadow-2xl flex items-center gap-6"
           >
-            {/* Timeline Slider */}
-            <div
-              ref={timelineCardRef}
-              className="flex-1 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 p-5 px-6 shadow-2xl flex items-center gap-6"
-            >
-              <div className="flex gap-2 shrink-0">
-                <button
-                  onClick={() =>
-                    setSelectedIdx((prev) => Math.max(0, prev - 1))
-                  }
-                  disabled={selectedIdx === 0}
-                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#F76000] text-white shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all font-black"
-                  title="Previous Quarter"
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={() =>
-                    setSelectedIdx((prev) =>
-                      Math.min(QUARTERS.length - 1, prev + 1),
-                    )
-                  }
-                  disabled={selectedIdx === QUARTERS.length - 1}
-                  className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#F76000] text-white shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all font-black"
-                  title="Next Quarter"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
-              </div>
-              <div className="flex-1 flex flex-col gap-4">
-                <div className="flex justify-between items-end text-[8px] font-black uppercase tracking-[0.2em]">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-gray-400">Timeline Control</span>
-                  </div>
-                  <div className="text-right flex items-center gap-2">
-                    <span className="text-[#F76000] text-lg font-mono font-bold leading-none">
-                      {currentQuarter.label.split(' ')[0]}
-                    </span>
-                    <span className="text-gray-700 text-sm font-mono font-bold">
-                      {currentQuarter.year}
-                    </span>
-                  </div>
+            <div className="flex gap-2 shrink-0">
+              <button
+                onClick={() => setSelectedIdx((prev) => Math.max(0, prev - 1))}
+                disabled={selectedIdx === 0}
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#F76000] text-white shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all font-black"
+                title="Previous Quarter"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button
+                onClick={() =>
+                  setSelectedIdx((prev) =>
+                    Math.min(QUARTERS.length - 1, prev + 1),
+                  )
+                }
+                disabled={selectedIdx === QUARTERS.length - 1}
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#F76000] text-white shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all font-black"
+                title="Next Quarter"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="flex-1 flex flex-col gap-4">
+              <div className="flex justify-between items-end text-[8px] font-black uppercase tracking-[0.2em]">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-gray-400">Timeline Control</span>
                 </div>
-                {/* LULC Chart - Only visible when chart is on */}
-                {showChart && chartData.length > 0 && (
-                  <div className="h-24 w-full mt-2 mb-8 transition-all animate-in fade-in slide-in-from-bottom-2">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={chartData}
-                        margin={{ top: 5, right: 5, left: 5, bottom: 0 }}
-                      >
-                        <XAxis dataKey="name" hide />
-                        <YAxis hide />
-                        <Tooltip
-                          position={{ y: -50 }}
-                          content={({ active, payload, label }) => {
-                            if (active && payload && payload.length) {
-                              return (
-                                <div className="bg-white/95 backdrop-blur-md border border-gray-200 p-2.5 rounded-lg shadow-xl text-[10px]">
-                                  <p className="font-black text-gray-900 mb-1 border-b pb-1">
-                                    {label}
-                                  </p>
-                                  {payload.filter((p: any) => !p.dataKey.endsWith('_trend')).map((p: any) => (
+                <div className="text-right flex items-center gap-2">
+                  <span className="text-[#F76000] text-lg font-mono font-bold leading-none">
+                    {currentQuarter.label.split(' ')[0]}
+                  </span>
+                  <span className="text-gray-700 text-sm font-mono font-bold">
+                    {currentQuarter.year}
+                  </span>
+                </div>
+              </div>
+              {/* LULC Chart - Only visible when chart is on */}
+              {showChart && chartData.length > 0 && (
+                <div className="h-24 w-full mt-2 mb-8 transition-all animate-in fade-in slide-in-from-bottom-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={chartData}
+                      margin={{ top: 5, right: 5, left: 5, bottom: 0 }}
+                    >
+                      <XAxis dataKey="name" hide />
+                      <YAxis hide />
+                      <Tooltip
+                        position={{ y: -50 }}
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-white/95 backdrop-blur-md border border-gray-200 p-2.5 rounded-lg shadow-xl text-[10px]">
+                                <p className="font-black text-gray-900 mb-1 border-b pb-1">
+                                  {label}
+                                </p>
+                                {payload
+                                  .filter(
+                                    (p: any) => !p.dataKey.endsWith('_trend'),
+                                  )
+                                  .map((p: any) => (
                                     <div
                                       key={p.dataKey}
                                       className="flex items-center justify-between gap-4 py-0.5"
@@ -1320,225 +1328,229 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                                       </span>
                                     </div>
                                   ))}
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        {selectedLulcCategory === 'all' ? (
-                          LULC_LEGEND.map((cat) => (
-                            <React.Fragment key={cat.key}>
-                              <Line
-                                type="monotone"
-                                dataKey={cat.key}
-                                stroke={cat.color}
-                                strokeWidth={2}
-                                dot={false}
-                                isAnimationActive={false}
-                              />
-                              <Line
-                                type="monotone"
-                                dataKey={`${cat.key}_trend`}
-                                stroke={cat.color}
-                                strokeWidth={1.5}
-                                strokeDasharray="4 4"
-                                dot={false}
-                                isAnimationActive={false}
-                              />
-                            </React.Fragment>
-                          ))
-                        ) : selectedLulcCategory === 'vegetation' ? (
-                          LULC_LEGEND.filter(c => typeof c.value === 'number' && [1, 2, 3, 4, 5].includes(c.value)).map((cat) => (
-                            <React.Fragment key={cat.key}>
-                              <Line
-                                type="monotone"
-                                dataKey={cat.key}
-                                stroke={cat.color}
-                                strokeWidth={2}
-                                dot={false}
-                                isAnimationActive={false}
-                              />
-                              <Line
-                                type="monotone"
-                                dataKey={`${cat.key}_trend`}
-                                stroke={cat.color}
-                                strokeWidth={1.5}
-                                strokeDasharray="4 4"
-                                dot={false}
-                                isAnimationActive={false}
-                              />
-                            </React.Fragment>
-                          ))
-                        ) : (
-                          <>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      {selectedLulcCategory === 'all' ? (
+                        LULC_LEGEND.map((cat) => (
+                          <React.Fragment key={cat.key}>
                             <Line
                               type="monotone"
-                              dataKey={
-                                LULC_LEGEND.find(
-                                  (c) => c.value === selectedLulcCategory,
-                                )?.key || ''
-                              }
-                              stroke={
-                                LULC_LEGEND.find(
-                                  (c) => c.value === selectedLulcCategory,
-                                )?.color || '#F76000'
-                              }
-                              strokeWidth={3}
-                              dot={(props: any) => {
-                                const { cx, cy, index } = props;
-                                if (index === selectedIdx) {
-                                  return (
-                                    <Dot
-                                      key={`dot-${index}`}
-                                      cx={cx}
-                                      cy={cy}
-                                      r={4}
-                                      fill="#F76000"
-                                      stroke="#FFFFFF"
-                                      strokeWidth={2}
-                                    />
-                                  );
-                                }
-                                return null;
-                              }}
-                              isAnimationActive={false}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey={`${
-                                LULC_LEGEND.find(
-                                  (c) => c.value === selectedLulcCategory,
-                                )?.key || ''
-                              }_trend`}
-                              stroke={
-                                LULC_LEGEND.find(
-                                  (c) => c.value === selectedLulcCategory,
-                                )?.color || '#F76000'
-                              }
+                              dataKey={cat.key}
+                              stroke={cat.color}
                               strokeWidth={2}
-                              strokeDasharray="5 5"
                               dot={false}
                               isAnimationActive={false}
                             />
-                          </>
-                        )}
-                        {/* Active Marker */}
-                        <ReferenceLine
-                          x={currentQuarter.label}
-                          stroke="#F76000"
-                          strokeWidth={2}
-                          strokeDasharray="3 3"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-                <div className="relative group/track py-1">
-                  {/* Background Track with Tick Scale */}
-                  <div className="relative h-2 bg-gray-100 rounded-full overflow-visible">
-                    <div
-                      className="absolute h-full rounded-full transition-all duration-300"
-                      style={{
-                        width: `${(selectedIdx / (QUARTERS.length - 1)) * 100}%`,
-                        backgroundColor: '#F76000',
-                      }}
-                    />
-
-                    {/* Tick Marks & Labels Container */}
-                    <div className="absolute inset-0 flex justify-between items-center px-0.5 pointer-events-none">
-                      {QUARTERS.map((q, idx) => (
-                        <div
-                          key={q.key}
-                          className="relative flex flex-col items-center"
-                        >
-                          <div
-                            className={`w-[2px] h-3 rounded-full mb-1 transition-all ${idx === selectedIdx ? 'bg-[#F76000] h-4' : 'bg-gray-300'}`}
+                            <Line
+                              type="monotone"
+                              dataKey={`${cat.key}_trend`}
+                              stroke={cat.color}
+                              strokeWidth={1.5}
+                              strokeDasharray="4 4"
+                              dot={false}
+                              isAnimationActive={false}
+                            />
+                          </React.Fragment>
+                        ))
+                      ) : selectedLulcCategory === 'vegetation' ? (
+                        LULC_LEGEND.filter(
+                          (c) =>
+                            typeof c.value === 'number' &&
+                            [1, 2, 3, 4, 5].includes(c.value),
+                        ).map((cat) => (
+                          <React.Fragment key={cat.key}>
+                            <Line
+                              type="monotone"
+                              dataKey={cat.key}
+                              stroke={cat.color}
+                              strokeWidth={2}
+                              dot={false}
+                              isAnimationActive={false}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey={`${cat.key}_trend`}
+                              stroke={cat.color}
+                              strokeWidth={1.5}
+                              strokeDasharray="4 4"
+                              dot={false}
+                              isAnimationActive={false}
+                            />
+                          </React.Fragment>
+                        ))
+                      ) : (
+                        <>
+                          <Line
+                            type="monotone"
+                            dataKey={
+                              LULC_LEGEND.find(
+                                (c) => c.value === selectedLulcCategory,
+                              )?.key || ''
+                            }
+                            stroke={
+                              LULC_LEGEND.find(
+                                (c) => c.value === selectedLulcCategory,
+                              )?.color || '#F76000'
+                            }
+                            strokeWidth={3}
+                            dot={(props: any) => {
+                              const { cx, cy, index } = props;
+                              if (index === selectedIdx) {
+                                return (
+                                  <Dot
+                                    key={`dot-${index}`}
+                                    cx={cx}
+                                    cy={cy}
+                                    r={4}
+                                    fill="#F76000"
+                                    stroke="#FFFFFF"
+                                    strokeWidth={2}
+                                  />
+                                );
+                              }
+                              return null;
+                            }}
+                            isAnimationActive={false}
                           />
+                          <Line
+                            type="monotone"
+                            dataKey={`${
+                              LULC_LEGEND.find(
+                                (c) => c.value === selectedLulcCategory,
+                              )?.key || ''
+                            }_trend`}
+                            stroke={
+                              LULC_LEGEND.find(
+                                (c) => c.value === selectedLulcCategory,
+                              )?.color || '#F76000'
+                            }
+                            strokeWidth={2}
+                            strokeDasharray="5 5"
+                            dot={false}
+                            isAnimationActive={false}
+                          />
+                        </>
+                      )}
+                      {/* Active Marker */}
+                      <ReferenceLine
+                        x={currentQuarter.label}
+                        stroke="#F76000"
+                        strokeWidth={2}
+                        strokeDasharray="3 3"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+              <div className="relative group/track py-1">
+                {/* Background Track with Tick Scale */}
+                <div className="relative h-2 bg-gray-100 rounded-full overflow-visible">
+                  <div
+                    className="absolute h-full rounded-full transition-all duration-300"
+                    style={{
+                      width: `${(selectedIdx / (QUARTERS.length - 1)) * 100}%`,
+                      backgroundColor: '#F76000',
+                    }}
+                  />
 
-                          {/* Year Indicator Above (Only on Q1) */}
-                          {q.q === 1 && (
-                            <div className="absolute -top-6 whitespace-nowrap">
-                              <span className="text-[10px] font-black text-gray-800 tracking-tighter opacity-70">
-                                {q.year}
-                              </span>
-                            </div>
-                          )}
+                  {/* Tick Marks & Labels Container */}
+                  <div className="absolute inset-0 flex justify-between items-center px-0.5 pointer-events-none">
+                    {QUARTERS.map((q, idx) => (
+                      <div
+                        key={q.key}
+                        className="relative flex flex-col items-center"
+                      >
+                        <div
+                          className={`w-[2px] h-3 rounded-full mb-1 transition-all ${idx === selectedIdx ? 'bg-[#F76000] h-4' : 'bg-gray-300'}`}
+                        />
 
-                          {/* Month Initials Below */}
-                          <div className="absolute -bottom-5">
-                            <span
-                              className={`text-[8px] font-bold transition-all ${idx === selectedIdx ? 'text-[#F76000] scale-110' : 'text-gray-400 opacity-60'}`}
-                            >
-                              {q.label.charAt(0)}
+                        {/* Year Indicator Above (Only on Q1) */}
+                        {q.q === 1 && (
+                          <div className="absolute -top-6 whitespace-nowrap">
+                            <span className="text-[10px] font-black text-gray-800 tracking-tighter opacity-70">
+                              {q.year}
                             </span>
                           </div>
+                        )}
+
+                        {/* Month Initials Below */}
+                        <div className="absolute -bottom-5">
+                          <span
+                            className={`text-[8px] font-bold transition-all ${idx === selectedIdx ? 'text-[#F76000] scale-110' : 'text-gray-400 opacity-60'}`}
+                          >
+                            {q.label.charAt(0)}
+                          </span>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
-
-                  {/* Invisible Interactive Input */}
-                  <input
-                    type="range"
-                    min="0"
-                    max={QUARTERS.length - 1}
-                    value={selectedIdx}
-                    onChange={(e) => {
-                      setSelectedIdx(parseInt(e.target.value));
-                    }}
-                    className="absolute inset-0 w-full opacity-0 cursor-pointer z-10"
-                  />
                 </div>
-                <div className="h-2" /> {/* spacing for bottom labels */}
-              </div>
-              <div className="flex flex-col gap-2 items-center">
-                <button
-                  onClick={() => setShowChart(!showChart)}
-                  disabled={!showLulc}
-                  className={`transition-all p-2 rounded-lg ${showChart ? 'bg-orange-100 text-[#F76000]' : showLulc ? 'text-gray-400 hover:text-[#F76000]' : 'text-gray-200 cursor-not-allowed'}`}
-                  title={
-                    !showLulc
-                      ? 'Select a category first'
-                      : showChart
-                        ? 'Hide Chart'
-                        : 'Show Chart'
-                  }
-                >
-                  {showChart ? (
-                    <X className="w-5 h-5" />
-                  ) : (
-                    <LucideLineChart className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-            </div>
 
-            {/* Zoom Controls - Aligned with the timeline bar bottom */}
-            <div className="flex flex-col gap-2 shrink-0 self-end pb-1">
+                {/* Invisible Interactive Input */}
+                <input
+                  type="range"
+                  min="0"
+                  max={QUARTERS.length - 1}
+                  value={selectedIdx}
+                  onChange={(e) => {
+                    setSelectedIdx(parseInt(e.target.value));
+                  }}
+                  className="absolute inset-0 w-full opacity-0 cursor-pointer z-10"
+                />
+              </div>
+              <div className="h-2" /> {/* spacing for bottom labels */}
+            </div>
+            <div className="flex flex-col gap-2 items-center">
               <button
-                onClick={handleReset}
-                className="bg-white/90 backdrop-blur-md w-9 h-9 flex items-center justify-center rounded-xl shadow-lg border border-gray-100 text-gray-600 hover:text-[#F76000] hover:border-[#F76000] transition-all active:scale-90"
-                title="Reset View"
+                onClick={() => setShowChart(!showChart)}
+                disabled={!showLulc}
+                className={`transition-all p-2 rounded-lg ${showChart ? 'bg-orange-100 text-[#F76000]' : showLulc ? 'text-gray-400 hover:text-[#F76000]' : 'text-gray-200 cursor-not-allowed'}`}
+                title={
+                  !showLulc
+                    ? 'Select a category first'
+                    : showChart
+                      ? 'Hide Chart'
+                      : 'Show Chart'
+                }
               >
-                <Home className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => mapRef.current?.zoomIn()}
-                className="bg-white/90 backdrop-blur-md w-9 h-9 flex items-center justify-center rounded-xl shadow-lg border border-gray-100 text-gray-600 hover:text-[#F76000] hover:border-[#F76000] transition-all active:scale-90"
-                title="Zoom In"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => mapRef.current?.zoomOut()}
-                className="bg-white/90 backdrop-blur-md w-9 h-9 flex items-center justify-center rounded-xl shadow-lg border border-gray-100 text-gray-600 hover:text-[#F76000] hover:border-[#F76000] transition-all active:scale-90"
-                title="Zoom Out"
-              >
-                <Minus className="w-4 h-4" />
+                {showChart ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <LucideLineChart className="w-5 h-5" />
+                )}
               </button>
             </div>
           </div>
+
+          {/* Zoom Controls - Aligned with the timeline bar bottom */}
+          <div className="flex flex-col gap-2 shrink-0 self-end pb-1">
+            <button
+              onClick={handleReset}
+              className="bg-white/90 backdrop-blur-md w-9 h-9 flex items-center justify-center rounded-xl shadow-lg border border-gray-100 text-gray-600 hover:text-[#F76000] hover:border-[#F76000] transition-all active:scale-90"
+              title="Reset View"
+            >
+              <Home className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => mapRef.current?.zoomIn()}
+              className="bg-white/90 backdrop-blur-md w-9 h-9 flex items-center justify-center rounded-xl shadow-lg border border-gray-100 text-gray-600 hover:text-[#F76000] hover:border-[#F76000] transition-all active:scale-90"
+              title="Zoom In"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => mapRef.current?.zoomOut()}
+              className="bg-white/90 backdrop-blur-md w-9 h-9 flex items-center justify-center rounded-xl shadow-lg border border-gray-100 text-gray-600 hover:text-[#F76000] hover:border-[#F76000] transition-all active:scale-90"
+              title="Zoom Out"
+            >
+              <Minus className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
 
         {/* Point Analysis Sidebar */}
         {selectedPoint && (
