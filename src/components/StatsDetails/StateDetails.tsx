@@ -33,16 +33,19 @@ import {
   ALLOWED_DISTRICTS,
   DEMOGRAPHIC_STATS,
   CENSUS_PROJECTION_DATA,
-  MODEL_PROJECTION_DATA,
-  MODEL_DATA,
   GENDER,
 } from '../../data/comparativeData';
+import {
+  MODEL_STATS_DATA,
+  MODEL_DATA,
+  MODEL_URBAN_RURAL_DATA,
+} from '../../data/modelStats';
 import type { LayerType } from '../../../types';
 // import MapLulc from './MapLulc';
 // import { ChangeAnalysis } from './ChangeAnalysis';
 import MapCompare from '../MapCompare/MapCompare';
 import { MultiMapCompare } from '../MapCompare/MultiMapCompare';
-import { MapSentinel } from '../Map/MapSentinel';
+
 import { MapSentinelQuaterly } from '../Map/MapSentinelQuaterly';
 import { WhatHowWhy_v2 } from '../Map/WhatHowWhy_v2/WhatHowWhy_v2';
 // import Analysis from '../MapCompare/Analysis';
@@ -254,6 +257,24 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     return null;
   };
 
+  // New helper to get trend data specifically from MODEL_DATA
+  const getModelTrendData = (name: string) => {
+    if (MODEL_DATA[name]) {
+      // Return full range from 2011 to 2036 as per modelStats.ts
+      return Object.entries(MODEL_DATA[name])
+        .map(([year, value]) => ({
+          year: year.toString(),
+          value: value as number,
+        }))
+        .sort((a, b) => parseInt(a.year) - parseInt(b.year));
+    }
+    // Fallback to PMTiles trend if model data is not available
+    return availableTrendYears.map((year) => ({
+      year,
+      value: (getPopForYear(name, year) as number) || 0,
+    }));
+  };
+
   // Dynamically identify available years from the data
   const availableTrendYears = React.useMemo(() => {
     let years: string[] = [];
@@ -299,14 +320,11 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
 
   // Generate District Performance Data using available data where possible
   const DISTRICT_PERFORMANCE = React.useMemo(() => {
-    const rawData = DISTRICT_NAMES.map((name) => {
+    const rawData = ALLOWED_DISTRICTS.map((name) => {
       const seed = name.length;
 
-      // Trend Data (Dynamic from PMTiles)
-      const trendData = availableTrendYears.map((year) => ({
-        year,
-        value: (getPopForYear(name, year) as number) || 0,
-      }));
+      // Trend Data (Prioritize MODEL_DATA)
+      const trendData = getModelTrendData(name);
 
       // District Data for 2025 specifically
       const yearForTable = '2025';
@@ -315,19 +333,34 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
       const pmtilesPop = (getPopForYear(name, yearForTable) as number) || 0;
       const pmtilesPop2023 =
         (getPopForYear(name, yearForGrowth) as number) || 0;
-      const densityKey = `density_${yearForTable}`;
 
+      let populationValue = pmtilesPop;
+      if (MODEL_DATA[name] && MODEL_DATA[name][2025]) {
+        populationValue = MODEL_DATA[name][2025];
+      }
+
+      const densityKey = `density_${yearForTable}`;
       let latestDensityValue = 0;
-      if (selectedDistrict === name && data && data[densityKey]) {
+
+      if (MODEL_STATS_DATA[name] && MODEL_STATS_DATA[name]['2025']) {
+        latestDensityValue = MODEL_STATS_DATA[name]['2025'].density;
+      } else if (selectedDistrict === name && data && data[densityKey]) {
         latestDensityValue = parseFloat(data[densityKey]);
       } else if (districtsLookup.has(name)) {
         const dData = districtsLookup.get(name);
         latestDensityValue = parseFloat(dData[densityKey] || 0);
       }
 
-      // Growth calculation from DEMOGRAPHIC_STATS for 2025
+      // Growth calculation from MODEL_STATS_DATA for 2025
       let growthStr = '+0.0%';
-      if (DEMOGRAPHIC_STATS[name] && DEMOGRAPHIC_STATS[name][2025]) {
+      if (MODEL_STATS_DATA[name] && MODEL_STATS_DATA[name]['2025']) {
+        const growthVal = MODEL_STATS_DATA[name]['2025'].growth;
+        if (growthVal === null) {
+          growthStr = '-';
+        } else {
+          growthStr = (growthVal >= 0 ? '+' : '') + growthVal.toFixed(2) + '%';
+        }
+      } else if (DEMOGRAPHIC_STATS[name] && DEMOGRAPHIC_STATS[name][2025]) {
         const growthVal = DEMOGRAPHIC_STATS[name][2025].growth;
         growthStr = (growthVal >= 0 ? '+' : '') + growthVal.toFixed(2) + '%';
       } else if (pmtilesPop > 0 && pmtilesPop2023 > 0) {
@@ -339,25 +372,18 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
           (yearlyGrowth >= 0 ? '+' : '') + yearlyGrowth.toFixed(1) + '%';
       }
 
-      const latestPop = pmtilesPop;
+      const latestPop = populationValue;
       let malePop = 0;
       let femalePop = 0;
 
       const yearInt = parseInt(yearForTable);
-      // Use GENDER data specifically for male and female counts as requested
-      if (GENDER[name]) {
-        malePop = GENDER[name][`${yearForTable}_male`] || 0;
-        femalePop = GENDER[name][`${yearForTable}_female`] || 0;
-      } else if (
-        DISTRICT_DEMOGRAPHICS[name] &&
-        DISTRICT_DEMOGRAPHICS[name][yearInt]
-      ) {
-        malePop = DISTRICT_DEMOGRAPHICS[name][yearInt].male;
-        femalePop = DISTRICT_DEMOGRAPHICS[name][yearInt].female;
-      } else {
-        // Fallback percentage based male/female if data is missing
-        malePop = latestPop * 0.51;
-        femalePop = latestPop * 0.49;
+      
+      // Use Urban/Rural data from MODEL_URBAN_RURAL_DATA
+      let urbanPop = 0;
+      let ruralPop = 0;
+      if (MODEL_URBAN_RURAL_DATA[name] && MODEL_URBAN_RURAL_DATA[name]['2025']) {
+        urbanPop = MODEL_URBAN_RURAL_DATA[name]['2025'].urban;
+        ruralPop = MODEL_URBAN_RURAL_DATA[name]['2025'].rural;
       }
 
       return {
@@ -372,8 +398,8 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                 maximumFractionDigits: 1,
               }) + '/km²'
             : (400 + seed * 50).toFixed(0) + '/km²',
-        male: (malePop / 1000000).toFixed(2) + 'M',
-        female: (femalePop / 1000000).toFixed(2) + 'M',
+        urban: (urbanPop / 1000000).toFixed(2) + 'M',
+        rural: (ruralPop / 1000000).toFixed(2) + 'M',
         growth: growthStr,
         trendData: trendData,
       };
@@ -1181,8 +1207,8 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
               </h3>
               <p className="text-sm text-gray-500 mt-1 font-medium">
                 Comprehensive district-level demographic indicators including
-                total population, density, and gender distribution for the year
-                2025.
+                total population, density, and urban/rural distribution for the
+                year 2025.
               </p>
             </div>
           </div>
@@ -1199,8 +1225,8 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                     <th className="px-6 py-4 text-left">District Name</th>
                     <th className="px-6 py-4 text-right">Total Population</th>
                     <th className="px-6 py-4 text-right">Population Density</th>
-                    <th className="px-6 py-4 text-right">Male</th>
-                    <th className="px-6 py-4 text-right">Female</th>
+                    <th className="px-6 py-4 text-right">Urban Population</th>
+                    <th className="px-6 py-4 text-right">Rural Population</th>
                     <th className="px-6 py-4 text-right">YoY Growth</th>
                     <th className="px-6 py-4 text-center">Trend</th>
                   </tr>
@@ -1249,12 +1275,12 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                         <td
                           className={`px-6 py-4 text-right font-medium text-[#1A5BAB] ${selectedDistrict?.trim().toLowerCase() === d.name.trim().toLowerCase() ? 'text-blue-100 font-bold' : ''}`}
                         >
-                          {d.male}
+                          {d.urban}
                         </td>
                         <td
                           className={`px-6 py-4 text-right font-medium text-[#358221] ${selectedDistrict?.trim().toLowerCase() === d.name.trim().toLowerCase() ? 'text-green-100 font-bold' : ''}`}
                         >
-                          {d.female}
+                          {d.rural}
                         </td>
                         <td
                           className={`px-6 py-4 text-right first:rounded-l-xl last:rounded-r-xl`}
@@ -1609,8 +1635,8 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                       <th className="px-6 py-4 text-right">
                         Population Density
                       </th>
-                      <th className="px-6 py-4 text-right">Male</th>
-                      <th className="px-6 py-4 text-right">Female</th>
+                      <th className="px-6 py-4 text-right">Urban Population</th>
+                      <th className="px-6 py-4 text-right">Rural Population</th>
                       <th className="px-6 py-4 text-right">YoY Growth</th>
                       <th className="px-6 py-4 text-center">Trend</th>
                     </tr>
@@ -1634,10 +1660,10 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                           {d.density}
                         </td>
                         <td className="px-6 py-4 text-right font-medium text-[#1A5BAB]">
-                          {d.male}
+                          {d.urban}
                         </td>
                         <td className="px-6 py-4 text-right font-medium text-[#358221]">
-                          {d.female}
+                          {d.rural}
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className="px-2 py-1 rounded text-green-600 bg-green-50/50 font-bold">
