@@ -30,9 +30,11 @@ import {
   DISTRICT_NAMES,
   DISTRICT_NAME_VARIANTS,
   DISTRICT_DEMOGRAPHICS,
+  ALLOWED_DISTRICTS,
   DEMOGRAPHIC_STATS,
   CENSUS_PROJECTION_DATA,
   MODEL_PROJECTION_DATA,
+  MODEL_DATA,
   GENDER,
 } from '../../data/comparativeData';
 import type { LayerType } from '../../../types';
@@ -68,9 +70,13 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
   const [showSentinel, setShowSentinel] = useState(false);
   const [openYear1, setOpenYear1] = useState(false);
   const [openYear2, setOpenYear2] = useState(false);
-  const [chartDistricts, setChartDistricts] = useState<string[]>(
-    DISTRICT_NAMES.slice(0, 5),
-  );
+  const [chartDistricts, setChartDistricts] = useState<string[]>([
+    'Anugul',
+    'Balangir',
+    'Cuttack',
+    'Kendujhar',
+    'Khordha',
+  ]);
   const [openDistrictSelector, setOpenDistrictSelector] = useState(false);
   const [projectionMode, setProjectionMode] = useState<
     'Model Only' | 'Model Vs Census Projection'
@@ -270,7 +276,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     ) {
       setChartDistricts((prev) => {
         if (prev.includes(selectedDistrict)) return prev;
-        return [selectedDistrict, ...prev].slice(0, 5);
+        return [selectedDistrict, ...prev].slice(0, 7);
       });
     }
   }, [selectedDistrict]);
@@ -410,15 +416,10 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     return years.map((y) => {
       const row: any = { year: y };
       chartDistricts.forEach((distName) => {
-        // Model Data (PMTiles + MODEL_PROJECTION_DATA for remaining years)
-        let modelVal = getPopForYear(distName, y.toString());
-
-        if (
-          modelVal === null &&
-          MODEL_PROJECTION_DATA[distName] &&
-          MODEL_PROJECTION_DATA[distName][y]
-        ) {
-          modelVal = MODEL_PROJECTION_DATA[distName][y];
+        // Model Data (Only from MODEL_DATA)
+        let modelVal = null;
+        if (MODEL_DATA[distName] && MODEL_DATA[distName][y]) {
+          modelVal = MODEL_DATA[distName][y];
         }
 
         if (modelVal !== null) {
@@ -595,14 +596,15 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                     <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 z-[200] max-h-[400px] overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-2">
                       <div className="p-3 border-b border-gray-50 bg-gray-50/50">
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                          Select up to 5 districts
+                          Select up to 7 districts
                         </p>
                       </div>
                       <div className="overflow-y-auto p-2 custom-scrollbar space-y-0.5">
                         {DISTRICT_NAMES.map((name) => {
                           const isSelected = chartDistricts.includes(name);
                           const isDisabled =
-                            !isSelected && chartDistricts.length >= 5;
+                            (!isSelected && chartDistricts.length >= 7) ||
+                            !ALLOWED_DISTRICTS.includes(name);
                           return (
                             <button
                               key={name}
@@ -614,7 +616,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                                   );
                                 } else {
                                   setChartDistricts((prev) =>
-                                    [...prev, name].slice(0, 5),
+                                    [...prev, name].slice(0, 7),
                                   );
                                 }
                               }}
