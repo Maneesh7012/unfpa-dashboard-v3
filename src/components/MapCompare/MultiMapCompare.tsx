@@ -4,7 +4,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import { Protocol as PMTilesProtocol, PMTiles } from 'pmtiles';
-import { cogProtocol } from '@geomatico/maplibre-cog-protocol';
+import { cogProtocol, setColorFunction } from '@geomatico/maplibre-cog-protocol';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   Plus,
@@ -110,6 +110,23 @@ const buildYearlyUrls = (
   );
 };
 
+const GHSL_YEARS = ['2010', '2016', '2020', '2025', '2030'];
+const GHSL_CLASSES: any = {
+  '10': { label: 'Water surface', color: '#4a90d9' },
+  '11': { label: 'Very low density rural', color: '#d9d9b3' },
+  '12': { label: 'Low density rural', color: '#cccc66' },
+  '13': { label: 'Rural cluster', color: '#a3a347' },
+  '21': { label: 'Suburban / peri-urban', color: '#ffaa00' },
+  '22': { label: 'Semi-dense urban cluster', color: '#ff5500' },
+  '23': { label: 'Dense urban cluster', color: '#cc0000' },
+  '30': { label: 'Urban centre', color: '#660000' },
+};
+
+const buildGhslUrl = (year: string, district: string): string => {
+  const districtName = district || 'Anugul';
+  return `${BASE_URL}/ghsl_cog/${districtName}/${year}.tif`;
+};
+
 // ----------------------
 // ✅ YEAR RANGES
 // ----------------------
@@ -156,6 +173,13 @@ const LAYER_CONFIGS: any = {
     ),
     params: '7,7',
     type: 'raster',
+  },
+
+  ghsl: {
+    label: 'GHSL SMOD',
+    urls: Object.fromEntries(GHSL_YEARS.map((y) => [y, ''])),
+    type: 'raster',
+    isGhsl: true,
   },
 };
 
@@ -487,6 +511,12 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
                               {opt}
                             </option>
                           ))
+                        : pendingConfig.layer === 'ghsl'
+                          ? GHSL_YEARS.map((y) => (
+                              <option key={y} value={y}>
+                                {y}
+                              </option>
+                            ))
                         : Object.keys(
                             LAYER_CONFIGS[pendingConfig.layer]?.urls || {},
                           ).map((y) => (
@@ -867,6 +897,25 @@ const MapItem = ({
         url = buildNtlUrl(yearKey, selectedDistrict || 'Anugul');
         const colorStr = JSON.stringify(activePalette);
         rasterParams = `#color:${colorStr},0,200,c`;
+      } else if (config.layer === 'ghsl') {
+        url = buildGhslUrl(yearKey, selectedDistrict || 'Anugul');
+        rasterParams = ''; // Colors handled by setColorFunction
+
+        // Register color function for this specific COG URL
+        setColorFunction(url, (pixel: any, color: any, metadata: any) => {
+          const val = pixel[0];
+          const cls = GHSL_CLASSES[val.toString()];
+          if (cls) {
+            // Convert hex to RGB for the color.set([r, g, b, a]) method
+            const hex = cls.color.replace('#', '');
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            color.set([r, g, b, 255]);
+          } else {
+            color.set([0, 0, 0, 0]);
+          }
+        });
       } else {
         url =
           currentConfig.urls[yearKey] ||
@@ -878,7 +927,7 @@ const MapItem = ({
       map.addSource(sourceId, {
         type: 'raster',
         url: `cog://${url}${rasterParams}`,
-        tileSize: 128,
+        tileSize: 256,
       });
       map.addLayer({
         id: layerId,
@@ -1118,6 +1167,33 @@ const MapItem = ({
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {config.layer === 'ghsl' && (
+        <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-[120] w-[200px]">
+          <div className="flex flex-col mb-2">
+            <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
+              GHSL Settlement Model
+            </span>
+            <span className="text-[9px] text-gray-400 font-medium">
+              Source: GHS-SMOD R2023A
+            </span>
+          </div>
+
+          <div className="space-y-1">
+            {Object.entries(GHSL_CLASSES).map(([val, cls]: any) => (
+              <div key={val} className="flex items-center gap-2">
+                <div
+                  className="w-2.5 h-2.5 rounded-sm border border-gray-100 flex-shrink-0"
+                  style={{ backgroundColor: cls.color }}
+                />
+                <span className="text-[9px] font-medium text-gray-600 leading-tight">
+                  {cls.label}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}
