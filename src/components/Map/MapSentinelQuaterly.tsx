@@ -646,6 +646,13 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         item[cat.key] =
           typeof rawVal === 'string' ? parseFloat(rawVal) : rawVal || 0;
       });
+      // Calculate consolidated vegetation sum
+      item['vegetation'] =
+        (item['trees'] || 0) +
+        (item['grass'] || 0) +
+        (item['flooded_vegetation'] || 0) +
+        (item['crops'] || 0) +
+        (item['shrub_and_scrub'] || 0);
       return item;
     });
 
@@ -656,6 +663,13 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
           item[`${cat.key}_trend`] = trend.calcY(index);
           item[`${cat.key}_r2`] = trend.rSquared;
         });
+      });
+
+      // Calculate trend for consolidated vegetation
+      const vegTrend = createTrend(data, 'index', 'vegetation');
+      data.forEach((item, index) => {
+        item[`vegetation_trend`] = vegTrend.calcY(index);
+        item[`vegetation_r2`] = vegTrend.rSquared;
       });
     }
 
@@ -1357,31 +1371,41 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                           </React.Fragment>
                         ))
                       ) : selectedLulcCategory === 'vegetation' ? (
-                        LULC_LEGEND.filter(
-                          (c) =>
-                            typeof c.value === 'number' &&
-                            [1, 2, 3, 4, 5].includes(c.value),
-                        ).map((cat) => (
-                          <React.Fragment key={cat.key}>
-                            <Line
-                              type="monotone"
-                              dataKey={cat.key}
-                              stroke={cat.color}
-                              strokeWidth={2}
-                              dot={false}
-                              isAnimationActive={false}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey={`${cat.key}_trend`}
-                              stroke={cat.color}
-                              strokeWidth={1.5}
-                              strokeDasharray="4 4"
-                              dot={false}
-                              isAnimationActive={false}
-                            />
-                          </React.Fragment>
-                        ))
+                        <>
+                          <Line
+                            type="monotone"
+                            dataKey="vegetation"
+                            stroke="#397D49"
+                            strokeWidth={3}
+                            dot={(props: any) => {
+                              const { cx, cy, index } = props;
+                              if (index === selectedIdx) {
+                                return (
+                                  <Dot
+                                    key={`dot-${index}`}
+                                    cx={cx}
+                                    cy={cy}
+                                    r={4}
+                                    fill="#397D49"
+                                    stroke="#FFFFFF"
+                                    strokeWidth={2}
+                                  />
+                                );
+                              }
+                              return null;
+                            }}
+                            isAnimationActive={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="vegetation_trend"
+                            stroke="#397D49"
+                            strokeWidth={2}
+                            strokeDasharray="5 5"
+                            dot={false}
+                            isAnimationActive={false}
+                          />
+                        </>
                       ) : (
                         <>
                           <Line
