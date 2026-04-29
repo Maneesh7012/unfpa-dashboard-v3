@@ -124,7 +124,9 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
       const { scrollLeft, scrollWidth, clientWidth } =
         insightsScrollContainerRef.current;
       setShowInsightsLeftScroll(scrollLeft > 0);
-      setShowInsightsRightScroll(Math.ceil(scrollLeft) < scrollWidth - clientWidth);
+      setShowInsightsRightScroll(
+        Math.ceil(scrollLeft) < scrollWidth - clientWidth,
+      );
     }
   }, []);
 
@@ -658,6 +660,13 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                   data={PROJECTION_DATA}
                   margin={{ top: 25, right: 80, left: 10, bottom: 0 }}
                 >
+                  <ReferenceArea
+                    x1={2036}
+                    x2={2036}
+                    fill="#f8f8f8ff"
+                    fillOpacity={1}
+                    stroke="none"
+                  />
                   <CartesianGrid
                     vertical={true}
                     stroke="#E5E7EB"
@@ -742,13 +751,6 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                       }
                       return null;
                     }}
-                  />
-                  <ReferenceArea
-                    x1={2025}
-                    x2={2036}
-                    fill="#f8f8f8ff"
-                    fillOpacity={1}
-                    stroke="none"
                   />
 
                   {displayDistricts.map((district) => {
