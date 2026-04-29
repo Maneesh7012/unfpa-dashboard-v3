@@ -65,7 +65,7 @@ const Dashboard: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <Router basename="/v4/">
+    <Router basename="/v5">
       <div className="flex flex-col min-h-screen bg-background">
         <Header />
 
