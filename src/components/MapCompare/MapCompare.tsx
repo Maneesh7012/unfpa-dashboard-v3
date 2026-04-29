@@ -17,7 +17,7 @@ import {
   ALLOWED_DISTRICTS,
   LULC_STATS,
 } from '../../data/comparativeData';
-import { X, ChevronRight, Calendar, Layers } from 'lucide-react';
+import { Layers } from 'lucide-react';
 import {
   XAxis,
   YAxis,
@@ -39,185 +39,12 @@ const ODISHA_BOUNDS: maplibregl.LngLatBoundsLike = [
   [87.4770036487483651, 22.5674384683253209],
 ];
 
-import { TAB_CONTENT, Points_Data } from './pointData';
-
-const RadianceChart = ({ data }: { data: any[] }) => {
-  return (
-    <div className="w-full h-[320px] mb-8 mt-4">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={data}
-          margin={{ top: 20, right: 30, left: 15, bottom: 25 }}
-        >
-          <CartesianGrid
-            strokeDasharray="3 3"
-            vertical={false}
-            stroke="#f0f0f0"
-          />
-          <XAxis
-            dataKey="year"
-            axisLine={false}
-            tickLine={false}
-            tick={{ fontSize: 11, fill: '#6B7280' }}
-            dy={5}
-          >
-            <Label
-              value="Year"
-              position="bottom"
-              offset={10}
-              style={{ fontSize: '11px', fill: '#9CA3AF', fontWeight: 600 }}
-            />
-          </XAxis>
-          <YAxis
-            axisLine={false}
-            tickLine={false}
-            tick={{ fontSize: 11, fill: '#6B7280' }}
-            tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
-            domain={[20000, 40000]}
-          >
-            <Label
-              value="Radiance (nW/sr/cm²)"
-              angle={-90}
-              position="insideLeft"
-              offset={10}
-              style={{
-                fontSize: '11px',
-                fill: '#9CA3AF',
-                textAnchor: 'middle',
-                fontWeight: 600,
-              }}
-            />
-          </YAxis>
-          <Tooltip
-            contentStyle={{
-              borderRadius: '8px',
-              border: 'none',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              fontSize: '12px',
-            }}
-            formatter={(value: any) => [
-              value.toLocaleString(),
-              'Radiance (nW/sr/cm²)',
-            ]}
-          />
-          <Line
-            type="monotone"
-            dataKey="Radiance"
-            stroke="#F96000"
-            strokeWidth={2}
-            dot={{ r: 4, strokeWidth: 2, fill: 'white' }}
-            activeDot={{ r: 6, strokeWidth: 0 }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  );
-};
-
-const RadianceTable = ({
-  data,
-  nameKey,
-  columns,
-}: {
-  data: any[];
-  nameKey: string;
-  columns: string[];
-}) => {
-  const getChartData = (row: any) => {
-    return columns.map((year) => ({
-      year,
-      value: Number(String(row[year]).replace(/,/g, '')),
-    }));
-  };
-
-  return (
-    <div className="min-w-full w-full overflow-x-auto my-6 rounded-lg border border-gray-200 shadow-sm">
-      <table className="min-w-full table-fixed divide-y divide-gray-200 text-[11px]">
-        <thead className="bg-gray-50 text-gray-700">
-          <tr>
-            <th
-              rowSpan={2}
-              className="px-3 py-2 text-left bg-gray-100 font-black border-r border-gray-200"
-            >
-              {nameKey}
-            </th>
-            <th
-              colSpan={columns.length}
-              className="px-4 py-1.5 text-center bg-gray-100 text-[#F96000] font-black uppercase tracking-tighter border-b border-gray-200"
-            >
-              Radiance (nW/sr/cm²)
-            </th>
-            <th
-              rowSpan={2}
-              className="px-3 py-2 text-center bg-gray-100 font-black"
-            >
-              Trendline
-            </th>
-          </tr>
-          <tr>
-            {columns.map((col) => (
-              <th
-                key={col}
-                className="px-2 py-1 text-center font-bold bg-gray-100 border-r border-gray-200 last:border-r-0 whitespace-nowrap"
-              >
-                {col}
-              </th>
-            ))}
-          </tr>
-        </thead>
-
-        <tbody className="divide-y divide-gray-200 bg-white">
-          {data.map((row, i) => (
-            <tr key={i} className="hover:bg-gray-50/80 transition-colors">
-              <td className="px-3 py-2 font-bold text-left text-gray-900 border-r border-gray-200 whitespace-nowrap">
-                {row[nameKey]}
-              </td>
-
-              {columns.map((col) => {
-                const val = Number(String(row[col]).replace(/,/g, ''));
-                return (
-                  <td
-                    key={col}
-                    className="px-2 py-2 text-center text-gray-600 border-r border-gray-200 last:border-r-0"
-                  >
-                    {val.toFixed(2)}
-                  </td>
-                );
-              })}
-
-              <td className="py-1 px-2 text-center bg-gray-50/30">
-                <div className="w-full h-[50px] min-w-[120px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={getChartData(row)}>
-                      <XAxis dataKey="year" hide />
-                      <YAxis hide domain={['auto', 'auto']} />
-                      <Tooltip
-                        contentStyle={{
-                          fontSize: '10px',
-                          borderRadius: '4px',
-                          border: 'none',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                        }}
-                        labelStyle={{ fontWeight: 'bold' }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="value"
-                        stroke="#F96000"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
+const basemapOptions: { id: 'grey' | 'satellite' | 'osm'; label: string }[] =
+  [
+    { id: 'grey', label: 'Grey Canvas' },
+    { id: 'satellite', label: 'Satellite' },
+    { id: 'osm', label: 'OSM' },
+  ];
 
 export const DATA_CONFIG_ANUGUL: any = {
   nightlight: {
@@ -438,17 +265,6 @@ export default function MapCompare({
   const [lulc2024Val, setLulc2024Val] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
-  const [lastSelectedPoint, setLastSelectedPoint] = useState<number | null>(
-    null,
-  );
-  const [activeModalTab, setActiveModalTab] = useState<'What' | 'How' | 'Why'>(
-    'What',
-  );
-  const prePointClickState = useRef<{
-    center: maplibregl.LngLatLike;
-    zoom: number;
-  } | null>(null);
   const layerInfoRef = useRef({
     currentLayerKey: '',
     y1: '',
@@ -464,14 +280,12 @@ export default function MapCompare({
 
   useEffect(() => {
     setSelectedLngLat(null);
-    setSelectedPoint(null);
   }, [activeLayer, activeLulcPixel, viewMode]);
 
   useEffect(() => {
     if (
       selectedLngLat &&
-      viewMode !== 'change_analysis' &&
-      selectedPoint === null
+      viewMode !== 'change_analysis'
     ) {
       if (leftMapObj.current && !leftMarkerRef.current) {
         leftMarkerRef.current = new maplibregl.Marker({ color: '#ff0000ff' })
@@ -629,13 +443,6 @@ export default function MapCompare({
     e: maplibregl.MapMouseEvent & { lngLat: maplibregl.LngLat },
     mapInstance: maplibregl.Map,
   ) => {
-    if (mapInstance.getLayer('points-layer')) {
-      const pointFeatures = mapInstance.queryRenderedFeatures(e.point, {
-        layers: ['points-layer'],
-      });
-      if (pointFeatures.length > 0) return;
-    }
-
     const { lngLat } = e;
     const side = mapInstance === leftMapObj.current ? 'left' : 'right';
 
@@ -708,13 +515,6 @@ export default function MapCompare({
       console.error(e);
     }
   };
-
-  const basemapOptions: { id: 'grey' | 'satellite' | 'osm'; label: string }[] =
-    [
-      { id: 'grey', label: 'Grey Canvas' },
-      { id: 'satellite', label: 'Satellite' },
-      { id: 'osm', label: 'OSM' },
-    ];
 
   const handleResetView = () => {
     if (initialBoundsRef.current) {
@@ -1097,95 +897,6 @@ export default function MapCompare({
             if (leftMapObj.current)
               leftMapObj.current.getCanvas().style.cursor = '';
           });
-
-          const pointsGeoJSON = {
-            type: 'FeatureCollection' as const,
-            features: Points_Data.map((item: any) => ({
-              type: 'Feature' as const,
-              geometry: {
-                type: 'Point' as const,
-                coordinates: [item.cord[1], item.cord[0]],
-              },
-              properties: {
-                id: item.id,
-              },
-            })),
-          };
-
-          leftMapObj.current?.addSource('points-source', {
-            type: 'geojson',
-            data: pointsGeoJSON,
-          });
-
-          leftMapObj.current?.addLayer({
-            id: 'points-layer',
-            type: 'circle',
-            source: 'points-source',
-            paint: {
-              'circle-radius': 6,
-              'circle-color': '#F58220',
-              'circle-stroke-width': 2,
-              'circle-stroke-color': '#FFFFFF',
-              'circle-opacity':
-                viewModeRef.current === 'change_analysis' ||
-                viewModeRef.current === 'compare'
-                  ? 1
-                  : 0,
-              'circle-stroke-opacity':
-                viewModeRef.current === 'change_analysis' ||
-                viewModeRef.current === 'compare'
-                  ? 1
-                  : 0,
-            },
-            filter: ['all'],
-          });
-
-          leftMapObj.current?.addLayer({
-            id: 'points-layer-highlight',
-            type: 'circle',
-            source: 'points-source',
-            paint: {
-              'circle-radius': 6,
-              'circle-color': 'transparent',
-              'circle-stroke-width': 4,
-              'circle-stroke-color': '#0868ac',
-              'circle-stroke-opacity':
-                viewModeRef.current === 'change_analysis' ||
-                viewModeRef.current === 'compare'
-                  ? 1
-                  : 0,
-            },
-            filter: ['==', 'id', -999],
-          });
-
-          leftMapObj.current?.on('click', 'points-layer', (e) => {
-            if (
-              (viewModeRef.current === 'change_analysis' ||
-                viewModeRef.current === 'compare') &&
-              e.features &&
-              e.features.length > 0
-            ) {
-              const props = e.features[0].properties;
-              if (props) {
-                setSelectedPoint(Number(props.id));
-                setSelectedLngLat(null);
-                setActiveModalTab('What');
-              }
-            }
-          });
-
-          leftMapObj.current?.on('mouseenter', 'points-layer', () => {
-            if (
-              leftMapObj.current &&
-              (viewModeRef.current === 'change_analysis' ||
-                viewModeRef.current === 'compare')
-            )
-              leftMapObj.current.getCanvas().style.cursor = 'pointer';
-          });
-          leftMapObj.current?.on('mouseleave', 'points-layer', () => {
-            if (leftMapObj.current)
-              leftMapObj.current.getCanvas().style.cursor = '';
-          });
         }
 
         setupSubdistrictLayer(leftMapObj.current!, 'left');
@@ -1291,95 +1002,6 @@ export default function MapCompare({
             }
           });
           rightMapObj.current?.on('mouseleave', 'vector-fill-right', () => {
-            if (rightMapObj.current)
-              rightMapObj.current.getCanvas().style.cursor = '';
-          });
-
-          const pointsGeoJSON = {
-            type: 'FeatureCollection' as const,
-            features: Points_Data.map((item: any) => ({
-              type: 'Feature' as const,
-              geometry: {
-                type: 'Point' as const,
-                coordinates: [item.cord[1], item.cord[0]],
-              },
-              properties: {
-                id: item.id,
-              },
-            })),
-          };
-
-          rightMapObj.current?.addSource('points-source', {
-            type: 'geojson',
-            data: pointsGeoJSON,
-          });
-
-          rightMapObj.current?.addLayer({
-            id: 'points-layer',
-            type: 'circle',
-            source: 'points-source',
-            paint: {
-              'circle-radius': 6,
-              'circle-color': '#F58220',
-              'circle-stroke-width': 2,
-              'circle-stroke-color': '#FFFFFF',
-              'circle-opacity':
-                viewModeRef.current === 'change_analysis' ||
-                viewModeRef.current === 'compare'
-                  ? 1
-                  : 0,
-              'circle-stroke-opacity':
-                viewModeRef.current === 'change_analysis' ||
-                viewModeRef.current === 'compare'
-                  ? 1
-                  : 0,
-            },
-            filter: ['all'],
-          });
-
-          rightMapObj.current?.addLayer({
-            id: 'points-layer-highlight',
-            type: 'circle',
-            source: 'points-source',
-            paint: {
-              'circle-radius': 6,
-              'circle-color': 'transparent',
-              'circle-stroke-width': 4,
-              'circle-stroke-color': '#0868ac',
-              'circle-stroke-opacity':
-                viewModeRef.current === 'change_analysis' ||
-                viewModeRef.current === 'compare'
-                  ? 1
-                  : 0,
-            },
-            filter: ['==', 'id', -999],
-          });
-
-          rightMapObj.current?.on('click', 'points-layer', (e) => {
-            if (
-              (viewModeRef.current === 'change_analysis' ||
-                viewModeRef.current === 'compare') &&
-              e.features &&
-              e.features.length > 0
-            ) {
-              const props = e.features[0].properties;
-              if (props) {
-                setSelectedPoint(Number(props.id));
-                setSelectedLngLat(null);
-                setActiveModalTab('What');
-              }
-            }
-          });
-
-          rightMapObj.current?.on('mouseenter', 'points-layer', () => {
-            if (
-              rightMapObj.current &&
-              (viewModeRef.current === 'change_analysis' ||
-                viewModeRef.current === 'compare')
-            )
-              rightMapObj.current.getCanvas().style.cursor = 'pointer';
-          });
-          rightMapObj.current?.on('mouseleave', 'points-layer', () => {
             if (rightMapObj.current)
               rightMapObj.current.getCanvas().style.cursor = '';
           });
@@ -1490,54 +1112,6 @@ export default function MapCompare({
       currentLayerKey,
     );
 
-    if (leftMapObj.current.getLayer('points-layer')) {
-      leftMapObj.current.setFilter('points-layer', ['all']);
-    }
-    if (rightMapObj.current.getLayer('points-layer')) {
-      rightMapObj.current.setFilter('points-layer', ['all']);
-    }
-
-    const isAnalysisVisible =
-      viewMode === 'change_analysis' || viewMode === 'compare';
-    if (leftMapObj.current.getLayer('points-layer')) {
-      leftMapObj.current.setPaintProperty(
-        'points-layer',
-        'circle-opacity',
-        isAnalysisVisible ? 1 : 0,
-      );
-      leftMapObj.current.setPaintProperty(
-        'points-layer',
-        'circle-stroke-opacity',
-        isAnalysisVisible ? 1 : 0,
-      );
-    }
-    if (leftMapObj.current.getLayer('points-layer-highlight')) {
-      leftMapObj.current.setPaintProperty(
-        'points-layer-highlight',
-        'circle-stroke-opacity',
-        isAnalysisVisible ? 1 : 0,
-      );
-    }
-
-    if (rightMapObj.current.getLayer('points-layer')) {
-      rightMapObj.current.setPaintProperty(
-        'points-layer',
-        'circle-opacity',
-        isAnalysisVisible ? 1 : 0,
-      );
-      rightMapObj.current.setPaintProperty(
-        'points-layer',
-        'circle-stroke-opacity',
-        isAnalysisVisible ? 1 : 0,
-      );
-    }
-    if (rightMapObj.current.getLayer('points-layer-highlight')) {
-      rightMapObj.current.setPaintProperty(
-        'points-layer-highlight',
-        'circle-stroke-opacity',
-        isAnalysisVisible ? 1 : 0,
-      );
-    }
   }, [leftUrl, rightUrl, currentLayerKey, activeLulcPixel, viewMode]);
 
   useEffect(() => {
@@ -1550,13 +1124,6 @@ export default function MapCompare({
       handleResetView();
     }
   }, [targetBounds, resetTrigger, mapsLoadedCount]);
-
-  useEffect(() => {
-    if (resetTrigger) {
-      setSelectedPoint(null);
-      prePointClickState.current = null;
-    }
-  }, [resetTrigger]);
 
   useEffect(() => {
     if (mapsLoadedCount < 2) return;
@@ -1645,62 +1212,6 @@ export default function MapCompare({
     leftMapObj.current.resize();
     rightMapObj.current.resize();
   }, [dividerX, viewMode]);
-
-  useEffect(() => {
-    if (
-      !leftMapObj.current ||
-      !rightMapObj.current ||
-      (viewMode !== 'change_analysis' && viewMode !== 'compare')
-    )
-      return;
-
-    if (leftMapObj.current.getLayer('points-layer-highlight')) {
-      leftMapObj.current.setFilter('points-layer-highlight', [
-        '==',
-        'id',
-        selectedPoint !== null ? selectedPoint : -999,
-      ]);
-    }
-    if (rightMapObj.current.getLayer('points-layer-highlight')) {
-      rightMapObj.current.setFilter('points-layer-highlight', [
-        '==',
-        'id',
-        selectedPoint !== null ? selectedPoint : -999,
-      ]);
-    }
-
-    if (selectedPoint !== null && selectedPoint !== lastSelectedPoint) {
-      if (lastSelectedPoint === null && prePointClickState.current === null) {
-        prePointClickState.current = {
-          center: leftMapObj.current.getCenter(),
-          zoom: leftMapObj.current.getZoom(),
-        };
-      }
-
-      const features = leftMapObj.current.querySourceFeatures('points-source', {
-        sourceLayer: 'zcta',
-        filter: ['==', 'id', selectedPoint],
-      });
-
-      if (features && features.length > 0) {
-        const geom = features[0].geometry;
-        if (geom.type === 'Point') {
-          leftMapObj.current.flyTo({
-            center: (geom as any).coordinates,
-            zoom: Math.max(leftMapObj.current.getZoom(), 12),
-            duration: 1000,
-            essential: true,
-          });
-        }
-      }
-    }
-    setLastSelectedPoint(selectedPoint);
-
-    setTimeout(() => {
-      leftMapObj.current?.resize();
-      rightMapObj.current?.resize();
-    }, 310);
-  }, [selectedPoint, viewMode]);
 
   // ─── Data processing ──────────────────────────────────────────────────────────
   const compData =
@@ -1826,10 +1337,6 @@ export default function MapCompare({
   const isRoadsLayer = currentLayerKey === 'roads';
 
   // ─── Road length data from NEW_DISTRICT_ROAD_DATA ────────────────────────────
-  // For roads layer: look up road km from the new dataset using y1 and y2
-  // For the roads tile years (2015, 2025), we map them to the nearest available
-  // year in NEW_DISTRICT_ROAD_DATA. The dataset has 2014–2025.
-  // y1 = "2015", y2 = "2025" — both exist in the dataset directly.
   const roadLen1 = isRoadsLayer ? getRoadLength(selectedDistrict, y1) : null;
   const roadLen2 = isRoadsLayer ? getRoadLength(selectedDistrict, y2) : null;
 
@@ -2161,196 +1668,6 @@ export default function MapCompare({
               </div>
             </div>
           )}
-
-          {/* ─── RIGHT ANALYSIS SIDEBAR ──────────────────────────────────────── */}
-          {(viewMode === 'change_analysis' || viewMode === 'compare') &&
-            selectedPoint && (
-              <div className="absolute top-0 right-0 h-full w-full md:w-[50%] bg-white border-l border-gray-200 shadow-2xl z-[60] flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
-                {/* Header Tabs & Close */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50">
-                  <div className="flex items-center flex-1 mr-4">
-                    {(['What', 'How', 'Why'] as const).map((tab, index) => (
-                      <div
-                        key={tab}
-                        className="flex-1 flex items-center justify-center relative"
-                      >
-                        <button
-                          onClick={() => setActiveModalTab(tab)}
-                          className="flex items-center cursor-pointer justify-center space-x-3 py-2 w-full transition-all group"
-                        >
-                          <div
-                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black border-2 transition-all duration-300 ${
-                              activeModalTab === tab
-                                ? 'bg-[#F96000] border-[#F96000] text-white'
-                                : 'bg-gray-100 border-gray-200 text-gray-700 group-hover:border-gray-400 group-hover:text-gray-600'
-                            }`}
-                          >
-                            {index + 1}
-                          </div>
-                          <span
-                            className={`text-[11px] font-black uppercase tracking-widest transition-colors ${
-                              activeModalTab === tab
-                                ? 'text-black'
-                                : 'text-gray-400 group-hover:text-gray-600'
-                            }`}
-                          >
-                            {tab}
-                          </span>
-                        </button>
-                        {index < 2 && (
-                          <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 text-gray-600 z-10">
-                            <ChevronRight className="w-4 h-4" strokeWidth={3} />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => {
-                      setSelectedPoint(null);
-                      prePointClickState.current = null;
-                      setTimeout(() => {
-                        if (leftMapObj.current) {
-                          leftMapObj.current.resize();
-                          if (targetBounds) {
-                            leftMapObj.current.fitBounds(targetBounds, {
-                              padding: 40,
-                              duration: 1000,
-                            });
-                          } else {
-                            leftMapObj.current.fitBounds(
-                              initialBoundsRef.current || ODISHA_BOUNDS,
-                              { padding: 20, duration: 800 },
-                            );
-                          }
-                        }
-                      }, 350);
-                    }}
-                    className="w-8 h-8 flex items-center justify-center bg-white border border-gray-200 hover:bg-[#FDCFB3] hover:text-white hover:border-[#bae4bc] text-[#0868ac] rounded-full transition-colors group shrink-0"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Sidebar Body */}
-                <div className="flex flex-col flex-1 overflow-y-auto p-5 custom-scrollbar">
-                  {(() => {
-                    const currentContent = (TAB_CONTENT as any)[
-                      activeModalTab
-                    ]?.find((c: any) => c.id === selectedPoint);
-                    if (!currentContent)
-                      return (
-                        <p className="text-gray-400 p-4">
-                          No data available for this point.
-                        </p>
-                      );
-
-                    return (
-                      <div className="flex flex-col w-full text-gray-800">
-                        {/* Heading */}
-                        <h3 className="text-lg font-black text-gray-900 mb-2 tracking-tight leading-tight uppercase font-mono">
-                          {currentContent.title}
-                        </h3>
-
-                        {/* Location Info */}
-                        <div className="flex items-center gap-2 text-[11px] text-gray-500 mb-2 font-mono p-2 w-full">
-                          <Calendar
-                            className="w-3.5 h-3.5 text-[#F96000]"
-                            strokeWidth={2.5}
-                          />
-                          <span className="lowercase">
-                            {currentContent.place}
-                          </span>
-                        </div>
-                        {/* Divider */}
-                        <span className="pb-4">
-                          <div className="w-full mx-auto h-px bg-gray-200 shrink-0"></div>
-                        </span>
-                        {/* Flexible Content */}
-                        {currentContent.content ? (
-                          currentContent.content.map(
-                            (block: any, idx: number) => {
-                              if (block.type === 'image') {
-                                return (
-                                  <div
-                                    key={idx}
-                                    className="flex flex-col mb-6 gap-2"
-                                  >
-                                    <div className="relative w-full rounded-xl overflow-hidden bg-gray-100/50 flex items-center justify-center min-h-[500px] max-h-[500px] border border-gray-200 shadow-inner group">
-                                      <img
-                                        src={block.url}
-                                        alt={`Content Image ${idx}`}
-                                        className="object-contain max-h-full"
-                                      />
-                                    </div>
-                                    {block.desc && (
-                                      <p className="text-[10px] text-gray-500 italic pl-1 lowercase">
-                                        {block.desc}
-                                      </p>
-                                    )}
-                                  </div>
-                                );
-                              } else if (block.type === 'text') {
-                                return (
-                                  <div
-                                    key={idx}
-                                    className="text-[13px] leading-relaxed text-gray-600 bg-white/50 p-1 mb-6"
-                                  >
-                                    {block.value}
-                                  </div>
-                                );
-                              } else if (block.type === 'heading') {
-                                return (
-                                  <h4
-                                    key={idx}
-                                    className="text-sm font-black text-gray-900 mb-3 mt-2 font-semibold border-l-3 border-[#F96000] pl-2"
-                                  >
-                                    {block.value}
-                                  </h4>
-                                );
-                              } else if (block.type === 'chart') {
-                                return (
-                                  <div key={idx} className="flex flex-col mb-4">
-                                    <RadianceChart data={block.data} />
-                                    {block.desc && (
-                                      <p className="text-[10px] text-gray-500 italic pl-1 lowercase -mt-4 mb-4">
-                                        {block.desc}
-                                      </p>
-                                    )}
-                                  </div>
-                                );
-                              } else if (block.type === 'table') {
-                                return (
-                                  <div key={idx} className="flex flex-col mb-4">
-                                    <RadianceTable
-                                      data={block.data}
-                                      nameKey={block.nameKey}
-                                      columns={block.columns}
-                                    />
-                                    {block.desc && (
-                                      <p className="text-[10px] text-gray-500 italic pl-1 lowercase -mt-4 mb-4">
-                                        {block.desc}
-                                      </p>
-                                    )}
-                                  </div>
-                                );
-                              }
-                              return null;
-                            },
-                          )
-                        ) : (
-                          <>
-                            <div className="text-[13px] leading-relaxed text-gray-600 bg-white/50 p-1">
-                              {currentContent.desc}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
 
           {/* Basemap Toggle - Bottom Right */}
           {currentLayerKey !== 'sentinel2' && (
