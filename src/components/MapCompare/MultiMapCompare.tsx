@@ -348,8 +348,8 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
   const lastFittedRef = useRef<string>('');
 
   useEffect(() => {
-    const boundsToUse = targetBounds || sharedInitialBoundsRef.current;
-    if (!boundsToUse) return;
+    // Determine the best bounds to use
+    let boundsToUse = targetBounds || sharedInitialBoundsRef.current;
 
     // Create a fingerprint of the current state that should trigger a refocus
     const layerFingerprint = mapConfigs.map((m) => m.layer).join('|');
@@ -359,19 +359,62 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
     if (refocusFingerprint === lastFittedRef.current) return;
     lastFittedRef.current = refocusFingerprint;
 
-    mapInstances.current.forEach((map) => {
-      if (map.isStyleLoaded()) {
-        map.fitBounds(boundsToUse, {
-          padding: 40,
-          duration: 1200,
-          essential: true,
+    const performFit = (bounds: maplibregl.LngLatBoundsLike) => {
+      mapInstances.current.forEach((map) => {
+        if (map.isStyleLoaded()) {
+          map.fitBounds(bounds, {
+            padding: 40,
+            duration: 1200,
+            essential: true,
+          });
+        } else {
+          map.once('load', () => {
+            map.fitBounds(bounds, { padding: 40, duration: 1200 });
+          });
+        }
+      });
+    };
+
+    // If we have an explicit district, try to find its bounds from the features first
+    if (selectedDistrict && selectedDistrict !== 'Odisha') {
+      const anyMap = Array.from(mapInstances.current.values())[0];
+      if (anyMap && anyMap.isStyleLoaded()) {
+        const features = anyMap.querySourceFeatures('district-source', {
+          sourceLayer: 'zcta',
+          filter: [
+            'any',
+            ['==', ['get', 'district_name'], selectedDistrict],
+            ['==', ['get', 'DIST_NAME'], selectedDistrict],
+            ['==', ['get', 'District'], selectedDistrict],
+            ['==', ['get', 'NAME'], selectedDistrict],
+            ['==', ['get', 'name'], selectedDistrict],
+            ['==', ['get', 'district'], selectedDistrict],
+          ],
         });
-      } else {
-        map.once('load', () => {
-          map.fitBounds(boundsToUse, { padding: 40, duration: 0 });
-        });
+
+        if (features && features.length > 0) {
+          const bounds = new maplibregl.LngLatBounds();
+          features.forEach((f: any) => {
+            if (f.geometry?.type === 'Polygon') {
+              f.geometry.coordinates[0].forEach((coord: any) =>
+                bounds.extend(coord),
+              );
+            } else if (f.geometry?.type === 'MultiPolygon') {
+              f.geometry.coordinates.forEach((poly: any) => {
+                poly[0].forEach((coord: any) => bounds.extend(coord));
+              });
+            }
+          });
+          if (!bounds.isEmpty()) {
+            boundsToUse = bounds.toArray() as any;
+          }
+        }
       }
-    });
+    }
+
+    if (boundsToUse) {
+      performFit(boundsToUse);
+    }
   }, [targetBounds, mapsLoadedCount, selectedDistrict, mapConfigs]);
 
   const syncMaps = (sourceId: string) => {
@@ -756,11 +799,9 @@ const MapItem = ({
     refreshMapContent();
   }, [config.year, config.layer]);
 
-  // Re-render nightlight layer when selectedDistrict changes (URL depends on district)
+  // Re-render map content when selectedDistrict changes
   useEffect(() => {
-    if (config.layer === 'nightlight') {
-      refreshMapContent();
-    }
+    refreshMapContent();
   }, [selectedDistrict]);
 
   const refreshMapContent = async () => {
