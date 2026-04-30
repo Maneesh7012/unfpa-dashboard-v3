@@ -250,6 +250,21 @@ interface MapCompareProps {
   onMapClick?: (lngLat: maplibregl.LngLat) => void;
 }
 
+export const formatLulcLabel = (y: string | number) => {
+  const val = String(y);
+  if (val.includes('q')) {
+    const [year, q] = val.split(' ');
+    const monthMap: Record<string, string> = {
+      q1: 'March',
+      q2: 'June',
+      q3: 'September',
+      q4: 'December',
+    };
+    return `${monthMap[q]} ${year} - ${q.toUpperCase()}`;
+  }
+  return val;
+};
+
 export default function MapCompare({
   targetBounds,
   targetDistrict,
@@ -1457,15 +1472,15 @@ export default function MapCompare({
 
           {/* LEFT LABEL */}
           {viewMode === 'compare' && (
-            <div className="absolute top-4 left-4 z-40 bg-white/20 backdrop-blur-sm text-white px-4 py-1.5 rounded-md text-sm font-medium shadow border border-white/30">
-              {y1}
+            <div className="absolute top-4 left-4 z-40 bg-white/20 backdrop-blur-sm text-white px-4 py-1.5 rounded-md text-sm font-medium shadow border border-white/30 uppercase font-mono tracking-wider">
+              {formatLulcLabel(y1)}
             </div>
           )}
 
           {/* RIGHT LABEL */}
           {(viewMode === 'compare' || viewMode === 'map') && (
-            <div className="absolute top-4 right-4 z-40 bg-white/20 backdrop-blur-sm text-white px-4 py-1.5 rounded-md text-sm font-medium shadow border border-white/30">
-              {viewMode === 'map' ? '2024' : y2}
+            <div className="absolute top-4 right-4 z-40 bg-white/20 backdrop-blur-sm text-white px-4 py-1.5 rounded-md text-sm font-medium shadow border border-white/30 uppercase font-mono tracking-wider">
+              {viewMode === 'map' ? '2024' : formatLulcLabel(y2)}
             </div>
           )}
 
