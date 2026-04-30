@@ -135,10 +135,10 @@ export const getDistrictConfig = (district: string) => {
   return {
     nightlight: {
       urls: ntlUrls,
-      params:
-        '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000", "#b44ef1"],0,20,c',
       // params:
-      //   '#color:["#e0f7fa", "#b2ebf2", "#80deea", "#4dd0e1", "#26c6da"],0,20,c',
+      //   '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000", "#b44ef1"],0,20,c',
+      params:
+        '#color:["#e0f7fa", "#b2ebf2", "#80deea", "#4dd0e1", "#26c6da"],0,20,c',
     },
     urbansprawl: {
       urls: {
