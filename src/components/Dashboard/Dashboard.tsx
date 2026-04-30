@@ -708,7 +708,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
   };
 
   return (
-    <div className="flex flex-col bg-[#F8FAFC] mx-auto py-10 space-y-12">
+    <div className="flex flex-col bg-[#F8FAFC] mx-auto py-14 space-y-12">
       {/* BOTTOM SECTION: CONTENT AREA */}
       <div className="flex-1">
         <div className="w-full mx-auto px-4 lg:px-6 flex flex-col lg:flex-row gap-4">

@@ -511,7 +511,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
 
   return (
     <div className="bg-white min-h-[500px]">
-      <div className="w-full mx-auto px-4 lg:px-6 py-10 space-y-12">
+      <div className="w-full mx-auto px-4 lg:px-6 py-14 space-y-12">
         {/* 1.5 Population Projections Section */}
         <div className="space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

@@ -35,30 +35,39 @@ const Dashboard: React.FC = () => {
 
   return (
     <>
-      <div className="mb-0">
-        <HeroSection_v3 />
+      {/* Hero */}
+      <HeroSection_v3 />
+
+      {/* Map & Stats Section */}
+      <div className="border-t border-gray-100">
+        <MapSection
+          currentView={currentView}
+          onViewChange={setCurrentView}
+          onDistrictChange={setSelectedDistrict}
+          onDataChange={setSelectedData}
+          onDataLoad={setAllDistrictsData}
+          targetDistrict={selectedDistrict}
+        />
       </div>
-      <MapSection
-        currentView={currentView}
-        onViewChange={setCurrentView}
-        onDistrictChange={setSelectedDistrict}
-        onDataChange={setSelectedData}
-        onDataLoad={setAllDistrictsData}
-        targetDistrict={selectedDistrict}
-      />
 
-      <StateDemographics_v3
-        selectedDistrict={selectedDistrict}
-        selectedData={selectedData}
-        allDistrictsData={allDistrictsData}
-      />
+      {/* District Overview */}
+      <div className="border-t border-gray-100 bg-gray-50">
+        <StateDemographics_v3
+          selectedDistrict={selectedDistrict}
+          selectedData={selectedData}
+          allDistrictsData={allDistrictsData}
+        />
+      </div>
 
-      <StatsDetails
-        selectedDistrict={selectedDistrict}
-        onDistrictSelect={setSelectedDistrict}
-        data={selectedData}
-        allDistrictsData={allDistrictsData}
-      />
+      {/* Detailed Stats */}
+      <div className="border-t border-gray-100">
+        <StatsDetails
+          selectedDistrict={selectedDistrict}
+          onDistrictSelect={setSelectedDistrict}
+          data={selectedData}
+          allDistrictsData={allDistrictsData}
+        />
+      </div>
     </>
   );
 };

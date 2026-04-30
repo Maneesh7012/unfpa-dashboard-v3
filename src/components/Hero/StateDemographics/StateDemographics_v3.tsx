@@ -344,7 +344,7 @@ export function StateDemographics_v3({
 
   return (
     <motion.div
-      className="mx-auto px-4 lg:px-6 py-10 space-y-12"
+      className="mx-auto px-4 lg:px-6 py-14 space-y-10"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
