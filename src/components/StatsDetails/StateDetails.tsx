@@ -86,7 +86,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     'Model Only' | 'Model Vs Census Projection'
   >('Model Only');
   const layerYearMap: Record<string, string[]> = {
-    nightlight: ['2012', '2024'],
+    nightlight: LULC_QUARTERS,
     urbansprawl: ['2011', '2024'],
     roads: ['2015', '2025'],
     builtup: LULC_QUARTERS,

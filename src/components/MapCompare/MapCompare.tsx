@@ -71,27 +71,21 @@ export const LULC_QUARTERS = [
 export const getDistrictConfig = (district: string) => {
   const d = district === 'Odisha' ? 'Anugul' : district;
   const formattedDistrict = d.replace(/\s+/g, '').trim();
-  const baseUrl = 'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc';
-
-  const buildQuarterlyUrls = () => {
+  const buildQuarterlyUrls = (path: string, suffix: string) => {
     const urls: Record<string, string> = {};
     LULC_QUARTERS.forEach((qLabel) => {
       const [year, q] = qLabel.split(' ');
-      urls[qLabel] = `${baseUrl}/${formattedDistrict}/${formattedDistrict}_${year}_${q}_lulc.tif`;
+      urls[qLabel] = `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/${path}/${formattedDistrict}/${formattedDistrict}_${year}_${q}_${suffix}.tif`;
     });
     return urls;
   };
 
-  const lulcUrls = buildQuarterlyUrls();
+  const lulcUrls = buildQuarterlyUrls('lulc', 'lulc');
+  const ntlUrls = buildQuarterlyUrls('ntl', 'ntl');
 
   return {
     nightlight: {
-      urls: {
-        '2012':
-          'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/NTL_2012.tif',
-        '2024':
-          'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/NTL_2024.tif',
-      },
+      urls: ntlUrls,
       params:
         '#color:["#e0f7fa", "#b2ebf2", "#80deea", "#4dd0e1", "#26c6da"],0,20,c',
     },
