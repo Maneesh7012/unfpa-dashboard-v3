@@ -42,8 +42,8 @@ import {
   cogProtocol,
   setColorFunction,
 } from '@geomatico/maplibre-cog-protocol';
-import { LULC_STATS } from '../../data/comparativeData';
-// ...
+import { DISTRICT_NAME_VARIANTS, LULC_STATS } from '../../data/comparativeData';
+
 try {
   const protocol = new pmtiles.Protocol();
   maplibregl.addProtocol('pmtiles', protocol.tile);
@@ -111,7 +111,7 @@ const LULC_LEGEND: LulcLegendItem[] = [
     key: 'shrub_and_scrub',
   },
   { label: 'Built area', color: '#C4281B', value: 6, key: 'built' },
-  { label: 'Bare', color: '#A59B8F', value: 7, key: 'bare' },
+  { label: 'Bare Ground', color: '#A59B8F', value: 7, key: 'bare' },
 ];
 
 const UI_LULC_LEGEND = [
@@ -499,7 +499,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         top: 30,
         bottom: timelineHeight + 30,
         left: 310,
-        right: selectedPoint ? 430 : 30,
+        right: selectedPoint ? 430 : 340,
       };
       map.fitBounds(targetBounds, { padding: fitPadding, duration: 1500 });
     } else if (targetDistrict?.toLowerCase() === 'odisha' || !targetDistrict) {
@@ -507,7 +507,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         top: 20,
         bottom: timelineHeight + 20,
         left: 310,
-        right: selectedPoint ? 430 : 20,
+        right: selectedPoint ? 430 : 340,
       };
       map.fitBounds(pmtilesBounds || ODISHA_BOUNDS, {
         padding: fitPadding,
@@ -531,7 +531,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
             top: 20,
             bottom: timelineHeight + 10,
             left: 250,
-            right: selectedPoint ? 430 : 100,
+            right: selectedPoint ? 430 : 250,
           };
           map.fitBounds(bounds, { padding: fitPadding, duration: 1500 });
         }
@@ -1185,110 +1185,176 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         </div>
 
         {/* ── LULC CHANGE SUMMARY (Top Right Overlay) ────────────────────── */}
-        {!selectedPoint && (() => {
-          const districtStats = LULC_STATS[targetDistrict] || LULC_STATS['Odisha'];
-          if (!districtStats) return null;
+        {!selectedPoint &&
+          (() => {
+            // Normalize district name to match LULC_STATS keys
+            const normalizedDistrict =
+              DISTRICT_NAME_VARIANTS[targetDistrict] || targetDistrict;
+            const districtStats =
+              LULC_STATS[normalizedDistrict] || LULC_STATS['Odisha'];
 
-          const availableYears = Object.keys(districtStats).sort();
-          if (availableYears.length < 2) return null;
+            if (!districtStats) return null;
 
-          const startYear = availableYears[0];
-          const endYear = availableYears[availableYears.length - 1];
-          const startData = districtStats[startYear];
-          const endData = districtStats[endYear];
+            const availableYears = Object.keys(districtStats).sort();
+            if (availableYears.length < 2) return null;
 
-          const getCategoryColor = (label: string) => {
-            const lower = label.toLowerCase();
-            if (lower.includes('water')) return '#419BDF';
-            if (lower.includes('tree')) return '#397D49';
-            if (lower.includes('crop')) return '#E49635';
-            if (lower.includes('built')) return '#C4281B';
-            if (lower.includes('bare')) return '#A59B8F';
-            if (lower.includes('flooded')) return '#7A87C6';
-            if (lower.includes('range') || lower.includes('grass')) return '#F0CF0E';
-            return '#94a3b8';
-          };
+            const currentYear = currentQuarter.year.toString();
+            const lastYear = availableYears[availableYears.length - 1];
 
-          const categories = Object.keys(startData).filter(cat => 
-            startData[cat] > 0 || endData[cat] > 0
-          );
+            // Determine the start year: use selected if available, otherwise earliest
+            const startYear = districtStats[currentYear]
+              ? currentYear
+              : availableYears[0];
+            const endYear = lastYear;
 
-          return (
-            <div className="absolute top-8 right-8 z-[110] bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-2xl p-5 w-64 max-h-[70%] overflow-y-auto custom-scrollbar">
-              <div className="mb-4">
-                <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-none border-b border-gray-100 pb-2">
-                  Landscape Transformation
-                </h4>
-                <p className="text-[12px] text-gray-900 font-bold mt-3 flex items-center gap-2">
-                  <Calendar className="w-3.5 h-3.5 text-[#F76000]" />
-                  {startYear} <span className="text-gray-400 font-medium">→</span> {endYear}
-                </p>
-                <p className="text-[9px] text-gray-400 font-medium mt-0.5">
-                  Net area change in sq. km
-                </p>
-              </div>
+            const rawStartData = districtStats[startYear];
+            const rawEndData = districtStats[endYear];
 
-              <div className="space-y-4">
-                {categories.map((cat) => {
-                  const from = startData[cat] || 0;
-                  const to = endData[cat] || 0;
-                  const diff = to - from;
-                  const pct = from > 0 ? (diff / from) * 100 : 0;
-                  const isGain = diff >= 0;
-                  const color = getCategoryColor(cat);
+            if (!rawStartData || !rawEndData) return null;
 
-                  return (
-                    <div key={cat} className="group">
-                      <div className="flex items-center justify-between mb-1">
+            // Helper to aggregate vegetation categories
+            const aggregateData = (data: Record<string, number>) => {
+              const result: Record<string, number> = {};
+              let vegetationSum = 0;
+
+              const vegKeys = [
+                'trees',
+                'flooded vegetation',
+                'crops',
+                'shrub & scrub',
+                'grass',
+                'rangeland',
+              ];
+
+              Object.keys(data).forEach((key) => {
+                const lowerKey = key.toLowerCase();
+                if (vegKeys.some((vk) => lowerKey.includes(vk))) {
+                  vegetationSum += data[key] || 0;
+                } else {
+                  result[key] = data[key];
+                }
+              });
+
+              result['Vegetation'] = vegetationSum;
+              return result;
+            };
+
+            const startData = aggregateData(rawStartData);
+            const endData = aggregateData(rawEndData);
+
+            const getCategoryColor = (label: string) => {
+              const lower = label.toLowerCase();
+              if (lower === 'vegetation') return '#397D49';
+              if (lower.includes('water')) return '#419BDF';
+              if (lower.includes('built')) return '#C4281B';
+              if (lower.includes('bare')) return '#A59B8F';
+              return '#94a3b8';
+            };
+
+            const categories = [
+              'Water',
+              'Vegetation',
+              'Built Area',
+              'Bare Ground',
+            ].filter(
+              (cat) => (startData[cat] || 0) > 0 || (endData[cat] || 0) > 0,
+            );
+
+            return (
+              <div className="absolute top-8 right-8 z-[110] bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-2xl p-5 w-64 max-h-[70%] overflow-y-auto custom-scrollbar">
+                <div className="mb-4">
+                  <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-none border-b border-gray-100 pb-2">
+                    Landscape Transformation
+                  </h4>
+                  <p className="text-[12px] text-gray-900 font-bold mt-3 flex items-center gap-2">
+                    <Calendar className="w-3.5 h-3.5 text-[#F76000]" />
+                    {startYear === endYear
+                      ? `Total Change (${availableYears[0]} - ${endYear})`
+                      : `${startYear} → ${endYear}`}
+                  </p>
+                  <p className="text-[9px] text-gray-400 font-medium mt-0.5">
+                    {startYear === endYear
+                      ? 'Overall net area shift'
+                      : `Change since ${startYear}`}
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  {categories.map((cat) => {
+                    const sYear =
+                      startYear === endYear ? availableYears[0] : startYear;
+                    const from = districtStats[sYear]?.[cat] || 0;
+                    const to = endData[cat] || 0;
+                    const diff = to - from;
+                    const pct = from > 0 ? (diff / from) * 100 : 0;
+                    const isGain = diff >= 0;
+                    const color = getCategoryColor(cat);
+
+                    return (
+                      <div key={cat} className="group">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-2.5 h-2.5 rounded-sm shadow-sm"
+                              style={{ backgroundColor: color }}
+                            />
+                            <span className="text-[10px] font-bold text-gray-700 truncate max-w-[110px]">
+                              {cat}
+                            </span>
+                          </div>
+                          <div
+                            className={`text-[11px] font-black ${isGain ? 'text-emerald-600' : 'text-rose-500'}`}
+                          >
+                            {isGain ? '+' : ''}
+                            {diff.toFixed(1)}
+                          </div>
+                        </div>
                         <div className="flex items-center gap-2">
-                          <div 
-                            className="w-2.5 h-2.5 rounded-sm shadow-sm" 
-                            style={{ backgroundColor: color }}
-                          />
-                          <span className="text-[10px] font-bold text-gray-700 truncate max-w-[110px]">
-                            {cat}
+                          <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{
+                                width: `${Math.min(Math.abs(pct), 100)}%`,
+                              }}
+                              transition={{ duration: 1, ease: 'easeOut' }}
+                              key={`${startYear}-${endYear}-${cat}`} // Force re-animate on change
+                              className={`h-full rounded-full ${isGain ? 'bg-emerald-400' : 'bg-rose-400'}`}
+                            />
+                          </div>
+                          <span
+                            className={`text-[9px] font-black min-w-[32px] text-right ${isGain ? 'text-emerald-600' : 'text-rose-500'}`}
+                          >
+                            {isGain ? '+' : ''}
+                            {pct.toFixed(1)}%
                           </span>
                         </div>
-                        <div className={`text-[11px] font-black ${isGain ? 'text-emerald-600' : 'text-rose-500'}`}>
-                          {isGain ? '+' : ''}{diff.toFixed(1)}
-                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${Math.min(Math.abs(pct), 100)}%` }}
-                            transition={{ duration: 1, ease: "easeOut" }}
-                            className={`h-full rounded-full ${isGain ? 'bg-emerald-400' : 'bg-rose-400'}`}
-                          />
-                        </div>
-                        <span className={`text-[9px] font-black min-w-[32px] text-right ${isGain ? 'text-emerald-600' : 'text-rose-500'}`}>
-                          {isGain ? '+' : ''}{pct.toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              
-              <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between">
-                 <div className="flex items-center gap-3">
+                    );
+                  })}
+                </div>
+
+                <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1">
-                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                       <span className="text-[8px] font-black text-gray-400 uppercase">Gain</span>
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span className="text-[8px] font-black text-gray-400 uppercase">
+                        Gain
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
-                       <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                       <span className="text-[8px] font-black text-gray-400 uppercase">Loss</span>
+                      <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                      <span className="text-[8px] font-black text-gray-400 uppercase">
+                        Loss
+                      </span>
                     </div>
-                 </div>
-                 <div className="text-[8px] font-black text-gray-300 uppercase tracking-tighter">
+                  </div>
+                  <div className="text-[8px] font-black text-gray-300 uppercase tracking-tighter">
                     LULC Trends
-                 </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
 
         <div
           className={`absolute top-8 left-8 w-75 h-fit transition-all duration-300 text-gray-900 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 p-6 shadow-2xl z-[60] flex flex-col gap-6 overflow-y-auto custom-scrollbar`}
