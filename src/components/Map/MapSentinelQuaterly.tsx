@@ -381,7 +381,10 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         // const tileUrl =
         //   'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/sentinel%C2%A0%202_tci/Anugul/Anugul_2018_q1.tif';
 
-        if (!tileUrl) {
+        const isOdisha =
+          !targetDistrict || targetDistrict.toLowerCase() === 'odisha';
+
+        if (!tileUrl && isOdisha) {
           setTileStatus('error');
           return;
         }
@@ -396,10 +399,6 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
 
         const year = q.year;
         const quarter = q.q;
-
-        // Handle Odisha fallback (same pattern as LULC)
-        const isOdisha =
-          !targetDistrict || targetDistrict.toLowerCase() === 'odisha';
 
         //  dynamic Sentinel URL
         const sentinelUrl = isOdisha
@@ -419,7 +418,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
 
         map.addSource(sourceId, {
           type: 'raster',
-          url: sentinelUrl ? `cog://${sentinelUrl}` : tileUrl, // fallback to existing planetary computer logic
+          url: sentinelUrl ? `cog://${sentinelUrl}` : (tileUrl ?? undefined), // fallback to existing planetary computer logic
           tileSize: 256,
           minzoom: 0,
           maxzoom: 14,
@@ -1205,8 +1204,13 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
             const availableYears = Object.keys(districtStats).sort();
             if (availableYears.length < 2) return null;
 
-            const currentYear = currentQuarter.year.toString();
-            const prevYear = (currentQuarter.year - 1).toString();
+            const isYear2026 = currentQuarter.year === 2026;
+            const currentYear = isYear2026
+              ? '2025'
+              : currentQuarter.year.toString();
+            const prevYear = isYear2026
+              ? '2024'
+              : (currentQuarter.year - 1).toString();
             // const lastYear = availableYears[availableYears.length - 1];
 
             // Helper to aggregate vegetation categories
