@@ -16,10 +16,11 @@ type Props = {
   selectedDistrict?: string;
   selectedData?: DistrictData;
   allDistrictsData: DistrictData[];
+  withCards?: boolean;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Stat extraction — sourced entirely from DISTRICT_OVERVIEWS text
+// Stat extraction, sourced entirely from DISTRICT_OVERVIEWS text
 // Each entry is hand-tuned from the narrative so numbers match the source.
 // ─────────────────────────────────────────────────────────────────────────────
 const DISTRICT_STATS: Record<
@@ -319,6 +320,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 export function StateDemographics_v3({
   selectedDistrict,
   selectedData,
+  withCards = false,
 }: Props) {
   useEffect(() => {
     console.log('Render Demographics v3', {
@@ -327,42 +329,43 @@ export function StateDemographics_v3({
     });
   }, [selectedDistrict, selectedData]);
 
-  const paragraphs = useMemo(() => {
-    if (!selectedDistrict) return [];
-    return DISTRICT_OVERVIEWS[selectedDistrict] || [];
+  const overview = useMemo(() => {
+    if (!selectedDistrict) return null;
+    return DISTRICT_OVERVIEWS[selectedDistrict] || null;
   }, [selectedDistrict]);
+
+  const paragraphs = useMemo(() => overview?.paragraphs || [], [overview]);
+  const highlightPhrases = useMemo(
+    () => overview?.highlightPhrases || [],
+    [overview],
+  );
 
   const stats = useMemo(() => {
     if (!selectedDistrict) return [];
     return DISTRICT_STATS[selectedDistrict] || [];
   }, [selectedDistrict]);
 
-  // Extract all numeric components from the district stats to use as high-impact filters
-  const impactNumbers = useMemo(() => {
-    if (!selectedDistrict) return new Set<string>();
-    const dStats = DISTRICT_STATS[selectedDistrict] || [];
-    const foundNumbers = new Set<string>();
+  // Refactored highlighting function to use explicit phrases
+  const highlightText = (text: string, phrases: string[]) => {
+    if (!text || !phrases.length) return text;
 
-    dStats.forEach((s) => {
-      // Extract numbers (including decimals) from value and sub-text
-      const valMatches = s.value.match(/\d+(?:\.\d+)?/g);
-      if (valMatches) valMatches.forEach((m) => foundNumbers.add(m));
-      if (s.sub) {
-        const subMatches = s.sub.match(/\d+(?:\.\d+)?/g);
-        if (subMatches) subMatches.forEach((m) => foundNumbers.add(m));
-      }
-    });
-    return foundNumbers;
-  }, [selectedDistrict]);
+    // Sort phrases by length descending to avoid partial matches
+    const sortedPhrases = [...phrases].sort((a, b) => b.length - a.length);
 
-  const highlightNumbers = (text: string) => {
-    if (!text) return text;
-    // Split by numbers, percentages, etc.
-    const parts = text.split(/(\d+(?:\.\d+)?%?)/g);
+    // Create a regex to match all phrases
+    const escapedPhrases = sortedPhrases.map((p) =>
+      p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+    );
+    const regex = new RegExp(`(${escapedPhrases.join('|')})`, 'gi');
+
+    const parts = text.split(regex);
+
     return parts.map((part, i) => {
-      const cleanNum = part.replace('%', '');
-      // Only highlight if it's a number AND it exists in our impactNumbers set
-      if (/^\d+(?:\.\d+)?%?$/.test(part) && impactNumbers.has(cleanNum)) {
+      const isMatch = phrases.some(
+        (phrase) => phrase.toLowerCase() === part.toLowerCase(),
+      );
+
+      if (isMatch) {
         return (
           <span
             key={i}
@@ -399,8 +402,8 @@ export function StateDemographics_v3({
         </p>
       </div>
 
-      {/* STAT CARDS — full width, above the 2-col layout */}
-      {stats.length > 0 && (
+      {/* STAT CARDS, full width, above the 2-col layout */}
+      {withCards && stats.length > 0 && (
         <div className="-mt-4 mb-8">
           <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">
             Key Figures at a Glance
@@ -425,7 +428,7 @@ export function StateDemographics_v3({
                 </div>
                 {stat.sub && (
                   <div className="text-[9px] text-gray-500 font-medium leading-snug">
-                    {highlightNumbers(stat.sub)}
+                    {stat.sub}
                   </div>
                 )}
               </motion.div>
@@ -439,7 +442,9 @@ export function StateDemographics_v3({
         {/* LEFT - 70% */}
         <div className="col-span-7 space-y-4 text-md text-gray-700 leading-relaxed font-medium">
           {paragraphs.length > 0 ? (
-            paragraphs.map((p, i) => <p key={i}>{highlightNumbers(p)}</p>)
+            paragraphs.map((p, i) => (
+              <p key={i}>{highlightText(p, highlightPhrases)}</p>
+            ))
           ) : (
             <p>Narrative data unavailable for this district.</p>
           )}
