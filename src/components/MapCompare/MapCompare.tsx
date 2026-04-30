@@ -45,26 +45,52 @@ const basemapOptions: { id: 'grey' | 'satellite' | 'osm'; label: string }[] = [
   { id: 'osm', label: 'OSM' },
 ];
 
-
-
-const buildCategoricalParams = (targetValue: number, activeColor: string, defaultColor = '#f0f0f0') => {
+const buildCategoricalParams = (
+  targetValue: number,
+  activeColor: string,
+  defaultColor = '#f0f0f0',
+) => {
   const colors = Array(12).fill(defaultColor);
   if (targetValue >= 0 && targetValue <= 11) {
     colors[targetValue] = activeColor;
   }
-  return `#color:[${colors.map(c => `"${c}"`).join(',')}],0,11,c`;
+  return `#color:[${colors.map((c) => `"${c}"`).join(',')}],0,11,c`;
 };
 
 // Available quarters by year
 export const LULC_QUARTERS = [
-  '2018 q1', '2018 q2', '2018 q3', '2018 q4',
-  '2019 q1', '2019 q2', '2019 q3', '2019 q4',
-  '2020 q1', '2020 q2', '2020 q3', '2020 q4',
-  '2021 q1', '2021 q2', '2021 q3', '2021 q4',
-  '2022 q1', '2022 q2', '2022 q3', '2022 q4',
-  '2023 q1', '2023 q2', '2023 q3', '2023 q4',
-  '2024 q1', '2024 q2', '2024 q3', '2024 q4',
-  '2025 q1', '2025 q2', '2025 q3', '2025 q4',
+  '2018 q1',
+  '2018 q2',
+  '2018 q3',
+  '2018 q4',
+  '2019 q1',
+  '2019 q2',
+  '2019 q3',
+  '2019 q4',
+  '2020 q1',
+  '2020 q2',
+  '2020 q3',
+  '2020 q4',
+  '2021 q1',
+  '2021 q2',
+  '2021 q3',
+  '2021 q4',
+  '2022 q1',
+  '2022 q2',
+  '2022 q3',
+  '2022 q4',
+  '2023 q1',
+  '2023 q2',
+  '2023 q3',
+  '2023 q4',
+  '2024 q1',
+  '2024 q2',
+  '2024 q3',
+  '2024 q4',
+  '2025 q1',
+  '2025 q2',
+  '2025 q3',
+  '2025 q4',
   '2026 q1',
 ];
 
@@ -75,7 +101,8 @@ export const getDistrictConfig = (district: string) => {
     const urls: Record<string, string> = {};
     LULC_QUARTERS.forEach((qLabel) => {
       const [year, q] = qLabel.split(' ');
-      urls[qLabel] = `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/${path}/${formattedDistrict}/${formattedDistrict}_${year}_${q}_${suffix}.tif`;
+      urls[qLabel] =
+        `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/${path}/${formattedDistrict}/${formattedDistrict}_${year}_${q}_${suffix}.tif`;
     });
     return urls;
   };
@@ -102,14 +129,16 @@ export const getDistrictConfig = (district: string) => {
     'district_0_roads',
     'pmtiles',
     2014,
-    2025
+    2025,
   );
 
   return {
     nightlight: {
       urls: ntlUrls,
       params:
-        '#color:["#e0f7fa", "#b2ebf2", "#80deea", "#4dd0e1", "#26c6da"],0,20,c',
+        '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000", "#b44ef1"],0,20,c',
+      // params:
+      //   '#color:["#e0f7fa", "#b2ebf2", "#80deea", "#4dd0e1", "#26c6da"],0,20,c',
     },
     urbansprawl: {
       urls: {
@@ -406,11 +435,14 @@ export default function MapCompare({
   const currentDistrict = targetDistrict || selectedDistrict || 'Anugul';
   const dynamicConfig = getDistrictConfig(currentDistrict);
 
-  const currentLayerKey = dynamicConfig[resolvedLayerKey as keyof typeof dynamicConfig]
+  const currentLayerKey = dynamicConfig[
+    resolvedLayerKey as keyof typeof dynamicConfig
+  ]
     ? resolvedLayerKey
     : 'water';
 
-  const config: any = dynamicConfig[currentLayerKey as keyof typeof dynamicConfig];
+  const config: any =
+    dynamicConfig[currentLayerKey as keyof typeof dynamicConfig];
 
   const availableYears = Object.keys(config.urls).sort();
 
@@ -1536,12 +1568,19 @@ export default function MapCompare({
           {/* ROADS LEGEND — bottom-left */}
           {activeLayer === 'roads' && (
             <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-40 w-[180px]">
-              <div className="text-[10px] font-black text-gray-700 uppercase tracking-wider mb-2">Road Network</div>
+              <div className="text-[10px] font-black text-gray-700 uppercase tracking-wider mb-2">
+                Road Network
+              </div>
               <div className="space-y-1.5">
                 {ROAD_CATEGORIES.map((cat) => (
                   <div key={cat.label} className="flex items-center gap-2">
-                    <div className="w-4 h-0.5 rounded-full" style={{ backgroundColor: cat.color }} />
-                    <span className="text-[10px] font-medium text-gray-700">{cat.label}</span>
+                    <div
+                      className="w-4 h-0.5 rounded-full"
+                      style={{ backgroundColor: cat.color }}
+                    />
+                    <span className="text-[10px] font-medium text-gray-700">
+                      {cat.label}
+                    </span>
                   </div>
                 ))}
               </div>
