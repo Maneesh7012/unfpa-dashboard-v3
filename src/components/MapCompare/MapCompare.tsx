@@ -135,33 +135,13 @@ export const getDistrictConfig = (district: string) => {
   return {
     nightlight: {
       urls: ntlUrls,
-      // params:
-      //   '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000", "#b44ef1"],0,20,c',
       params:
         '#color:["#e0f7fa", "#b2ebf2", "#80deea", "#4dd0e1", "#26c6da"],0,20,c',
-    },
-    urbansprawl: {
-      urls: {
-        '2011':
-          'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_built_up_vector_2010.pmtiles',
-        '2024':
-          'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_built_up_vector_2025.pmtiles',
-      },
-      params:
-        '#color:["#0868ac","#0868ac","#0868ac","#0868ac","#0868ac"],0,3000,c',
     },
     roads: {
       urls: roadUrls,
       params:
         '#color:["#0868ac","#0868ac","#0868ac","#0868ac","#0868ac"],0,3000,c',
-    },
-    lulc: {
-      urls: lulcUrls,
-      params: '',
-    },
-    barren: {
-      urls: lulcUrls,
-      params: '#color:["#0868ac","#0868ac"],7,7',
     },
     builtup: {
       urls: lulcUrls,
@@ -171,27 +151,15 @@ export const getDistrictConfig = (district: string) => {
     },
     cropland: {
       urls: lulcUrls,
-      params: buildCategoricalParams(4, '#1A5BAB'),
+      params: buildCategoricalParams(4, '#0868ac'),
       targetPixel: 4,
       type: 'dynamic_lulc',
     },
     forest: {
       urls: lulcUrls,
-      params: buildCategoricalParams(1, '#1A5BAB'),
+      params: buildCategoricalParams(1, '#0868ac'),
       targetPixel: 1,
       type: 'dynamic_lulc',
-    },
-    scrub: {
-      urls: lulcUrls,
-      params: '#color:["#0868ac","#0868ac"],5,5',
-    },
-    water: {
-      urls: lulcUrls,
-      params: '#color:["#0868ac","#0868ac"],0,0',
-    },
-    wetlands: {
-      urls: lulcUrls,
-      params: '#color:["#0868ac","#0868ac"],3,3',
     },
   };
 };
@@ -212,7 +180,7 @@ const getLulcName = (val: number) => {
     4: 'Cropland',
     6: 'Builtup',
   };
-  return lulcMap[val] ? `${lulcMap[val]}` : String(val);
+  return lulcMap[val] || String(val);
 };
 
 const getDisplayData = (
@@ -221,14 +189,9 @@ const getDisplayData = (
   side: 'left' | 'right' = 'left',
 ) => {
   const lulcColors: Record<string, string> = {
-    barren: '#91908e',
-    builtup: '#ED022A',
-    cropland: '#FFDB5C',
-    forest: '#358221',
-    scrub: '#666666',
-    water: '#1A5BAB',
-    wetlands: '#87D19E',
-    urbansprawl: side === 'right' ? '#ED022A' : '#0868ac',
+    builtup: side === 'right' ? '#ED022A' : '#0868ac',
+    cropland: side === 'right' ? '#ED022A' : '#0868ac',
+    forest: side === 'right' ? '#ED022A' : '#0868ac',
     nightlight: side === 'right' ? '#ED022A' : '#0868ac',
     roads: side === 'right' ? '#ED022A' : '#0868ac',
   };
@@ -325,7 +288,7 @@ export default function MapCompare({
   targetBounds,
   targetDistrict,
   onDistrictSelect,
-  activeLayer = 'lulc',
+  activeLayer = 'builtup',
   activeLulcPixel,
   year1,
   year2,
@@ -410,26 +373,13 @@ export default function MapCompare({
     }
   }, [targetDistrict]);
 
-  let resolvedLayerKey = activeLayer || 'water';
+  let resolvedLayerKey = activeLayer || 'builtup';
 
   if (
     resolvedLayerKey === 'nightlight_medium' ||
     resolvedLayerKey === 'nightlight_low'
   ) {
     resolvedLayerKey = 'nightlight';
-  }
-
-  if (
-    resolvedLayerKey === 'lulc' &&
-    activeLulcPixel !== null &&
-    activeLulcPixel !== undefined
-  ) {
-    const lulcMap: Record<number, string> = {
-      1: 'forest',
-      4: 'cropland',
-      6: 'builtup',
-    };
-    resolvedLayerKey = lulcMap[activeLulcPixel] || 'water';
   }
 
   const currentDistrict = targetDistrict || selectedDistrict || 'Anugul';
@@ -439,7 +389,7 @@ export default function MapCompare({
     resolvedLayerKey as keyof typeof dynamicConfig
   ]
     ? resolvedLayerKey
-    : 'water';
+    : 'builtup';
 
   const config: any =
     dynamicConfig[currentLayerKey as keyof typeof dynamicConfig];
@@ -1405,21 +1355,13 @@ export default function MapCompare({
   const d1 = getDisplayData(currentLayerKey, randLow || 0, 'left');
   const d2 = getDisplayData(currentLayerKey, randHigh || 0, 'right');
   const layerNameStr =
-    currentLayerKey === 'nightlight'
-      ? 'Night Lights'
-      : currentLayerKey === 'urbansprawl'
-        ? 'Built-up Area'
-        : currentLayerKey;
+    currentLayerKey === 'nightlight' ? 'Night Lights' : currentLayerKey;
   const areaKm2 = getDistrictArea(selectedDistrict);
 
   const lulcStatMap: Record<string, string> = {
     builtup: 'Built Area',
     cropland: 'Crops',
     forest: 'Trees',
-    water: 'Water',
-    barren: 'Bare Ground',
-    scrub: 'Scrub',
-    wetlands: 'Flooded Vegetation',
   };
 
   const getLulcStat = (dist: string, year: string, layerKey: string) => {

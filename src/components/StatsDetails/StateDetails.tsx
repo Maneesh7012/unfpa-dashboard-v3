@@ -87,7 +87,6 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
   >('Model Only');
   const layerYearMap: Record<string, string[]> = {
     nightlight: LULC_QUARTERS,
-    urbansprawl: ['2011', '2024'],
     roads: [
       '2014',
       '2015',
@@ -105,10 +104,6 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     builtup: LULC_QUARTERS,
     cropland: LULC_QUARTERS,
     forest: LULC_QUARTERS,
-    barren: LULC_QUARTERS,
-    scrub: LULC_QUARTERS,
-    water: LULC_QUARTERS,
-    wetlands: LULC_QUARTERS,
   };
 
   const validYears = layerYearMap[compareLayer] || ['2018', '2024'];
