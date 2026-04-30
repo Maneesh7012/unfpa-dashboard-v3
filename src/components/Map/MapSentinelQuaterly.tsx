@@ -181,6 +181,14 @@ interface MapSentinelQuaterlyProps {
   targetBounds?: any;
 }
 
+/**Against each class just the value
+ *
+ * show the area coverage in sq km
+ *
+ * show the percentage change compared to previous year
+ *
+ */
+
 export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
   targetDistrict = 'Odisha',
   targetBounds,

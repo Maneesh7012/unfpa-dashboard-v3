@@ -89,9 +89,18 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     nightlight: LULC_QUARTERS,
     urbansprawl: ['2011', '2024'],
     roads: [
-      '2014', '2015', '2016', '2017', '2018',
-      '2019', '2020', '2021', '2022', '2023',
-      '2024', '2025'
+      '2014',
+      '2015',
+      '2016',
+      '2017',
+      '2018',
+      '2019',
+      '2020',
+      '2021',
+      '2022',
+      '2023',
+      '2024',
+      '2025',
     ],
     builtup: LULC_QUARTERS,
     cropland: LULC_QUARTERS,
@@ -128,11 +137,15 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
       if (!LULC_QUARTERS.includes(String(year2))) setYear2('2026 q1');
     } else {
       if (!validYears.includes(String(year1))) {
-        setYear1(isNaN(Number(validYears[0])) ? validYears[0] : parseInt(validYears[0]));
+        setYear1(
+          isNaN(Number(validYears[0]))
+            ? validYears[0]
+            : parseInt(validYears[0]),
+        );
         setYear2(
           isNaN(Number(validYears[validYears.length - 1]))
             ? validYears[validYears.length - 1]
-            : parseInt(validYears[validYears.length - 1])
+            : parseInt(validYears[validYears.length - 1]),
         );
       }
     }

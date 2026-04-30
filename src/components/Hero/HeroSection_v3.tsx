@@ -23,7 +23,7 @@ export function HeroSection_v3() {
           className="absolute inset-0"
           style={{
             background:
-              'linear-gradient(90deg, #235E83 0%, rgba(35,94,131,0.85) 40%, rgba(249,96,0,0.7) 65%, rgba(249,96,0,0.4) 75%, rgba(0,0,0,0.2) 100%)',
+              'linear-gradient(90deg, #235E83 0%, rgba(35,94,131,0.95) 50%, rgba(35,94,131,0.7) 65%, rgba(249,96,0,0.3) 90%, rgba(249,96,0,0.1) 100%)',
           }}
         />
       </div>
@@ -41,19 +41,48 @@ export function HeroSection_v3() {
         {/*  FLEX CONTAINER (TEXT + STATS SIDE BY SIDE) */}
         <div className="mt-6 flex flex-col lg:flex-row gap-15 items-start lg:items-center">
           {/* LEFT → TEXT */}
-          <div className="max-w-5xl space-y-4 text-md md:text-[16px] leading-relaxed text-white flex-1">
+          <div className="max-w-full space-y-2 text-md md:text-[16px] leading-relaxed text-white flex-1">
             <p>
-              Odisha, one of India's eastern coastal states, has witnessed
-              steady population growth over the past several decades, rising
-              from approximately 31.6 million in 1991 to over 41.9 million as
-              recorded in the 2011 Census — a growth trajectory that reflects
-              both improved healthcare access and declining mortality rates
-              across the state. While the overall growth rate has been gradually
-              moderating, signaling a demographic transition, the state
-              continues to experience significant internal migration, with rural
-              populations steadily shifting toward urban centers like
-              Bhubaneswar, Cuttack, and Rourkela in search of better livelihoods
-              and opportunities.
+              Odisha stands at an important demographic juncture. Home to over
+              41.97 million people as per the 2011 Census, up from 31.66 million
+              in 1991, the state has moved through decades of improving
+              healthcare, declining mortality, and gradual fertility decline.
+              Growth has slowed across successive census periods, signalling a
+              maturing demographic transition, even as the composition of
+              Odisha's people, their age, location, and access to services,
+              continues to evolve.
+            </p>
+
+            <p>
+              {' '}
+              Internal migration remains a defining feature of this shift.
+              Movement from rural areas toward Bhubaneswar, Cuttack, Rourkela,
+              and the growth corridors of Jharsuguda, Angul, and Kalinganagar
+              reflects the state's expanding economic base. At the same time,
+              several districts face out-migration, ageing populations, and
+              changing household structures, each with distinct implications for
+              planning and service delivery.{' '}
+            </p>
+
+            <p>
+              Much of this complexity, however, remains fragmented across
+              departments, surveys, and administrative records, with
+              demographic, health, migration, and spatial datasets rarely
+              speaking to one another. As Odisha prepares for the next decade of
+              development planning, the absence of a unified, spatially
+              intelligent view of its population has become a binding constraint
+              on evidence-based decision-making.
+            </p>
+
+            <p>
+              The Odisha Demographic and Data Intelligence Platform has been
+              conceived to address this gap. By integrating census, survey,
+              administrative, and geospatial data within a single analytical
+              environment, it enables decision-makers to move from static
+              reporting to dynamic, district and block-level intelligence,
+              supporting more precise targeting of interventions and stronger
+              alignment between population dynamics and Odisha's long-term
+              development vision.
             </p>
 
             {/* <p>

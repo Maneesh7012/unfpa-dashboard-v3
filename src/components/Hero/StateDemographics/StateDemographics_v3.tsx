@@ -337,6 +337,45 @@ export function StateDemographics_v3({
     return DISTRICT_STATS[selectedDistrict] || [];
   }, [selectedDistrict]);
 
+  // Extract all numeric components from the district stats to use as high-impact filters
+  const impactNumbers = useMemo(() => {
+    if (!selectedDistrict) return new Set<string>();
+    const dStats = DISTRICT_STATS[selectedDistrict] || [];
+    const foundNumbers = new Set<string>();
+
+    dStats.forEach((s) => {
+      // Extract numbers (including decimals) from value and sub-text
+      const valMatches = s.value.match(/\d+(?:\.\d+)?/g);
+      if (valMatches) valMatches.forEach((m) => foundNumbers.add(m));
+      if (s.sub) {
+        const subMatches = s.sub.match(/\d+(?:\.\d+)?/g);
+        if (subMatches) subMatches.forEach((m) => foundNumbers.add(m));
+      }
+    });
+    return foundNumbers;
+  }, [selectedDistrict]);
+
+  const highlightNumbers = (text: string) => {
+    if (!text) return text;
+    // Split by numbers, percentages, etc.
+    const parts = text.split(/(\d+(?:\.\d+)?%?)/g);
+    return parts.map((part, i) => {
+      const cleanNum = part.replace('%', '');
+      // Only highlight if it's a number AND it exists in our impactNumbers set
+      if (/^\d+(?:\.\d+)?%?$/.test(part) && impactNumbers.has(cleanNum)) {
+        return (
+          <span
+            key={i}
+            className="px-1 py-0.5 rounded-sm bg-orange-100 text-gray-900 font-bold border-b border-orange-200/50"
+          >
+            {part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   if (!selectedData) return null;
 
   const districtName =
@@ -386,7 +425,7 @@ export function StateDemographics_v3({
                 </div>
                 {stat.sub && (
                   <div className="text-[9px] text-gray-500 font-medium leading-snug">
-                    {stat.sub}
+                    {highlightNumbers(stat.sub)}
                   </div>
                 )}
               </motion.div>
@@ -400,7 +439,7 @@ export function StateDemographics_v3({
         {/* LEFT - 70% */}
         <div className="col-span-7 space-y-4 text-md text-gray-700 leading-relaxed font-medium">
           {paragraphs.length > 0 ? (
-            paragraphs.map((p, i) => <p key={i}>{p}</p>)
+            paragraphs.map((p, i) => <p key={i}>{highlightNumbers(p)}</p>)
           ) : (
             <p>Narrative data unavailable for this district.</p>
           )}
