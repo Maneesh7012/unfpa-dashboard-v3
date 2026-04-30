@@ -88,7 +88,11 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
   const layerYearMap: Record<string, string[]> = {
     nightlight: LULC_QUARTERS,
     urbansprawl: ['2011', '2024'],
-    roads: ['2015', '2025'],
+    roads: [
+      '2014', '2015', '2016', '2017', '2018',
+      '2019', '2020', '2021', '2022', '2023',
+      '2024', '2025'
+    ],
     builtup: LULC_QUARTERS,
     cropland: LULC_QUARTERS,
     forest: LULC_QUARTERS,

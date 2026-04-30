@@ -83,6 +83,28 @@ export const getDistrictConfig = (district: string) => {
   const lulcUrls = buildQuarterlyUrls('lulc', 'lulc');
   const ntlUrls = buildQuarterlyUrls('ntl', 'ntl');
 
+  const buildYearlyUrls = (
+    basePath: string,
+    prefix: string,
+    extension: string,
+    startYear: number,
+    endYear: number,
+  ) => {
+    const urls: Record<string, string> = {};
+    for (let y = startYear; y <= endYear; y++) {
+      urls[y.toString()] = `${basePath}/${prefix}_${y}.${extension}`;
+    }
+    return urls;
+  };
+
+  const roadUrls = buildYearlyUrls(
+    'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/roads',
+    'district_0_roads',
+    'pmtiles',
+    2014,
+    2025
+  );
+
   return {
     nightlight: {
       urls: ntlUrls,
@@ -100,12 +122,7 @@ export const getDistrictConfig = (district: string) => {
         '#color:["#0868ac","#0868ac","#0868ac","#0868ac","#0868ac"],0,3000,c',
     },
     roads: {
-      urls: {
-        '2015':
-          'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_road_2015.pmtiles',
-        '2025':
-          'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_road_2025.pmtiles',
-      },
+      urls: roadUrls,
       params:
         '#color:["#0868ac","#0868ac","#0868ac","#0868ac","#0868ac"],0,3000,c',
     },
