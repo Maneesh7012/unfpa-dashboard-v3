@@ -348,8 +348,8 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
   const lastFittedRef = useRef<string>('');
 
   useEffect(() => {
-    // Determine the best bounds to use
-    let boundsToUse = targetBounds || sharedInitialBoundsRef.current;
+    const boundsToUse = targetBounds || sharedInitialBoundsRef.current;
+    if (!boundsToUse) return;
 
     // Create a fingerprint of the current state that should trigger a refocus
     const layerFingerprint = mapConfigs.map((m) => m.layer).join('|');
@@ -359,62 +359,19 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
     if (refocusFingerprint === lastFittedRef.current) return;
     lastFittedRef.current = refocusFingerprint;
 
-    const performFit = (bounds: maplibregl.LngLatBoundsLike) => {
-      mapInstances.current.forEach((map) => {
-        if (map.isStyleLoaded()) {
-          map.fitBounds(bounds, {
-            padding: 40,
-            duration: 1200,
-            essential: true,
-          });
-        } else {
-          map.once('load', () => {
-            map.fitBounds(bounds, { padding: 40, duration: 1200 });
-          });
-        }
-      });
-    };
-
-    // If we have an explicit district, try to find its bounds from the features first
-    if (selectedDistrict && selectedDistrict !== 'Odisha') {
-      const anyMap = Array.from(mapInstances.current.values())[0];
-      if (anyMap && anyMap.isStyleLoaded()) {
-        const features = anyMap.querySourceFeatures('district-source', {
-          sourceLayer: 'zcta',
-          filter: [
-            'any',
-            ['==', ['get', 'district_name'], selectedDistrict],
-            ['==', ['get', 'DIST_NAME'], selectedDistrict],
-            ['==', ['get', 'District'], selectedDistrict],
-            ['==', ['get', 'NAME'], selectedDistrict],
-            ['==', ['get', 'name'], selectedDistrict],
-            ['==', ['get', 'district'], selectedDistrict],
-          ],
+    mapInstances.current.forEach((map) => {
+      if (map.isStyleLoaded()) {
+        map.fitBounds(boundsToUse, {
+          padding: 40,
+          duration: 1200,
+          essential: true,
         });
-
-        if (features && features.length > 0) {
-          const bounds = new maplibregl.LngLatBounds();
-          features.forEach((f: any) => {
-            if (f.geometry?.type === 'Polygon') {
-              f.geometry.coordinates[0].forEach((coord: any) =>
-                bounds.extend(coord),
-              );
-            } else if (f.geometry?.type === 'MultiPolygon') {
-              f.geometry.coordinates.forEach((poly: any) => {
-                poly[0].forEach((coord: any) => bounds.extend(coord));
-              });
-            }
-          });
-          if (!bounds.isEmpty()) {
-            boundsToUse = bounds.toArray() as any;
-          }
-        }
+      } else {
+        map.once('load', () => {
+          map.fitBounds(boundsToUse, { padding: 40, duration: 0 });
+        });
       }
-    }
-
-    if (boundsToUse) {
-      performFit(boundsToUse);
-    }
+    });
   }, [targetBounds, mapsLoadedCount, selectedDistrict, mapConfigs]);
 
   const syncMaps = (sourceId: string) => {
@@ -663,12 +620,20 @@ const MapItem = ({
   const [isLoading, setIsLoading] = useState(true);
 
   const NTL_CLASSES = [
-    { label: '< 5', min: 0, max: 5 },
-    { label: '5 - 25', min: 5, max: 25 },
-    { label: '26 - 200', min: 26, max: 200 },
-    { label: '> 200', min: 200, max: 9999 },
-    { label: 'No Data', noData: true },
+    { label: '< 5', min: 0, max: 5, color: '#000000' },
+    { label: '5 - 25', min: 5, max: 25, color: '#48485d' },
+    { label: '26 - 50', min: 26, max: 50, color: '#f6eaaf' },
+    { label: '> 50', min: 50, max: 9999, color: '#fe0000' },
+    { label: 'No Data', noData: true, color: '#b44ef1' },
   ];
+
+  const classifyNtl = (val: number): string => {
+    if (val == null || Number.isNaN(val)) return '#b44ef1';
+    if (val < 5) return '#000000';
+    if (val <= 25) return '#48485d';
+    if (val <= 50) return '#f6eaaf';
+    return '#fe0000';
+  };
 
   const palettes = [
     ['#f7fbff', '#4292c6', '#2171b5', '#053b81'],
@@ -799,9 +764,11 @@ const MapItem = ({
     refreshMapContent();
   }, [config.year, config.layer]);
 
-  // Re-render map content when selectedDistrict changes
+  // Re-render nightlight layer when selectedDistrict changes (URL depends on district)
   useEffect(() => {
-    refreshMapContent();
+    if (config.layer === 'nightlight') {
+      refreshMapContent();
+    }
   }, [selectedDistrict]);
 
   const refreshMapContent = async () => {
@@ -972,8 +939,26 @@ const MapItem = ({
       if (config.layer === 'nightlight') {
         // ✅ Build dynamic URL from district + quarterly label
         url = buildNtlUrl(yearKey, selectedDistrict || 'Anugul');
-        const colorStr = JSON.stringify(activePalette);
-        rasterParams = `#color:${colorStr},0,200,c`;
+        rasterParams = ''; // Colors handled by setColorFunction (class-based)
+
+        setColorFunction(url, (pixel: any, color: any, metadata: any) => {
+          const val = pixel[0];
+          const nd = metadata?.noData;
+          if (
+            val == null ||
+            Number.isNaN(val) ||
+            (nd != null && val === nd) ||
+            val === 0
+          ) {
+            // leave pixel as the default transparent (rgba buffer is pre-zeroed)
+            return;
+          }
+          const hex = classifyNtl(val).replace('#', '');
+          const r = parseInt(hex.substring(0, 2), 16);
+          const g = parseInt(hex.substring(2, 4), 16);
+          const b = parseInt(hex.substring(4, 6), 16);
+          color.set([r, g, b, 255]);
+        });
       } else if (config.layer === 'ghsl') {
         url = buildGhslUrl(yearKey, selectedDistrict || 'Anugul');
         rasterParams = ''; // Colors handled by setColorFunction
@@ -1265,10 +1250,8 @@ const MapItem = ({
 
           {/* Legend Items */}
           <div className="space-y-1.5">
-            {NTL_CLASSES.map((cls, idx) => {
-              const color = cls.noData
-                ? '#e5e7eb'
-                : activePalette[Math.min(idx, activePalette.length - 1)];
+            {NTL_CLASSES.map((cls) => {
+              const color = cls.color;
 
               return (
                 <div

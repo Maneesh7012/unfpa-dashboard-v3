@@ -403,7 +403,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         //  dynamic Sentinel URL
         const sentinelUrl = isOdisha
           ? null // keep existing mosaic logic for Odisha
-          : `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/sentinel%C2%A0%202_tci/${formattedDistrict}/${formattedDistrict}_${year}_q${quarter}.tif`;
+          : `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/sentinel%C2%A0%202_tci/${formattedDistrict}/${formattedDistrict}_${year}_q${quarter}.tif?section=sentinel`;
 
         // map.addSource(sourceId, {
         //   type: 'raster',
@@ -1012,7 +1012,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
       : `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc/${formattedDistrict}/${formattedDistrict}_${lulcYear}_q${lulcQ}_lulc.tif`;
 
     // Namespace the URL to avoid global setColorFunction collision with other components (like MapCompare)
-    const namespacedLulcUrl = `${baseLulcUrl}#section=sentinel`;
+    const namespacedLulcUrl = `${baseLulcUrl}?section=sentinel`;
 
     setColorFunction(
       namespacedLulcUrl,
