@@ -45,103 +45,116 @@ const basemapOptions: { id: 'grey' | 'satellite' | 'osm'; label: string }[] = [
   { id: 'osm', label: 'OSM' },
 ];
 
-export const DATA_CONFIG_ANUGUL: any = {
-  nightlight: {
-    urls: {
-      '2012':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/NTL_2012.tif',
-      '2024':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/NTL_2024.tif',
-    },
-    params:
-      '#color:["#e0f7fa", "#b2ebf2", "#80deea", "#4dd0e1", "#26c6da"],0,20,c',
-  },
-  urbansprawl: {
-    urls: {
-      '2011':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_built_up_vector_2010.pmtiles',
-      '2024':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_built_up_vector_2025.pmtiles',
-    },
-    params:
-      '#color:["#0868ac","#0868ac","#0868ac","#0868ac","#0868ac"],0,3000,c',
-  },
-  roads: {
-    urls: {
-      '2015':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_road_2015.pmtiles',
-      '2025':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_road_2025.pmtiles',
-    },
-    params:
-      '#color:["#0868ac","#0868ac","#0868ac","#0868ac","#0868ac"],0,3000,c',
-  },
-  barren: {
-    urls: {
-      '2018':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_lulc_barren_2018.tif',
-      '2024':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_lulc_barren_2024.tif',
-    },
-    params: '#color:["#91908e","#91908e"],8,8',
-  },
-  builtup: {
-    urls: {
-      '2011':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/ghs_2010.tif',
-      '2024':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/ghs_2025.tif',
-    },
-    params: '#color:["#0868ac","#0868ac"],1,1',
-  },
-  cropland: {
-    urls: {
-      '2018':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_lulc_cropland_2018.tif',
-      '2024':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_lulc_cropland_2024.tif',
-    },
-    params: '#color:["#1A5BAB","#1A5BAB"],5,5',
-  },
-  forest: {
-    urls: {
-      '2018':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_lulc_forest_2018.tif',
-      '2024':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_lulc_forest_2024.tif',
-    },
-    params: '#color:["#1A5BAB","#1A5BAB"],2,2',
-  },
-  scrub: {
-    urls: {
-      '2018':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_lulc_scrub_2018.tif',
-      '2024':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_lulc_scrub_2024.tif',
-    },
-    params: '#color:["#666666","#666666"],4,4',
-  },
-  water: {
-    urls: {
-      '2018':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_lulc_water_2018.tif',
-      '2024':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_lulc_water_2024.tif',
-    },
-    params: '#color:["#1A5BAB","#1A5BAB"],1,1',
-  },
-  wetlands: {
-    urls: {
-      '2018':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_lulc_wetlands_2018.tif',
-      '2024':
-        'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_lulc_wetlands_2024.tif',
-    },
-    params: '#color:["#87D19E","#87D19E"],11,11',
-  },
+
+
+const buildCategoricalParams = (targetValue: number, activeColor: string, defaultColor = '#f0f0f0') => {
+  const colors = Array(12).fill(defaultColor);
+  if (targetValue >= 0 && targetValue <= 11) {
+    colors[targetValue] = activeColor;
+  }
+  return `#color:[${colors.map(c => `"${c}"`).join(',')}],0,11,c`;
 };
 
-export const DATA_CONFIG = DATA_CONFIG_ANUGUL;
+// Available quarters by year
+export const LULC_QUARTERS = [
+  '2018 q1', '2018 q2', '2018 q3', '2018 q4',
+  '2019 q1', '2019 q2', '2019 q3', '2019 q4',
+  '2020 q1', '2020 q2', '2020 q3', '2020 q4',
+  '2021 q1', '2021 q2', '2021 q3', '2021 q4',
+  '2022 q1', '2022 q2', '2022 q3', '2022 q4',
+  '2023 q1', '2023 q2', '2023 q3', '2023 q4',
+  '2024 q1', '2024 q2', '2024 q3', '2024 q4',
+];
+
+export const getDistrictConfig = (district: string) => {
+  const d = district === 'Odisha' ? 'Anugul' : district;
+  const formattedDistrict = d.replace(/\s+/g, '').trim();
+  const baseUrl = 'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc';
+
+  const buildQuarterlyUrls = () => {
+    const urls: Record<string, string> = {};
+    LULC_QUARTERS.forEach((qLabel) => {
+      const [year, q] = qLabel.split(' ');
+      urls[qLabel] = `${baseUrl}/${formattedDistrict}/${formattedDistrict}_${year}_${q}_lulc.tif`;
+    });
+    return urls;
+  };
+
+  const lulcUrls = buildQuarterlyUrls();
+
+  return {
+    nightlight: {
+      urls: {
+        '2012':
+          'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/NTL_2012.tif',
+        '2024':
+          'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/NTL_2024.tif',
+      },
+      params:
+        '#color:["#e0f7fa", "#b2ebf2", "#80deea", "#4dd0e1", "#26c6da"],0,20,c',
+    },
+    urbansprawl: {
+      urls: {
+        '2011':
+          'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_built_up_vector_2010.pmtiles',
+        '2024':
+          'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_built_up_vector_2025.pmtiles',
+      },
+      params:
+        '#color:["#0868ac","#0868ac","#0868ac","#0868ac","#0868ac"],0,3000,c',
+    },
+    roads: {
+      urls: {
+        '2015':
+          'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_road_2015.pmtiles',
+        '2025':
+          'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/anugul_road_2025.pmtiles',
+      },
+      params:
+        '#color:["#0868ac","#0868ac","#0868ac","#0868ac","#0868ac"],0,3000,c',
+    },
+    lulc: {
+      urls: lulcUrls,
+      params: '',
+    },
+    barren: {
+      urls: lulcUrls,
+      params: '#color:["#0868ac","#0868ac"],7,7',
+    },
+    builtup: {
+      urls: lulcUrls,
+      params: buildCategoricalParams(6, '#0868ac'),
+      targetPixel: 6,
+      type: 'dynamic_lulc',
+    },
+    cropland: {
+      urls: lulcUrls,
+      params: buildCategoricalParams(4, '#1A5BAB'),
+      targetPixel: 4,
+      type: 'dynamic_lulc',
+    },
+    forest: {
+      urls: lulcUrls,
+      params: buildCategoricalParams(1, '#1A5BAB'),
+      targetPixel: 1,
+      type: 'dynamic_lulc',
+    },
+    scrub: {
+      urls: lulcUrls,
+      params: '#color:["#0868ac","#0868ac"],5,5',
+    },
+    water: {
+      urls: lulcUrls,
+      params: '#color:["#0868ac","#0868ac"],0,0',
+    },
+    wetlands: {
+      urls: lulcUrls,
+      params: '#color:["#0868ac","#0868ac"],3,3',
+    },
+  };
+};
+
+export const DATA_CONFIG = getDistrictConfig('Anugul');
 
 // Helper to add protocol only once
 let protocolsAdded = false;
@@ -153,13 +166,9 @@ const LULC_2024_URL =
 
 const getLulcName = (val: number) => {
   const lulcMap: Record<number, string> = {
-    1: 'Water',
-    2: 'Forest',
-    4: 'Scrub',
-    5: 'Cropland',
-    7: 'Builtup',
-    8: 'Barren',
-    11: 'Wetlands',
+    1: 'Forest',
+    4: 'Cropland',
+    6: 'Builtup',
   };
   return lulcMap[val] ? `${lulcMap[val]}` : String(val);
 };
@@ -332,22 +341,21 @@ export default function MapCompare({
     activeLulcPixel !== undefined
   ) {
     const lulcMap: Record<number, string> = {
-      1: 'water',
-      2: 'forest',
-      4: 'scrub',
-      5: 'cropland',
-      7: 'builtup',
-      8: 'barren',
-      11: 'wetlands',
+      1: 'forest',
+      4: 'cropland',
+      6: 'builtup',
     };
     resolvedLayerKey = lulcMap[activeLulcPixel] || 'water';
   }
 
-  const currentLayerKey = DATA_CONFIG[resolvedLayerKey]
+  const currentDistrict = targetDistrict || selectedDistrict || 'Anugul';
+  const dynamicConfig = getDistrictConfig(currentDistrict);
+
+  const currentLayerKey = dynamicConfig[resolvedLayerKey as keyof typeof dynamicConfig]
     ? resolvedLayerKey
     : 'water';
 
-  const config = DATA_CONFIG_ANUGUL[currentLayerKey];
+  const config: any = dynamicConfig[currentLayerKey as keyof typeof dynamicConfig];
 
   const availableYears = Object.keys(config.urls).sort();
 
@@ -369,11 +377,13 @@ export default function MapCompare({
       return baseUrl;
     }
 
-    let params = config.params;
+    let params = config.params || '';
     if (side === 'right') {
       if (currentLayerKey === 'nightlight') {
         params =
           '#color:["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"],0,20,c';
+      } else if (config.type === 'dynamic_lulc') {
+        params = buildCategoricalParams(config.targetPixel, '#ED022A');
       } else {
         params = params.replace(
           /#color:\["[^\]]+"\]/,

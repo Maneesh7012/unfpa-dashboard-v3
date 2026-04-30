@@ -43,7 +43,7 @@ import {
 import type { LayerType } from '../../../types';
 // import MapLulc from './MapLulc';
 // import { ChangeAnalysis } from './ChangeAnalysis';
-import MapCompare from '../MapCompare/MapCompare';
+import MapCompare, { LULC_QUARTERS } from '../MapCompare/MapCompare';
 import { MultiMapCompare } from '../MapCompare/MultiMapCompare';
 
 import { MapSentinelQuaterly } from '../Map/MapSentinelQuaterly';
@@ -62,8 +62,8 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
   data,
   allDistrictsData,
 }) => {
-  const [year1, setYear1] = useState(2011);
-  const [year2, setYear2] = useState(2024);
+  const [year1, setYear1] = useState<number | string>(2011);
+  const [year2, setYear2] = useState<number | string>(2024);
   const [compareLayer, setCompareLayer] = useState<
     LayerType | 'builtup' | 'lulc'
   >('builtup' as any);
@@ -89,13 +89,13 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     nightlight: ['2012', '2024'],
     urbansprawl: ['2011', '2024'],
     roads: ['2015', '2025'],
-    builtup: ['2011', '2024'],
-    cropland: ['2018', '2024'],
-    forest: ['2018', '2024'],
-    barren: ['2018', '2024'],
-    scrub: ['2018', '2024'],
-    water: ['2018', '2024'],
-    wetlands: ['2018', '2024'],
+    builtup: LULC_QUARTERS,
+    cropland: LULC_QUARTERS,
+    forest: LULC_QUARTERS,
+    barren: LULC_QUARTERS,
+    scrub: LULC_QUARTERS,
+    water: LULC_QUARTERS,
+    wetlands: LULC_QUARTERS,
   };
 
   const availableYears = layerYearMap[compareLayer] || ['2018', '2024'];
@@ -104,11 +104,13 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
   React.useEffect(() => {
     // setShowSentinel(false); // Hide sentinel when layer changes - persistent view preferred
     const validYears = layerYearMap[compareLayer] || ['2018', '2024'];
-    if (!validYears.includes(year1.toString())) {
-      setYear1(parseInt(validYears[0]));
-    }
-    if (!validYears.includes(year2.toString())) {
-      setYear2(parseInt(validYears[validYears.length - 1]));
+    if (!validYears.includes(String(year1))) {
+      setYear1(isNaN(Number(validYears[0])) ? validYears[0] : parseInt(validYears[0]));
+      setYear2(
+        isNaN(Number(validYears[validYears.length - 1]))
+          ? validYears[validYears.length - 1]
+          : parseInt(validYears[validYears.length - 1])
+      );
     }
   }, [compareLayer]);
 
@@ -1055,13 +1057,13 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                         <button
                           key={y}
                           onClick={() => {
-                            setYear1(parseInt(y));
+                            setYear1(isNaN(Number(y)) ? y : parseInt(y));
                             setOpenYear1(false);
                           }}
                           className="w-full px-2 py-3 text-left transition-all hover:bg-gray-50/50 group/item flex items-center rounded"
                         >
                           <span
-                            className={`text-xs font-bold tracking-wider border-b-2 pb-0.5 transition-all ${year1 === parseInt(y) ? 'text-gray-600 border-gray-400' : 'text-gray-600 border-gray-400'}`}
+                            className={`text-xs font-bold tracking-wider border-b-2 pb-0.5 transition-all ${year1 === (isNaN(Number(y)) ? y : parseInt(y)) ? 'text-gray-600 border-gray-400' : 'text-gray-600 border-gray-400'}`}
                           >
                             {y}
                           </span>
@@ -1104,13 +1106,13 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                         <button
                           key={y}
                           onClick={() => {
-                            setYear2(parseInt(y));
+                            setYear2(isNaN(Number(y)) ? y : parseInt(y));
                             setOpenYear2(false);
                           }}
                           className="w-full px-2 py-3 text-left transition-all hover:bg-gray-50/50 group/item flex items-center rounded"
                         >
                           <span
-                            className={`text-xs font-bold tracking-wider border-b-2 pb-0.5 transition-all ${year2 === parseInt(y) ? 'text-gray-600 border-gray-400' : 'text-gray-600 border-gray-400'}`}
+                            className={`text-xs font-bold tracking-wider border-b-2 pb-0.5 transition-all ${year2 === (isNaN(Number(y)) ? y : parseInt(y)) ? 'text-gray-600 border-gray-400' : 'text-gray-600 border-gray-400'}`}
                           >
                             {y}
                           </span>
