@@ -285,9 +285,16 @@ export const MapSection: React.FC<MapSectionProps> = ({
         targetDistrict === 'Odisha' ? 'All Districts' : targetDistrict;
       if (mappedName !== selectedDistrictName) {
         setSelectedDistrictName(mappedName);
+
+        // Also update districtData if we have the full data list
+        if (mappedName === 'All Districts') {
+          setDistrictData(null);
+        } else if (districtsLookup.has(mappedName)) {
+          setDistrictData(districtsLookup.get(mappedName));
+        }
       }
     }
-  }, [targetDistrict]);
+  }, [targetDistrict, districtsLookup]);
 
   // const [availableYears, setAvailableYears] = useState<string[]>(['2023']);
   // const [availableDistricts, setAvailableDistricts] = useState<any[]>([]);

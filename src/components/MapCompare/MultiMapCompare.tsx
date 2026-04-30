@@ -346,10 +346,16 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
   }, []);
 
   const lastFittedRef = useRef<string>('');
-
+ 
+  // Reset maps count and instances when district changes to handle re-mounting
   useEffect(() => {
-    const boundsToUse = targetBounds || sharedInitialBoundsRef.current;
-    if (!boundsToUse) return;
+    setMapsLoadedCount(0);
+    mapInstances.current.clear();
+  }, [selectedDistrict]);
+ 
+  useEffect(() => {
+    // Determine the best bounds to use
+    let boundsToUse = targetBounds || sharedInitialBoundsRef.current;
 
     // Create a fingerprint of the current state that should trigger a refocus
     const layerFingerprint = mapConfigs.map((m) => m.layer).join('|');
@@ -357,18 +363,57 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
 
     // Only refocus if the district or any layer has changed
     if (refocusFingerprint === lastFittedRef.current) return;
+    
+    const anyMap = Array.from(mapInstances.current.values())[0];
+    
+    // If we have an explicit district, try to find its bounds from the features
+    if (selectedDistrict && selectedDistrict !== 'Odisha' && anyMap && anyMap.isStyleLoaded()) {
+      const features = anyMap.querySourceFeatures('district-source', {
+        sourceLayer: 'zcta',
+        filter: [
+          'any',
+          ['==', ['get', 'district_name'], selectedDistrict],
+          ['==', ['get', 'DIST_NAME'], selectedDistrict],
+          ['==', ['get', 'District'], selectedDistrict],
+          ['==', ['get', 'NAME'], selectedDistrict],
+          ['==', ['get', 'name'], selectedDistrict],
+          ['==', ['get', 'district'], selectedDistrict],
+        ],
+      });
+
+      if (features && features.length > 0) {
+        const bounds = new maplibregl.LngLatBounds();
+        features.forEach((f: any) => {
+          if (f.geometry?.type === 'Polygon') {
+            f.geometry.coordinates[0].forEach((coord: any) =>
+              bounds.extend(coord as [number, number]),
+            );
+          } else if (f.geometry?.type === 'MultiPolygon') {
+            f.geometry.coordinates.forEach((poly: any) => {
+              poly[0].forEach((coord: any) => bounds.extend(coord as [number, number]));
+            });
+          }
+        });
+        if (!bounds.isEmpty()) {
+          boundsToUse = bounds.toArray() as any;
+        }
+      }
+    }
+
+    if (!boundsToUse) return;
+    
     lastFittedRef.current = refocusFingerprint;
 
     mapInstances.current.forEach((map) => {
       if (map.isStyleLoaded()) {
-        map.fitBounds(boundsToUse, {
+        map.fitBounds(boundsToUse!, {
           padding: 40,
           duration: 1200,
           essential: true,
         });
       } else {
         map.once('load', () => {
-          map.fitBounds(boundsToUse, { padding: 40, duration: 0 });
+          map.fitBounds(boundsToUse!, { padding: 40, duration: 1200 });
         });
       }
     });
@@ -455,7 +500,7 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
 
       <div className="flex flex-nowrap gap-4 overflow-x-auto pb-4 custom-scrollbar">
         {mapConfigs.map((config, idx) => (
-          <div key={config.id} className="min-w-[450px] flex-1">
+          <div key={`${config.id}-${selectedDistrict}`} className="min-w-[450px] flex-1">
             <MapItem
               config={config}
               panelIndex={idx}
