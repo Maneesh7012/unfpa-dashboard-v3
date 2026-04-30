@@ -7,7 +7,6 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
-import { motion } from 'framer-motion';
 import maplibregl from 'maplibre-gl';
 import {
   Plus,
@@ -1269,7 +1268,6 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
               if (lower.includes('bare')) return '#A59B8F';
               return '#94a3b8';
             };
-
 
             return (
               <div className="absolute top-8 right-8 z-[110] bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-2xl p-5 w-64 max-h-[70%] overflow-y-auto custom-scrollbar">
