@@ -1207,18 +1207,8 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
             if (availableYears.length < 2) return null;
 
             const currentYear = currentQuarter.year.toString();
-            const lastYear = availableYears[availableYears.length - 1];
-
-            // Determine the start year: use selected if available, otherwise earliest
-            const startYear = districtStats[currentYear]
-              ? currentYear
-              : availableYears[0];
-            const endYear = lastYear;
-
-            const rawStartData = districtStats[startYear];
-            const rawEndData = districtStats[endYear];
-
-            if (!rawStartData || !rawEndData) return null;
+            const prevYear = (currentQuarter.year - 1).toString();
+            // const lastYear = availableYears[availableYears.length - 1];
 
             // Helper to aggregate vegetation categories
             const aggregateData = (data: Record<string, number>) => {
@@ -1247,8 +1237,29 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
               return result;
             };
 
-            const startData = aggregateData(rawStartData);
-            const endData = aggregateData(rawEndData);
+            if (selectedLulcCategory === null) return null;
+
+            const valueToCategory: Record<string | number, string> = {
+              0: 'Water',
+              vegetation: 'Vegetation',
+              6: 'Built Area',
+              7: 'Bare Ground',
+            };
+
+            const categories =
+              selectedLulcCategory === 'all'
+                ? ['Water', 'Vegetation', 'Built Area', 'Bare Ground']
+                : [valueToCategory[selectedLulcCategory]].filter(Boolean);
+
+            if (categories.length === 0) return null;
+
+            const currentDataRaw = districtStats[currentYear];
+            const prevDataRaw = districtStats[prevYear];
+
+            if (!currentDataRaw) return null;
+
+            const currentData = aggregateData(currentDataRaw);
+            const prevData = prevDataRaw ? aggregateData(prevDataRaw) : null;
 
             const getCategoryColor = (label: string) => {
               const lower = label.toLowerCase();
@@ -1259,14 +1270,6 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
               return '#94a3b8';
             };
 
-            const categories = [
-              'Water',
-              'Vegetation',
-              'Built Area',
-              'Bare Ground',
-            ].filter(
-              (cat) => (startData[cat] || 0) > 0 || (endData[cat] || 0) > 0,
-            );
 
             return (
               <div className="absolute top-8 right-8 z-[110] bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-2xl p-5 w-64 max-h-[70%] overflow-y-auto custom-scrollbar">
@@ -1276,88 +1279,74 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                   </h4>
                   <p className="text-[12px] text-gray-900 font-bold mt-3 flex items-center gap-2">
                     <Calendar className="w-3.5 h-3.5 text-[#F76000]" />
-                    {startYear === endYear
-                      ? `Total Change (${availableYears[0]} - ${endYear})`
-                      : `${startYear} → ${endYear}`}
+                    {currentYear} Analysis
                   </p>
-                  <p className="text-[9px] text-gray-400 font-medium mt-0.5">
-                    {startYear === endYear
-                      ? 'Overall net area shift'
-                      : `Change since ${startYear}`}
+                  <p className="text-[9px] text-gray-400 font-medium mt-0.5 uppercase tracking-tighter">
+                    Area Coverage & Annual Change
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   {categories.map((cat) => {
-                    const sYear =
-                      startYear === endYear ? availableYears[0] : startYear;
-                    const from = districtStats[sYear]?.[cat] || 0;
-                    const to = endData[cat] || 0;
-                    const diff = to - from;
-                    const pct = from > 0 ? (diff / from) * 100 : 0;
-                    const isGain = diff >= 0;
+                    const area = currentData[cat] || 0;
+                    const prevArea = prevData ? prevData[cat] || 0 : 0;
+                    const diff = prevArea > 0 ? area - prevArea : 0;
+                    const pct = prevArea > 0 ? (diff / prevArea) * 100 : 0;
                     const color = getCategoryColor(cat);
 
                     return (
-                      <div key={cat} className="group">
-                        <div className="flex items-center justify-between mb-1">
+                      <div key={cat} className="flex flex-col gap-1">
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div
                               className="w-2.5 h-2.5 rounded-sm shadow-sm"
                               style={{ backgroundColor: color }}
                             />
-                            <span className="text-[10px] font-bold text-gray-700 truncate max-w-[110px]">
+                            <span className="text-[10px] font-bold text-gray-700">
                               {cat}
                             </span>
                           </div>
-                          <div
-                            className={`text-[11px] font-black ${isGain ? 'text-emerald-600' : 'text-rose-500'}`}
-                          >
-                            {isGain ? '+' : ''}
-                            {diff.toFixed(1)}
+                          <div className="text-[11px] font-black text-gray-900">
+                            {area.toLocaleString(undefined, {
+                              minimumFractionDigits: 1,
+                              maximumFractionDigits: 1,
+                            })}{' '}
+                            <span className="text-[9px] font-normal text-gray-400">
+                              sq.km
+                            </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{
-                                width: `${Math.min(Math.abs(pct), 100)}%`,
-                              }}
-                              transition={{ duration: 1, ease: 'easeOut' }}
-                              key={`${startYear}-${endYear}-${cat}`} // Force re-animate on change
-                              className={`h-full rounded-full ${isGain ? 'bg-emerald-400' : 'bg-rose-400'}`}
-                            />
+
+                        {prevData && (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <span className="text-[8px] font-black text-gray-500 uppercase">
+                              vs {prevYear}
+                            </span>
+                            <span
+                              className={`text-[10px] font-black ${
+                                pct >= 0 ? 'text-emerald-600' : 'text-rose-500'
+                              }`}
+                            >
+                              {pct >= 0 ? '+' : ''}
+                              {pct.toFixed(1)}%
+                            </span>
+                            {pct !== 0 && (
+                              <div
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  pct >= 0 ? 'bg-emerald-500' : 'bg-rose-500'
+                                }`}
+                              />
+                            )}
                           </div>
-                          <span
-                            className={`text-[9px] font-black min-w-[32px] text-right ${isGain ? 'text-emerald-600' : 'text-rose-500'}`}
-                          >
-                            {isGain ? '+' : ''}
-                            {pct.toFixed(1)}%
-                          </span>
-                        </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
 
-                <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      <span className="text-[8px] font-black text-gray-400 uppercase">
-                        Gain
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                      <span className="text-[8px] font-black text-gray-400 uppercase">
-                        Loss
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-[8px] font-black text-gray-300 uppercase tracking-tighter">
-                    LULC Trends
+                <div className="mt-5 pt-4 border-t border-gray-100">
+                  <div className="text-[8px] font-black text-gray-300 uppercase tracking-tighter text-center">
+                    District LULC Coverage Stats
                   </div>
                 </div>
               </div>
