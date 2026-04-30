@@ -585,3 +585,10 @@ export const LULC_STATS_v2: Record<
   },
 };
 
+1. Add content in terms of demography in banner section.
+2. No. could be highlighted in cards to show prominently in terms of all data in District Overview
+3. Add how much change in Land Use Analysis to show some numbers of how much number 
+is changed in each class as a summary of what has happened in the timeline period.
+4. check water bodies in lulc layer classification as they are not matching with the base layer
+take it directly from sentinel 2 lulc explorer - livingatlas.arcgis.com
+5. check Comparative Analysis  for issue of ther districts 
