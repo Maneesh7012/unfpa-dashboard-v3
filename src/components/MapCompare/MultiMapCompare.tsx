@@ -277,13 +277,13 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
   const [mapConfigs, setMapConfigs] = useState<MapConfig[]>([
     {
       id: 'map-1',
-      year: '2024',
+      year: propActiveLayer === 'nightlight' ? '2018 March' : '2017',
       layer: propActiveLayer || 'builtup',
       basemap: 'grey',
     },
     {
       id: 'map-2',
-      year: '2024',
+      year: propActiveLayer === 'nightlight' ? '2026 March' : '2025',
       layer: propActiveLayer || 'builtup',
       basemap: 'grey',
     },
@@ -299,7 +299,18 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
   useEffect(() => {
     if (propActiveLayer) {
       setMapConfigs((prev) =>
-        prev.map((m) => ({ ...m, layer: propActiveLayer })),
+        prev.map((m, idx) => {
+          let year = m.year;
+          if (idx === 0) {
+            year = propActiveLayer === 'nightlight' ? '2018 March' : '2017';
+          } else if (idx === 1) {
+            year = propActiveLayer === 'nightlight' ? '2026 March' : '2025';
+          } else {
+            // For 3rd map or others, default to a sensible middle/latest
+            year = propActiveLayer === 'nightlight' ? '2026 March' : '2024';
+          }
+          return { ...m, layer: propActiveLayer, year };
+        }),
       );
     }
   }, [propActiveLayer]);
@@ -484,15 +495,12 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
                     value={pendingConfig.layer}
                     onChange={(e) => {
                       const layer = e.target.value;
-
                       const defaultYear =
-                        mapConfigs.length === 2
-                          ? '01-01-2026'
-                          : layer === 'nightlight'
-                            ? '2026 March'
-                            : layer === 'degree_urbanization'
-                              ? '2024' // 👈 set whatever default you want
-                              : '2024';
+                        layer === 'nightlight'
+                          ? '2026 March'
+                          : pendingConfig.year.includes(' ')
+                            ? '2024'
+                            : pendingConfig.year;
 
                       setPendingConfig({ layer, year: defaultYear });
                     }}
@@ -1157,12 +1165,17 @@ const MapItem = ({
                   <button
                     key={key}
                     onClick={() => {
-                      // When switching to nightlight, default to latest available quarter
-                      const defaultYear =
-                        key === 'nightlight' ? '2026 March' : '2024';
+                      // Synchronize year format when switching layers
+                      const nextYear =
+                        key === 'nightlight'
+                          ? '2026 March'
+                          : config.year.includes(' ')
+                            ? '2024'
+                            : config.year;
+
                       onUpdate({
                         layer: key,
-                        year: key === 'nightlight' ? defaultYear : config.year,
+                        year: nextYear,
                       });
                       setIsLayerOpen(false);
                     }}
