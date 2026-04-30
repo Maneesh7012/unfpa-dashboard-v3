@@ -346,13 +346,13 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
   }, []);
 
   const lastFittedRef = useRef<string>('');
- 
+
   // Reset maps count and instances when district changes to handle re-mounting
   useEffect(() => {
     setMapsLoadedCount(0);
     mapInstances.current.clear();
   }, [selectedDistrict]);
- 
+
   useEffect(() => {
     // Determine the best bounds to use
     let boundsToUse = targetBounds || sharedInitialBoundsRef.current;
@@ -363,21 +363,34 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
 
     // Only refocus if the district or any layer has changed
     if (refocusFingerprint === lastFittedRef.current) return;
-    
-    const anyMap = Array.from(mapInstances.current.values())[0];
-    
-    // If we have an explicit district, try to find its bounds from the features
-    if (selectedDistrict && selectedDistrict !== 'Odisha' && anyMap && anyMap.isStyleLoaded()) {
-      const features = anyMap.querySourceFeatures('district-source', {
+
+    const performFit = (bounds: maplibregl.LngLatBoundsLike) => {
+      mapInstances.current.forEach((map) => {
+        if (map.isStyleLoaded()) {
+          map.fitBounds(bounds, {
+            padding: 40,
+            duration: 1200,
+            essential: true,
+          });
+        } else {
+          map.once('load', () => {
+            map.fitBounds(bounds, { padding: 40, duration: 1200 });
+          });
+        }
+      });
+    };
+
+    const tryFitFromFeatures = (map: maplibregl.Map) => {
+      const features = map.querySourceFeatures('districts-source', {
         sourceLayer: 'zcta',
         filter: [
           'any',
-          ['==', ['get', 'district_name'], selectedDistrict],
-          ['==', ['get', 'DIST_NAME'], selectedDistrict],
-          ['==', ['get', 'District'], selectedDistrict],
-          ['==', ['get', 'NAME'], selectedDistrict],
-          ['==', ['get', 'name'], selectedDistrict],
-          ['==', ['get', 'district'], selectedDistrict],
+          ['==', ['get', 'district_name'], selectedDistrict || ''],
+          ['==', ['get', 'DIST_NAME'], selectedDistrict || ''],
+          ['==', ['get', 'District'], selectedDistrict || ''],
+          ['==', ['get', 'NAME'], selectedDistrict || ''],
+          ['==', ['get', 'name'], selectedDistrict || ''],
+          ['==', ['get', 'district'], selectedDistrict || ''],
         ],
       });
 
@@ -390,33 +403,42 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
             );
           } else if (f.geometry?.type === 'MultiPolygon') {
             f.geometry.coordinates.forEach((poly: any) => {
-              poly[0].forEach((coord: any) => bounds.extend(coord as [number, number]));
+              poly[0].forEach((coord: any) =>
+                bounds.extend(coord as [number, number]),
+              );
             });
           }
         });
         if (!bounds.isEmpty()) {
-          boundsToUse = bounds.toArray() as any;
+          const bArr = bounds.toArray() as any;
+          performFit(bArr);
+          return true;
+        }
+      }
+      return false;
+    };
+
+    // If we have an explicit district, try to find its bounds
+    if (selectedDistrict && selectedDistrict !== 'Odisha') {
+      const anyMap = Array.from(mapInstances.current.values())[0];
+      if (anyMap) {
+        if (anyMap.isStyleLoaded()) {
+          const success = tryFitFromFeatures(anyMap);
+          if (!success) {
+            // Wait for idle and try again
+            anyMap.once('idle', () => tryFitFromFeatures(anyMap));
+          }
+        } else {
+          anyMap.once('load', () => {
+            anyMap.once('idle', () => tryFitFromFeatures(anyMap));
+          });
         }
       }
     }
 
-    if (!boundsToUse) return;
-    
-    lastFittedRef.current = refocusFingerprint;
-
-    mapInstances.current.forEach((map) => {
-      if (map.isStyleLoaded()) {
-        map.fitBounds(boundsToUse!, {
-          padding: 40,
-          duration: 1200,
-          essential: true,
-        });
-      } else {
-        map.once('load', () => {
-          map.fitBounds(boundsToUse!, { padding: 40, duration: 1200 });
-        });
-      }
-    });
+    if (boundsToUse) {
+      performFit(boundsToUse);
+    }
   }, [targetBounds, mapsLoadedCount, selectedDistrict, mapConfigs]);
 
   const syncMaps = (sourceId: string) => {
@@ -500,7 +522,10 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
 
       <div className="flex flex-nowrap gap-4 overflow-x-auto pb-4 custom-scrollbar">
         {mapConfigs.map((config, idx) => (
-          <div key={`${config.id}-${selectedDistrict}`} className="min-w-[450px] flex-1">
+          <div
+            key={`${config.id}-${selectedDistrict}`}
+            className="min-w-[450px] flex-1"
+          >
             <MapItem
               config={config}
               panelIndex={idx}
@@ -536,7 +561,7 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
         ))}
 
         {isAddingMap && (
-          <div className="min-w-[450px] max-w-[450px] h-[400px] bg-white rounded-2xl border-2 border-dashed border-orange-100 p-8 flex flex-col items-center justify-center gap-6 animate-in fade-in zoom-in duration-300">
+          <div className="min-w-[450px] max-w-[450px] h-[600px] bg-white rounded-2xl border-2 border-dashed border-orange-100 p-8 flex flex-col items-center justify-center gap-6 animate-in fade-in zoom-in duration-300">
             <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-2">
               <Plus className="w-8 h-8 text-[#F96000]" strokeWidth={2.5} />
             </div>
@@ -778,6 +803,18 @@ const MapItem = ({
 
     map.setPaintProperty('districts-mask', 'fill-color', getMaskColor());
     map.setPaintProperty('districts-mask', 'fill-opacity', 0);
+
+    if (map.getLayer('selected-district-outline')) {
+      map.setFilter('selected-district-outline', [
+        'any',
+        ['==', ['get', 'district_name'], selectedDistrict || ''],
+        ['==', ['get', 'DIST_NAME'], selectedDistrict || ''],
+        ['==', ['get', 'District'], selectedDistrict || ''],
+        ['==', ['get', 'NAME'], selectedDistrict || ''],
+        ['==', ['get', 'name'], selectedDistrict || ''],
+        ['==', ['get', 'district'], selectedDistrict || ''],
+      ]);
+    }
   };
 
   useEffect(() => {
@@ -825,6 +862,7 @@ const MapItem = ({
       'data-layer',
       'districts-mask',
       'districts-outline',
+      'selected-district-outline',
       'subdistrict-outline',
     ];
     const sourcesToClean = [
@@ -906,6 +944,39 @@ const MapItem = ({
           'line-opacity': 0.5,
         },
       });
+
+      // ✅ Add highlighted boundary for selected district
+      map.addLayer({
+        id: 'selected-district-outline',
+        type: 'line',
+        source: 'districts-source',
+        'source-layer': 'zcta',
+        paint: {
+          'line-color': '#F96000',
+          'line-width': 2.5,
+          'line-opacity': 1.0,
+        },
+        filter: [
+          'any',
+          ['==', ['get', 'district_name'], selectedDistrict || ''],
+          ['==', ['get', 'DIST_NAME'], selectedDistrict || ''],
+          ['==', ['get', 'District'], selectedDistrict || ''],
+          ['==', ['get', 'NAME'], selectedDistrict || ''],
+          ['==', ['get', 'name'], selectedDistrict || ''],
+          ['==', ['get', 'district'], selectedDistrict || ''],
+        ],
+      });
+    } else if (map.getLayer('selected-district-outline')) {
+      // If source exists but district changed, update filter
+      map.setFilter('selected-district-outline', [
+        'any',
+        ['==', ['get', 'district_name'], selectedDistrict || ''],
+        ['==', ['get', 'DIST_NAME'], selectedDistrict || ''],
+        ['==', ['get', 'District'], selectedDistrict || ''],
+        ['==', ['get', 'NAME'], selectedDistrict || ''],
+        ['==', ['get', 'name'], selectedDistrict || ''],
+        ['==', ['get', 'district'], selectedDistrict || ''],
+      ]);
     }
 
     if (!map.getSource('subdistrict-source')) {
@@ -1132,7 +1203,7 @@ const MapItem = ({
   };
 
   return (
-    <div className="relative h-[400px] bg-gray-100 rounded-2xl border border-gray-200 overflow-hidden group shadow-sm transition-all hover:shadow-md">
+    <div className="relative h-[600px] bg-gray-100 rounded-2xl border border-gray-200 overflow-hidden group shadow-sm transition-all hover:shadow-md">
       <div ref={containerRef} className="w-full h-full" />
 
       {isLoading && (
