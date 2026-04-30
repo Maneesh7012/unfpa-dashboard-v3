@@ -705,13 +705,13 @@ const MapItem = ({
     return '#fe0000';
   };
 
-  const palettes = [
-    ['#f7fbff', '#4292c6', '#2171b5', '#053b81'],
-    ['#fff5f0', '#ef3b2c', '#cb181d', '#99000d'],
-    ['#fff5eb', '#f16913', '#d94801', '#6c2202'],
-  ];
+  // const palettes = [
+  //   ['#f7fbff', '#4292c6', '#2171b5', '#053b81'],
+  //   ['#fff5f0', '#ef3b2c', '#cb181d', '#99000d'],
+  //   ['#fff5eb', '#f16913', '#d94801', '#6c2202'],
+  // ];
 
-  const activePalette = palettes[panelIndex % palettes.length];
+  // const activePalette = palettes[panelIndex % palettes.length];
   const panelColors = ['#0868ac', '#FF0000', '#F96000'];
   const activeColor = panelColors[panelIndex % panelColors.length];
 
