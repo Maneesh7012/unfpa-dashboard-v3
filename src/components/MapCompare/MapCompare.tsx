@@ -237,6 +237,33 @@ const getRoadLength = (district: string, year: string): number | null => {
   return val !== undefined && val !== null ? (val as number) : null;
 };
 
+const ROAD_CATEGORIES = [
+  {
+    label: 'National Highway',
+    values: ['trunk', 'primary', 'trunk_link', 'primary_link'],
+    color: '#ef4444',
+    width: 2.5,
+  },
+  {
+    label: 'State Highway',
+    values: ['secondary', 'secondary_link'],
+    color: '#f59e0b',
+    width: 2.0,
+  },
+  {
+    label: 'Major Roads',
+    values: ['tertiary', 'tertiary_link'],
+    color: '#10b981',
+    width: 1.5,
+  },
+  {
+    label: 'Local Roads',
+    values: ['residential', 'living_street', 'unclassified', 'road'],
+    color: '#94a3b8',
+    width: 1.0,
+  },
+];
+
 interface MapCompareProps {
   targetBounds?: maplibregl.LngLatBoundsLike;
   targetDistrict?: string;
@@ -710,8 +737,30 @@ export default function MapCompare({
                 source: sourceId,
                 'source-layer': 'zcta',
                 paint: {
-                  'line-color': side === 'right' ? '#ED022A' : '#0868ac',
-                  'line-width': 1,
+                  'line-color': [
+                    'match',
+                    ['get', 'highway'],
+                    ['trunk', 'primary', 'trunk_link', 'primary_link'],
+                    '#ef4444',
+                    ['secondary', 'secondary_link'],
+                    '#f59e0b',
+                    ['tertiary', 'tertiary_link'],
+                    '#10b981',
+                    ['residential', 'living_street', 'unclassified', 'road'],
+                    '#94a3b8',
+                    '#94a3b8',
+                  ],
+                  'line-width': [
+                    'match',
+                    ['get', 'highway'],
+                    ['trunk', 'primary'],
+                    2.5,
+                    ['secondary'],
+                    2,
+                    ['tertiary'],
+                    1.5,
+                    1,
+                  ],
                 },
                 minzoom: 0,
                 maxzoom: 22,
@@ -1481,6 +1530,21 @@ export default function MapCompare({
           {(viewMode === 'compare' || viewMode === 'map') && (
             <div className="absolute top-4 right-4 z-40 bg-white/20 backdrop-blur-sm text-white px-4 py-1.5 rounded-md text-sm font-medium shadow border border-white/30 uppercase font-mono tracking-wider">
               {viewMode === 'map' ? '2024' : formatLulcLabel(y2)}
+            </div>
+          )}
+
+          {/* ROADS LEGEND — bottom-left */}
+          {activeLayer === 'roads' && (
+            <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-40 w-[180px]">
+              <div className="text-[10px] font-black text-gray-700 uppercase tracking-wider mb-2">Road Network</div>
+              <div className="space-y-1.5">
+                {ROAD_CATEGORIES.map((cat) => (
+                  <div key={cat.label} className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 rounded-full" style={{ backgroundColor: cat.color }} />
+                    <span className="text-[10px] font-medium text-gray-700">{cat.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
