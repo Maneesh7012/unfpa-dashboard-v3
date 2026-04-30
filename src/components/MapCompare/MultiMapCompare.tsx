@@ -345,9 +345,20 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
     }
   }, []);
 
+  const lastFittedRef = useRef<string>('');
+
   useEffect(() => {
     const boundsToUse = targetBounds || sharedInitialBoundsRef.current;
     if (!boundsToUse) return;
+
+    // Create a fingerprint of the current state that should trigger a refocus
+    const layerFingerprint = mapConfigs.map((m) => m.layer).join('|');
+    const refocusFingerprint = `${selectedDistrict || 'odisha'}_${layerFingerprint}`;
+
+    // Only refocus if the district or any layer has changed
+    if (refocusFingerprint === lastFittedRef.current) return;
+    lastFittedRef.current = refocusFingerprint;
+
     mapInstances.current.forEach((map) => {
       if (map.isStyleLoaded()) {
         map.fitBounds(boundsToUse, {
@@ -361,7 +372,7 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
         });
       }
     });
-  }, [targetBounds, mapsLoadedCount]);
+  }, [targetBounds, mapsLoadedCount, selectedDistrict, mapConfigs]);
 
   const syncMaps = (sourceId: string) => {
     if (isSyncing.current) return;
