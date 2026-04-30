@@ -64,6 +64,8 @@ export const LULC_QUARTERS = [
   '2022 q1', '2022 q2', '2022 q3', '2022 q4',
   '2023 q1', '2023 q2', '2023 q3', '2023 q4',
   '2024 q1', '2024 q2', '2024 q3', '2024 q4',
+  '2025 q1', '2025 q2', '2025 q3', '2025 q4',
+  '2026 q1',
 ];
 
 export const getDistrictConfig = (district: string) => {

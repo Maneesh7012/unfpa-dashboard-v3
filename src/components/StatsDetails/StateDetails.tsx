@@ -98,21 +98,41 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     wetlands: LULC_QUARTERS,
   };
 
-  const availableYears = layerYearMap[compareLayer] || ['2018', '2024'];
+  const validYears = layerYearMap[compareLayer] || ['2018', '2024'];
+  const availableYears = validYears;
+  const isLulcLayer = validYears === LULC_QUARTERS;
+
+  const formatLulcLabel = (y: string | number) => {
+    const val = String(y);
+    if (val.includes('q')) {
+      const [year, q] = val.split(' ');
+      const monthMap: Record<string, string> = {
+        q1: 'March',
+        q2: 'June',
+        q3: 'September',
+        q4: 'December',
+      };
+      return `${monthMap[q]} ${year} - ${q.toUpperCase()}`;
+    }
+    return val;
+  };
 
   // Update years if current selection is not available for new layer
   React.useEffect(() => {
-    // setShowSentinel(false); // Hide sentinel when layer changes - persistent view preferred
-    const validYears = layerYearMap[compareLayer] || ['2018', '2024'];
-    if (!validYears.includes(String(year1))) {
-      setYear1(isNaN(Number(validYears[0])) ? validYears[0] : parseInt(validYears[0]));
-      setYear2(
-        isNaN(Number(validYears[validYears.length - 1]))
-          ? validYears[validYears.length - 1]
-          : parseInt(validYears[validYears.length - 1])
-      );
+    if (isLulcLayer) {
+      if (!LULC_QUARTERS.includes(String(year1))) setYear1('2018 q1');
+      if (!LULC_QUARTERS.includes(String(year2))) setYear2('2026 q1');
+    } else {
+      if (!validYears.includes(String(year1))) {
+        setYear1(isNaN(Number(validYears[0])) ? validYears[0] : parseInt(validYears[0]));
+        setYear2(
+          isNaN(Number(validYears[validYears.length - 1]))
+            ? validYears[validYears.length - 1]
+            : parseInt(validYears[validYears.length - 1])
+        );
+      }
     }
-  }, [compareLayer]);
+  }, [compareLayer, isLulcLayer, validYears]);
 
   const devScrollContainerRef = React.useRef<HTMLDivElement>(null);
   const [showDevLeftScroll, setShowDevLeftScroll] = useState(false);
@@ -1037,7 +1057,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                     }}
                     className="px-4 py-1.5 text-[12px] font-black tracking-wide bg-white text-gray-600 border border-gray-400 rounded-md transition-all min-w-[70px] flex items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-gray-400"
                   >
-                    <span className="font-mono">{year1}</span>
+                    <span className="font-mono">{formatLulcLabel(year1)}</span>
                   </div>
                   <button
                     onClick={() => {
@@ -1065,7 +1085,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                           <span
                             className={`text-xs font-bold tracking-wider border-b-2 pb-0.5 transition-all ${year1 === (isNaN(Number(y)) ? y : parseInt(y)) ? 'text-gray-600 border-gray-400' : 'text-gray-600 border-gray-400'}`}
                           >
-                            {y}
+                            {formatLulcLabel(y)}
                           </span>
                         </button>
                       ))}
@@ -1086,7 +1106,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                     }}
                     className="px-4 py-1.5 text-[12px] font-black tracking-wide bg-white text-gray-600 border border-gray-400 rounded-md transition-all min-w-[70px] flex items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-gray-400"
                   >
-                    <span className="font-mono">{year2}</span>
+                    <span className="font-mono">{formatLulcLabel(year2)}</span>
                   </div>
                   <button
                     onClick={() => {
@@ -1114,7 +1134,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                           <span
                             className={`text-xs font-bold tracking-wider border-b-2 pb-0.5 transition-all ${year2 === (isNaN(Number(y)) ? y : parseInt(y)) ? 'text-gray-600 border-gray-400' : 'text-gray-600 border-gray-400'}`}
                           >
-                            {y}
+                            {formatLulcLabel(y)}
                           </span>
                         </button>
                       ))}
