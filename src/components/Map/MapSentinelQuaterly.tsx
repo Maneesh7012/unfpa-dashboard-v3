@@ -1011,22 +1011,28 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
       ? `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc_quarterly/raster/lulc_${lulcYear}_q${lulcQ}.tif`
       : `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc/${formattedDistrict}/${formattedDistrict}_${lulcYear}_q${lulcQ}_lulc.tif`;
 
-    setColorFunction(baseLulcUrl, (pixel: any, color: any, metadata: any) => {
-      const val = pixel[0];
-      if (val === metadata.noData || val < 0 || val > 7) {
-        color.set([0, 0, 0, 0]);
-        return;
-      }
-      const rgba = [...(LULC_RGBA[val] || [0, 0, 0, 0])];
-      let isVisible = selectedLulcCategory === 'all';
-      if (typeof selectedLulcCategory === 'number') {
-        isVisible = val === selectedLulcCategory;
-      } else if (selectedLulcCategory === 'vegetation') {
-        isVisible = [1, 2, 3, 4, 5].includes(val);
-      }
-      if (!isVisible) rgba[3] = 0;
-      color.set(rgba);
-    });
+    // Namespace the URL to avoid global setColorFunction collision with other components (like MapCompare)
+    const namespacedLulcUrl = `${baseLulcUrl}#section=sentinel`;
+
+    setColorFunction(
+      namespacedLulcUrl,
+      (pixel: any, color: any, metadata: any) => {
+        const val = pixel[0];
+        if (val === metadata.noData || val < 0 || val > 7) {
+          color.set([0, 0, 0, 0]);
+          return;
+        }
+        const rgba = [...(LULC_RGBA[val] || [0, 0, 0, 0])];
+        let isVisible = selectedLulcCategory === 'all';
+        if (typeof selectedLulcCategory === 'number') {
+          isVisible = val === selectedLulcCategory;
+        } else if (selectedLulcCategory === 'vegetation') {
+          isVisible = [1, 2, 3, 4, 5].includes(val);
+        }
+        if (!isVisible) rgba[3] = 0;
+        color.set(rgba);
+      },
+    );
 
     setLulcStatus('loading');
     try {
@@ -1034,7 +1040,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
       if (m.getSource(sourceId)) m.removeSource(sourceId);
       m.addSource(sourceId, {
         type: 'raster',
-        url: `cog://${baseLulcUrl}`,
+        url: `cog://${namespacedLulcUrl}`,
         tileSize: 256,
       });
       const beforeLayer = m.getLayer('district-mask-layer')
