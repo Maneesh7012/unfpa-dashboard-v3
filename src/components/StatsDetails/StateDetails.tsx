@@ -62,8 +62,8 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
   data,
   allDistrictsData,
 }) => {
-  const [year1, setYear1] = useState<number | string>(2011);
-  const [year2, setYear2] = useState<number | string>(2024);
+  const [year1, setYear1] = useState<number | string>('2018 q1');
+  const [year2, setYear2] = useState<number | string>('2026 q1');
   const [compareLayer, setCompareLayer] = useState<
     LayerType | 'builtup' | 'lulc'
   >('builtup' as any);
@@ -498,34 +498,6 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
   const PROJECTION_DATA = getProjectionData();
 
   // Available years for each layer
-  const LAYER_YEARS: Record<string, number[]> = {
-    // buildup: [2011, 2024], // use the lulc layer built area
-    nightlight: [2012, 2024],
-    urbansprawl: [2011, 2024],
-    lulc: [2018, 2024],
-    water: [2018, 2024],
-    forest: [2018, 2024],
-    scrub: [2018, 2024],
-    cropland: [2018, 2024],
-    builtup: [2011, 2024],
-    barren: [2018, 2024],
-    wetlands: [2018, 2024],
-    roads: [2015, 2025],
-  };
-
-  // Derived years based on selected layer
-  // const years = LAYER_YEARS[compareLayer] || [];
-
-  // Reset years and lulc selection when layer changes manually
-  React.useEffect(() => {
-    const availableYears = LAYER_YEARS[compareLayer];
-    if (availableYears) {
-      // Default: First and Last year
-      setYear1(availableYears[0]);
-      setYear2(availableYears[availableYears.length - 1]);
-    }
-  }, [compareLayer]);
-
   // Tab Content Data
   // Tab Content Data moved to ChangeAnalysis.tsx
   const isModelVsCensus = projectionMode === 'Model Vs Census Projection';
@@ -1072,7 +1044,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                     />
                   </button>
                   {openYear1 && (
-                    <div className="absolute right-0 top-full mt-3 bg-white rounded-md shadow-xl border border-gray-100 p-3 z-[200] animate-in fade-in slide-in-from-top-2 min-w-[120px] transition-all">
+                    <div className="absolute right-0 top-full mt-3 bg-white rounded-md shadow-xl border border-gray-100 p-3 z-[200] animate-in fade-in slide-in-from-top-2 w-max min-w-[160px] max-h-60 overflow-y-auto transition-all">
                       {availableYears.map((y) => (
                         <button
                           key={y}
@@ -1080,7 +1052,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                             setYear1(isNaN(Number(y)) ? y : parseInt(y));
                             setOpenYear1(false);
                           }}
-                          className="w-full px-2 py-3 text-left transition-all hover:bg-gray-50/50 group/item flex items-center rounded"
+                          className="w-full px-2 py-3 text-left transition-all hover:bg-gray-50/50 group/item flex items-center rounded whitespace-nowrap"
                         >
                           <span
                             className={`text-xs font-bold tracking-wider border-b-2 pb-0.5 transition-all ${year1 === (isNaN(Number(y)) ? y : parseInt(y)) ? 'text-gray-600 border-gray-400' : 'text-gray-600 border-gray-400'}`}
@@ -1121,7 +1093,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                     />
                   </button>
                   {openYear2 && (
-                    <div className="absolute right-0 top-full mt-3 bg-white rounded-md shadow-xl border border-gray-100 p-3 z-[200] animate-in fade-in slide-in-from-top-2 min-w-[120px] transition-all">
+                    <div className="absolute right-0 top-full mt-3 bg-white rounded-md shadow-xl border border-gray-100 p-3 z-[200] animate-in fade-in slide-in-from-top-2 w-max min-w-[160px] max-h-60 overflow-y-auto transition-all">
                       {availableYears.map((y) => (
                         <button
                           key={y}
@@ -1129,7 +1101,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                             setYear2(isNaN(Number(y)) ? y : parseInt(y));
                             setOpenYear2(false);
                           }}
-                          className="w-full px-2 py-3 text-left transition-all hover:bg-gray-50/50 group/item flex items-center rounded"
+                          className="w-full px-2 py-3 text-left transition-all hover:bg-gray-50/50 group/item flex items-center rounded whitespace-nowrap"
                         >
                           <span
                             className={`text-xs font-bold tracking-wider border-b-2 pb-0.5 transition-all ${year2 === (isNaN(Number(y)) ? y : parseInt(y)) ? 'text-gray-600 border-gray-400' : 'text-gray-600 border-gray-400'}`}
