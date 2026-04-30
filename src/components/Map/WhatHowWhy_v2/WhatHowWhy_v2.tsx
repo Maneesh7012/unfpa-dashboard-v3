@@ -647,7 +647,7 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
         <div>
           <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
             <Satellite className="w-6 h-6" />
-            What, How and Why
+            Hotspot Analysis
           </h2>
           <p className="text-[13px] text-gray-500 mt-1 font-medium leading-relaxed">
             Analyze what changed, how it changed, and why using high-resolution
