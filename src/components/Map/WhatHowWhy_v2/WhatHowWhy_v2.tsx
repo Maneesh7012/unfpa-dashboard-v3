@@ -969,7 +969,7 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
                                     return ASSET_MAP[targetPath] || block.url;
                                   })()}
                                   alt=""
-                                  className="w-full h-70"
+                                  className="w-full h-100"
                                 />
                               </div>
                               {block.desc && (

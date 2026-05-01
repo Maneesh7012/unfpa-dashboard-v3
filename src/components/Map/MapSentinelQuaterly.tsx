@@ -73,14 +73,15 @@ const DISTRICT_SYNONYMS: Record<string, string[]> = {
 };
 
 const LULC_RGBA: Record<number, number[]> = {
-  0: [65, 155, 223, 255], // Water (#419BDF)
-  1: [57, 125, 73, 255], // Trees (#397D49)
-  2: [136, 176, 83, 255], // Grass (#88B053)
-  3: [122, 135, 198, 255], // Flooded vegetation (#7A87C6)
-  4: [228, 150, 53, 255], // Crops (#E49635)
-  5: [223, 195, 90, 255], // Shrub & Scrub (#DFC35A)
-  6: [196, 40, 27, 255], // Built (#C4281B)
-  7: [165, 155, 143, 255], // Bare (#A59B8F)
+  1: [65, 155, 223, 255], // Water (#419BDF)
+  2: [57, 125, 73, 255], // Trees (#397D49)
+  4: [122, 135, 198, 255], // Flooded vegetation (#7A87C6)
+  5: [228, 150, 53, 255], // Crops (#E49635)
+  7: [196, 40, 27, 255], // Built (#C4281B)
+  8: [165, 155, 143, 255], // Bare (#A59B8F)
+  9: [240, 240, 240, 255], // Snow/Ice (#F0F0F0)
+  10: [255, 255, 255, 255], // Clouds (#FFFFFF)
+  11: [223, 195, 90, 255], // Rangeland (#DFC35A)
 };
 
 type LulcCategory = number | 'all' | 'vegetation';
@@ -93,36 +94,32 @@ interface LulcLegendItem {
 }
 
 const LULC_LEGEND: LulcLegendItem[] = [
-  { label: 'Water', color: '#419BDF', value: 0, key: 'water' },
-  { label: 'Trees', color: '#397D49', value: 1, key: 'trees' },
-  { label: 'Grass', color: '#88B053', value: 2, key: 'grass' },
+  { label: 'Water', color: '#419BDF', value: 1, key: 'water' },
+  { label: 'Trees', color: '#397D49', value: 2, key: 'trees' },
   {
     label: 'Flooded vegetation',
     color: '#7A87C6',
-    value: 3,
+    value: 4,
     key: 'flooded_vegetation',
   },
-  { label: 'Crops', color: '#E49635', value: 4, key: 'crops' },
-  {
-    label: 'Shrub & Scrub',
-    color: '#DFC35A',
-    value: 5,
-    key: 'shrub_and_scrub',
-  },
-  { label: 'Built area', color: '#C4281B', value: 6, key: 'built' },
-  { label: 'Bare Ground', color: '#A59B8F', value: 7, key: 'bare' },
+  { label: 'Crops', color: '#E49635', value: 5, key: 'crops' },
+  { label: 'Built area', color: '#C4281B', value: 7, key: 'built' },
+  { label: 'Bare Ground', color: '#A59B8F', value: 8, key: 'bare' },
+  { label: 'Snow/Ice', color: '#F0F0F0', value: 9, key: 'snow_ice' },
+  { label: 'Clouds', color: '#FFFFFF', value: 10, key: 'clouds' },
+  { label: 'Rangeland', color: '#DFC35A', value: 11, key: 'rangeland' },
 ];
 
 const UI_LULC_LEGEND = [
-  LULC_LEGEND.find((c) => c.value === 0),
+  LULC_LEGEND.find((c) => c.value === 1),
   {
     label: 'Vegetation',
     color: '#397D49',
     value: 'vegetation',
     key: 'vegetation',
   },
-  LULC_LEGEND.find((c) => c.value === 6),
   LULC_LEGEND.find((c) => c.value === 7),
+  LULC_LEGEND.find((c) => c.value === 8),
 ].filter(Boolean) as any[];
 
 interface Quarter {
@@ -403,7 +400,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         //  dynamic Sentinel URL
         const sentinelUrl = isOdisha
           ? null // keep existing mosaic logic for Odisha
-          : `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/sentinel%C2%A0%202_tci/${formattedDistrict}/${formattedDistrict}_${year}_q${quarter}.tif?section=sentinel`;
+          : `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/sentinel%C2%A0%202_tci/${formattedDistrict}/${formattedDistrict}_${year}_q${quarter}.tif`;
 
         // map.addSource(sourceId, {
         //   type: 'raster',
@@ -648,7 +645,10 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
   }, [isLoaded]);
 
   const chartData = useMemo(() => {
-    if (!districtLulcData) return [];
+    const normalizedDistrict =
+      DISTRICT_NAME_VARIANTS[targetDistrict] || targetDistrict;
+    const stats = LULC_STATS[normalizedDistrict] || LULC_STATS['Odisha'];
+
     const data = QUARTERS.map((q, index) => {
       const item: any = {
         name: q.label,
@@ -657,19 +657,34 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         q: q.q,
         index: index,
       };
-      LULC_LEGEND.forEach((cat) => {
-        const attrKey = `lulc_${q.year}_q${q.q}_clipped_${cat.key}`;
-        const rawVal = districtLulcData[attrKey];
-        item[cat.key] =
-          typeof rawVal === 'string' ? parseFloat(rawVal) : rawVal || 0;
-      });
-      // Calculate consolidated vegetation sum
+
+      const yearKey = q.year.toString();
+      const yearStats = stats ? stats[yearKey] : null;
+
+      if (yearStats) {
+        // Map LULC_STATS keys to chart keys
+        item['water'] = yearStats['Water'] || 0;
+        item['trees'] = yearStats['Trees'] || 0;
+        item['flooded_vegetation'] = yearStats['Flooded Vegetation'] || 0;
+        item['crops'] = yearStats['Crops'] || 0;
+        item['built'] = yearStats['Built Area'] || 0;
+        item['bare'] = yearStats['Bare Ground'] || 0;
+        item['snow_ice'] = yearStats['Snow/Ice'] || 0;
+        item['clouds'] = yearStats['Clouds'] || 0;
+        item['rangeland'] = yearStats['Rangeland'] || 0;
+      } else {
+        LULC_LEGEND.forEach((cat) => {
+          item[cat.key] = 0;
+        });
+      }
+
+      // Calculate consolidated vegetation sum: Trees + Flooded Veg + Crops + Rangeland
       item['vegetation'] =
         (item['trees'] || 0) +
-        (item['grass'] || 0) +
         (item['flooded_vegetation'] || 0) +
         (item['crops'] || 0) +
-        (item['shrub_and_scrub'] || 0);
+        (item['rangeland'] || 0);
+
       return item;
     });
 
@@ -998,27 +1013,25 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
 
     const lulcYear = currentQuarter.year;
     const lulcQ = currentQuarter.q;
-    // const baseLulcUrl = `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc_quarterly/raster/lulc_${lulcYear}_q${lulcQ}.tif`;
 
-    const formatDistrictName = (name: string) =>
-      name.replace(/\s+/g, '').trim();
-
-    const formattedDistrict = formatDistrictName(targetDistrict);
+    const normalizedDistrict =
+      DISTRICT_NAME_VARIANTS[targetDistrict] || targetDistrict;
+    const formattedDistrict = normalizedDistrict.replace(/\s+/g, '').trim();
 
     const isOdisha = targetDistrict.toLowerCase() === 'odisha';
 
     const baseLulcUrl = isOdisha
       ? `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc_quarterly/raster/lulc_${lulcYear}_q${lulcQ}.tif`
-      : `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc/${formattedDistrict}/${formattedDistrict}_${lulcYear}_q${lulcQ}_lulc.tif`;
+      : `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc_yearly/${formattedDistrict}/${formattedDistrict}_lulc_${lulcYear}.tif`;
 
     // Namespace the URL to avoid global setColorFunction collision with other components (like MapCompare)
-    const namespacedLulcUrl = `${baseLulcUrl}?section=sentinel`;
+    const namespacedLulcUrl = `${baseLulcUrl}`;
 
     setColorFunction(
       namespacedLulcUrl,
       (pixel: any, color: any, metadata: any) => {
         const val = pixel[0];
-        if (val === metadata.noData || val < 0 || val > 7) {
+        if (val === metadata.noData || val < 0 || val > 11) {
           color.set([0, 0, 0, 0]);
           return;
         }
@@ -1027,7 +1040,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         if (typeof selectedLulcCategory === 'number') {
           isVisible = val === selectedLulcCategory;
         } else if (selectedLulcCategory === 'vegetation') {
-          isVisible = [1, 2, 3, 4, 5].includes(val);
+          isVisible = [2, 4, 5, 11].includes(val); // Trees, Flooded Veg, Crops, Rangeland
         }
         if (!isVisible) rgba[3] = 0;
         color.set(rgba);
@@ -1219,46 +1232,42 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
               : (currentQuarter.year - 1).toString();
             // const lastYear = availableYears[availableYears.length - 1];
 
-            // Helper to aggregate vegetation categories
+            // Helper to process data for display
             const aggregateData = (data: Record<string, number>) => {
               const result: Record<string, number> = {};
-              let vegetationSum = 0;
-
-              const vegKeys = [
-                'trees',
-                'flooded vegetation',
-                'crops',
-                'shrub & scrub',
-                'grass',
-                'rangeland',
-              ];
-
               Object.keys(data).forEach((key) => {
-                const lowerKey = key.toLowerCase();
-                if (vegKeys.some((vk) => lowerKey.includes(vk))) {
-                  vegetationSum += data[key] || 0;
-                } else {
-                  result[key] = data[key];
-                }
+                result[key] = data[key];
               });
-
-              result['Vegetation'] = vegetationSum;
+              // Still calculate Vegetation sum in case it's needed
+              result['Vegetation'] =
+                (data['Trees'] || 0) +
+                (data['Flooded Vegetation'] || 0) +
+                (data['Crops'] || 0) +
+                (data['Rangeland'] || 0);
               return result;
             };
 
             if (selectedLulcCategory === null) return null;
 
-            const valueToCategory: Record<string | number, string> = {
-              0: 'Water',
-              vegetation: 'Vegetation',
-              6: 'Built Area',
-              7: 'Bare Ground',
+            const valueToCategory: Record<string | number, string[]> = {
+              1: ['Water'],
+              vegetation: ['Trees', 'Flooded Vegetation', 'Crops', 'Rangeland'],
+              7: ['Built Area'],
+              8: ['Bare Ground'],
             };
 
             const categories =
               selectedLulcCategory === 'all'
-                ? ['Water', 'Vegetation', 'Built Area', 'Bare Ground']
-                : [valueToCategory[selectedLulcCategory]].filter(Boolean);
+                ? [
+                    'Water',
+                    'Trees',
+                    'Flooded Vegetation',
+                    'Crops',
+                    'Rangeland',
+                    'Built Area',
+                    'Bare Ground',
+                  ]
+                : valueToCategory[selectedLulcCategory] || [];
 
             if (categories.length === 0) return null;
 
@@ -1272,10 +1281,14 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
 
             const getCategoryColor = (label: string) => {
               const lower = label.toLowerCase();
-              if (lower === 'vegetation') return '#397D49';
+              if (lower === 'trees') return '#397D49';
+              if (lower.includes('flooded')) return '#7A87C6';
+              if (lower === 'crops') return '#E49635';
+              if (lower === 'rangeland') return '#DFC35A';
               if (lower.includes('water')) return '#419BDF';
               if (lower.includes('built')) return '#C4281B';
               if (lower.includes('bare')) return '#A59B8F';
+              if (lower === 'vegetation') return '#397D49';
               return '#94a3b8';
             };
 
