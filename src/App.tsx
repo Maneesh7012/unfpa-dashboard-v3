@@ -50,23 +50,49 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
-      {/* District Overview */}
-      <div className="border-t border-gray-100 bg-gray-50">
-        <StateDemographics_v3
-          selectedDistrict={selectedDistrict}
-          selectedData={selectedData}
-          allDistrictsData={allDistrictsData}
-        />
-      </div>
+      {/* Combined Stats Section with Overlay */}
+      <div
+        className={`relative ${
+          !selectedDistrict || selectedDistrict.toLowerCase() === 'odisha'
+            ? 'h-[500px] overflow-hidden'
+            : 'min-h-[500px]'
+        }`}
+      >
+        {(!selectedDistrict || selectedDistrict.toLowerCase() === 'odisha') && (
+          <div className="absolute inset-0 z-[100] bg-white/60 backdrop-blur-xl flex flex-col items-center justify-center text-center p-8 transition-all duration-700 animate-in fade-in">
+            <div className="max-w-2xl transform transition-all duration-1000 slide-in-from-bottom-8">
+              <h2 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tighter uppercase mb-6 leading-[0.9] font-mono">
+                Select a <span className="text-[#F76000]">Project</span> to view{' '}
+                <br />
+                District Overview and State Details
+              </h2>
+              <div className="w-24 h-1.5 bg-[#F76000] mx-auto mb-6 rounded-full" />
+              <p className="text-gray-500 text-[11px] font-black uppercase tracking-[0.3em] max-w-md mx-auto leading-relaxed">
+                Choose a specific district on the map above to unlock detailed
+                demographics, landscape trends, and statistical insights.
+              </p>
+            </div>
+          </div>
+        )}
 
-      {/* Detailed Stats */}
-      <div className="border-t border-gray-100">
-        <StatsDetails
-          selectedDistrict={selectedDistrict}
-          onDistrictSelect={setSelectedDistrict}
-          data={selectedData}
-          allDistrictsData={allDistrictsData}
-        />
+        {/* District Overview */}
+        <div className="border-t border-gray-100 bg-gray-50">
+          <StateDemographics_v3
+            selectedDistrict={selectedDistrict}
+            selectedData={selectedData}
+            allDistrictsData={allDistrictsData}
+          />
+        </div>
+
+        {/* Detailed Stats */}
+        <div className="border-t border-gray-100">
+          <StatsDetails
+            selectedDistrict={selectedDistrict}
+            onDistrictSelect={setSelectedDistrict}
+            data={selectedData}
+            allDistrictsData={allDistrictsData}
+          />
+        </div>
       </div>
     </>
   );
