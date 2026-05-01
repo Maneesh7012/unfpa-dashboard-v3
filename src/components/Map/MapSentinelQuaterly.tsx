@@ -1249,15 +1249,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
 
             const categories =
               selectedLulcCategory === 'all'
-                ? [
-                    'Water',
-                    'Trees',
-                    'Flooded Vegetation',
-                    'Crops',
-                    'Rangeland',
-                    'Built Area',
-                    'Bare Ground',
-                  ]
+                ? ['Water', 'Vegetation', 'Built Area', 'Bare Ground']
                 : valueToCategory[selectedLulcCategory] || [];
 
             if (categories.length === 0) return null;

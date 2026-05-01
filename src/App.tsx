@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Header } from './components/Header/Header';
 import { Footer } from './components/Footer/Footer';
@@ -15,6 +15,10 @@ import { StateDemographics_v3 } from './components/Hero/StateDemographics/StateD
 import { HeroSection_v3 } from './components/Hero/HeroSection_v3';
 
 const Dashboard: React.FC = () => {
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const [currentView, setCurrentView] = useState<ViewType>('Demographics');
   const [selectedDistrict, setSelectedDistrict] = useState<string>('Odisha');
   const [selectedData, setSelectedData] = useState<any>(null);
@@ -59,7 +63,7 @@ const Dashboard: React.FC = () => {
         }`}
       >
         {(!selectedDistrict || selectedDistrict.toLowerCase() === 'odisha') && (
-          <div className="absolute inset-0 z-[100] bg-white/60 backdrop-blur-xl flex flex-col items-center justify-center text-center p-8 transition-all duration-700 animate-in fade-in">
+          <div className="absolute inset-0 z-[900] bg-white/60 backdrop-blur-xl flex flex-col items-center justify-center text-center p-8 transition-all duration-700 animate-in fade-in">
             <div className="max-w-2xl transform transition-all duration-1000 slide-in-from-bottom-8">
               <h2 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tighter uppercase mb-6 leading-[0.9] font-mono">
                 Select a <span className="text-[#F76000]">Project</span> to view{' '}

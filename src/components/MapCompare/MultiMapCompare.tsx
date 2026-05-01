@@ -354,9 +354,6 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
   }, [selectedDistrict]);
 
   useEffect(() => {
-    // Determine the best bounds to use
-    let boundsToUse = targetBounds || sharedInitialBoundsRef.current;
-
     // Create a fingerprint of the current state that should trigger a refocus
     const layerFingerprint = mapConfigs.map((m) => m.layer).join('|');
     const refocusFingerprint = `${selectedDistrict || 'odisha'}_${layerFingerprint}`;
@@ -378,9 +375,13 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
           });
         }
       });
+      lastFittedRef.current = refocusFingerprint;
     };
 
     const tryFitFromFeatures = (map: maplibregl.Map) => {
+      const source = map.getSource('districts-source');
+      if (!source) return false;
+
       const features = map.querySourceFeatures('districts-source', {
         sourceLayer: 'zcta',
         filter: [
@@ -410,22 +411,27 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
           }
         });
         if (!bounds.isEmpty()) {
-          const bArr = bounds.toArray() as any;
-          performFit(bArr);
+          performFit(bounds.toArray() as any);
           return true;
         }
       }
       return false;
     };
 
-    // If we have an explicit district, try to find its bounds
-    if (selectedDistrict && selectedDistrict !== 'Odisha') {
+    // 1. If we have explicit targetBounds from prop, use them first
+    if (targetBounds) {
+      performFit(targetBounds);
+      return;
+    }
+
+    // 2. If we have a district, try to fit to its features
+    if (selectedDistrict && selectedDistrict.toLowerCase() !== 'odisha') {
       const anyMap = Array.from(mapInstances.current.values())[0];
       if (anyMap) {
         if (anyMap.isStyleLoaded()) {
           const success = tryFitFromFeatures(anyMap);
           if (!success) {
-            // Wait for idle and try again
+            // Wait for data to load
             anyMap.once('idle', () => tryFitFromFeatures(anyMap));
           }
         } else {
@@ -434,10 +440,9 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
           });
         }
       }
-    }
-
-    if (boundsToUse) {
-      performFit(boundsToUse);
+    } else if (sharedInitialBoundsRef.current) {
+      // 3. Fallback to initial bounds (Odisha)
+      performFit(sharedInitialBoundsRef.current);
     }
   }, [targetBounds, mapsLoadedCount, selectedDistrict, mapConfigs]);
 
