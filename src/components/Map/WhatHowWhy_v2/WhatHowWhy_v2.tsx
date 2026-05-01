@@ -685,10 +685,16 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
             {isYearDropdownOpen && (
               <>
                 <div
-                  className="fixed inset-0 z-190"
+                  className={`fixed inset-0 ${
+                    isImagePreviewOpen ? 'z-30' : 'z-190'
+                  }`}
                   onClick={() => setIsYearDropdownOpen(false)}
                 />
-                <div className="absolute right-0 top-full mt-3 bg-white rounded-md shadow-xl border border-gray-100 p-3 z-200 animate-in fade-in slide-in-from-top-2 min-w-30 transition-all">
+                <div
+                  className={`absolute right-0 top-full mt-3 bg-white rounded-md shadow-xl border border-gray-100 p-3 ${
+                    isImagePreviewOpen ? 'z-30' : 'z-200'
+                  } animate-in fade-in slide-in-from-top-2 min-w-30 transition-all`}
+                >
                   {YEARS.map((y) => (
                     <button
                       key={y}
@@ -719,7 +725,9 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
         {/* Playback Controls & Timeline */}
         {isLoaded && (
           <div
-            className={`absolute bottom-6 z-40 w-[90%] md:w-150 bg-gray-900/80 backdrop-blur-md rounded-2xl border border-white/20 p-4 shadow-2xl flex items-center gap-6 group transition-all duration-300
+            className={`absolute bottom-6 ${
+              isImagePreviewOpen ? 'z-30' : 'z-40'
+            } w-[90%] md:w-150 bg-gray-900/80 backdrop-blur-md rounded-2xl border border-white/20 p-4 shadow-2xl flex items-center gap-6 group transition-all duration-300
               ${
                 selectedPoint
                   ? 'left-[40%] -translate-x-[50%] md:left-[38%] lg:left-[35%]'
@@ -795,7 +803,11 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
         )}
 
         {/* Custom Controls */}
-        <div className="absolute bottom-5 right-5 flex flex-col gap-2 z-60">
+        <div
+          className={`absolute bottom-5 right-5 flex flex-col gap-2 ${
+            isImagePreviewOpen ? 'z-40' : 'z-60'
+          }`}
+        >
           <button
             onClick={handleResetView}
             className="bg-white/70 backdrop-blur-md w-9 h-9 flex items-center justify-center rounded-xl shadow-lg border border-gray-100 text-gray-600 hover:text-primary hover:border-primary transition-all active:scale-90"
