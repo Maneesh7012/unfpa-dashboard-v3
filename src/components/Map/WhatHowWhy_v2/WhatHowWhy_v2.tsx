@@ -16,6 +16,13 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import * as pmtiles from 'pmtiles';
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+  DialogDescription,
+} from '../../ui/dialog';
 
 // NEW: Eagerly glob all images/gifs in the subdirectories so Vite bundles them.
 // We map the "frontend_assets/" prefix from frontend_data.ts back to the local folders.
@@ -99,6 +106,7 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
   targetDistrict = 'Odisha',
   targetBounds,
 }) => {
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [selectedYear, setSelectedYear] = useState('2026');
@@ -824,7 +832,11 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
         )}
 
         {selectedPoint && (
-          <div className="absolute top-0 right-0 h-full w-full md:w-[45%] lg:w-[35%] bg-white border-l border-gray-200 shadow-2xl z-150 flex flex-col overflow-hidden animate-in slide-in-from-right duration-300">
+          <div
+            className={`absolute top-0 right-0 h-full w-full md:w-[45%] lg:w-[35%] bg-white border-l border-gray-200 shadow-2xl ${
+              isImagePreviewOpen ? 'z-40' : 'z-150'
+            } flex flex-col overflow-hidden animate-in slide-in-from-right duration-300`}
+          >
             {/* Header Tabs & Close */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50">
               <div className="flex items-center flex-1 mr-4">
@@ -957,21 +969,56 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
                             </div>
                           );
                         } else if (block.type === 'image') {
+                          const imageUrl = (() => {
+                            const targetPath = block.url.replace(
+                              'frontend_assets/',
+                              './',
+                            );
+                            return ASSET_MAP[targetPath] || block.url;
+                          })();
+                          const isGif = block.url.toLowerCase().endsWith('.gif');
                           return (
                             <div key={idx} className="mb-6">
-                              <div className="relative w-full rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm">
-                                <img
-                                  src={(() => {
-                                    const targetPath = block.url.replace(
-                                      'frontend_assets/',
-                                      './',
-                                    );
-                                    return ASSET_MAP[targetPath] || block.url;
-                                  })()}
-                                  alt=""
-                                  className="w-full h-100"
-                                />
-                              </div>
+                              <Dialog onOpenChange={setIsImagePreviewOpen}>
+                                <DialogTrigger asChild>
+                                  <div className="relative w-full rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shadow-sm cursor-zoom-in group">
+                                    <img
+                                      src={imageUrl}
+                                      alt=""
+                                      className={`w-full transition-transform duration-500 group-hover:scale-105 ${
+                                        activeModalTab === 'Why'
+                                          ? 'h-100'
+                                          : 'h-70'
+                                      }`}
+                                    />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+                                  </div>
+                                </DialogTrigger>
+                                <DialogContent
+                                  className={`border-none p-0 shadow-none overflow-hidden flex items-center justify-center outline-none translate-x-[-50%] translate-y-[-50%] ${
+                                    isGif
+                                      ? 'max-w-[95vw] w-full max-h-[95vh] h-fit bg-white rounded-lg'
+                                      : 'max-w-[95vw] max-h-[95vh] w-fit h-fit sm:max-w-none bg-transparent'
+                                  }`}
+                                >
+                                  <DialogTitle className="sr-only">
+                                    {isGif ? 'GIF Preview' : 'Image Preview'}
+                                  </DialogTitle>
+                                  <DialogDescription className="sr-only">
+                                    Expanded view of{' '}
+                                    {block.desc || 'hotspot asset'}
+                                  </DialogDescription>
+                                  <img
+                                    src={imageUrl}
+                                    alt=""
+                                    className={`object-contain block ${
+                                      isGif
+                                        ? 'w-full h-auto max-h-[90vh] rounded-none'
+                                        : 'max-h-[90vh] max-w-[90vw] w-auto h-auto rounded-lg shadow-2xl'
+                                    }`}
+                                  />
+                                </DialogContent>
+                              </Dialog>
                               {block.desc && (
                                 <p className="text-[10px] text-gray-500 italic mt-2">
                                   {block.desc}
