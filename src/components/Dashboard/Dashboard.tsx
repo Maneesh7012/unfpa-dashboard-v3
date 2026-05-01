@@ -346,14 +346,14 @@ export const MapSection: React.FC<MapSectionProps> = ({
       id: 'density',
       label: 'Population Density',
       minYear: 2011,
-      maxYear: 2035,
+      maxYear: 2036,
     },
-    { id: 'pop', label: 'Total Population', minYear: 2011, maxYear: 2035 },
+    { id: 'pop', label: 'Total Population', minYear: 2011, maxYear: 2036 },
     // {
     //   id: 'deg_urbanisation',
     //   label: 'Degree of Urbanisation',
     //   minYear: 2015,
-    //   maxYear: 2035,
+    //   maxYear: 2036,
     // },
   ];
 
@@ -1048,9 +1048,9 @@ export const MapSection: React.FC<MapSectionProps> = ({
                       layers.find((l) => l.id === activeLayer)?.minYear || 2011
                     }
                     max={
-                      layers.find((l) => l.id === activeLayer)?.maxYear || 2035
+                      layers.find((l) => l.id === activeLayer)?.maxYear || 2036
                     }
-                    step="2"
+                    step="1"
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(e.target.value)}
                     className="w-full appearance-none bg-transparent"
@@ -1062,7 +1062,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                     </span>
                     <span className="text-[9px] font-bold text-gray-400">
                       {layers.find((l) => l.id === activeLayer)?.maxYear ||
-                        2035}
+                        2036}
                     </span>
                   </div>
                 </div>
