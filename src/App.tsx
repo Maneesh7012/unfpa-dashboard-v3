@@ -65,10 +65,11 @@ const Dashboard: React.FC = () => {
         {(!selectedDistrict || selectedDistrict.toLowerCase() === 'odisha') && (
           <div className="absolute inset-0 z-[900] bg-white/60 backdrop-blur-xl flex flex-col items-center justify-center text-center p-8 transition-all duration-700 animate-in fade-in">
             <div className="max-w-2xl transform transition-all duration-1000 slide-in-from-bottom-8">
-              <h2 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tighter uppercase mb-6 leading-[0.9] font-mono">
-                Select a <span className="text-[#F76000]">Project</span> to view{' '}
+              <h2 className="text-3xl md:text-5xl font-black text-gray-900 tracking-[0.05em] uppercase mb-6 leading-[1.1] font-mono">
+                Select a <span className="text-[#F76000]">District</span> <br />{' '}
+                to view its
                 <br />
-                District Overview and State Details
+                Overview and Details
               </h2>
               <div className="w-24 h-1.5 bg-[#F76000] mx-auto mb-6 rounded-full" />
               <p className="text-gray-500 text-[11px] font-black uppercase tracking-[0.3em] max-w-md mx-auto leading-relaxed">
