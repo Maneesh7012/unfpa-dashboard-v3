@@ -17,6 +17,13 @@ import {
 } from 'lucide-react';
 import * as pmtiles from 'pmtiles';
 
+// NEW: Eagerly glob all images/gifs in the subdirectories so Vite bundles them.
+// We map the "frontend_assets/" prefix from frontend_data.ts back to the local folders.
+const ASSET_MAP: Record<string, string> = (import.meta as any).glob(
+  './**/*.{png,jpg,jpeg,gif,svg}',
+  { eager: true, import: 'default' },
+);
+
 // CHANGED: pull TAB_CONTENT + Points_Data from the auto-generated file backed
 // by the satellite pipeline, so every modal carries the actual measurements
 // (new built-up area, conversion sources, nearby drivers, confidence).
@@ -29,13 +36,6 @@ import { point } from '@turf/helpers';
 // Set up PMTiles protocol
 const protocol = new pmtiles.Protocol();
 maplibregl.addProtocol('pmtiles', protocol.tile);
-
-// NEW: Eagerly glob all images/gifs in the subdirectories so Vite bundles them.
-// We map the "outputs/" prefix from frontend_data.ts back to the local folders.
-const ASSET_MAP: Record<string, string> = (import.meta as any).glob(
-  './**/*.{png,jpg,jpeg,gif,svg}',
-  { eager: true, import: 'default' },
-);
 
 const isPointInDistrict = (pointCoords: [number, number], features: any[]) => {
   const pt = point(pointCoords);
@@ -681,7 +681,7 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
                   onClick={() => setIsYearDropdownOpen(false)}
                 />
                 <div className="absolute right-0 top-full mt-3 bg-white rounded-md shadow-xl border border-gray-100 p-3 z-200 animate-in fade-in slide-in-from-top-2 min-w-30 transition-all">
-                  {[...YEARS].reverse().map((y) => (
+                  {YEARS.map((y) => (
                     <button
                       key={y}
                       onClick={() => {
@@ -779,7 +779,7 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
                 setIsPlaying(false);
               }}
               className="p-2 text-white/40 hover:text-white transition-colors"
-              title={`Reset to ${YEARS[0]}`}
+              title="Reset to 2017"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -963,7 +963,7 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
                                 <img
                                   src={(() => {
                                     const targetPath = block.url.replace(
-                                      'outputs/',
+                                      'frontend_assets/',
                                       './',
                                     );
                                     return ASSET_MAP[targetPath] || block.url;
