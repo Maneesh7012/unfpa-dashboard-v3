@@ -16,7 +16,14 @@ import {
   Layers,
   Map as MapIcon,
   Calendar,
+  Info,
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '../ui/tooltip';
+import { MULTI_TOOLTIPS } from '../../data/tooltipInfo';
 import { DISTRICT_NAME_VARIANTS } from '../../data/comparativeData';
 
 // Protocols setup
@@ -1351,13 +1358,25 @@ const MapItem = ({
       {config.layer === 'nightlight' && (
         <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-[120] w-[170px]">
           {/* Title + Unit */}
-          <div className="flex flex-col mb-2">
-            <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
-              Nightlight Intensity
-            </span>
-            <span className="text-[9px] text-gray-400 font-medium">
-              <span className="text-gray-700">Unit : </span>nW·cm⁻²·sr⁻¹
-            </span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
+                Nightlight Intensity
+              </span>
+              <span className="text-[9px] text-gray-400 font-medium">
+                <span className="text-gray-700">Unit : </span>nW·cm⁻²·sr⁻¹
+              </span>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={12} className="max-w-[200px]">
+                <p className="text-[11px] leading-relaxed">
+                  {MULTI_TOOLTIPS.nightlight.content}
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Legend Items */}
@@ -1388,13 +1407,25 @@ const MapItem = ({
 
       {config.layer === 'ghsl' && (
         <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-[120] w-[200px]">
-          <div className="flex flex-col mb-2">
-            <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
-              Settlement
-            </span>
-            <span className="text-[9px] text-gray-400 font-medium">
-              Source: GHS-SMOD R2023A
-            </span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
+                Settlement
+              </span>
+              <span className="text-[9px] text-gray-400 font-medium">
+                Source: GHS-SMOD R2023A
+              </span>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={12} className="max-w-[200px]">
+                <p className="text-[11px] leading-relaxed">
+                  {MULTI_TOOLTIPS.ghsl.content}
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           <div className="space-y-1">
@@ -1415,10 +1446,20 @@ const MapItem = ({
 
       {config.layer === 'roads' && (
         <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-[120] w-[180px]">
-          <div className="flex flex-col mb-2">
+          <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
               Road Network
             </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={12} className="max-w-[200px]">
+                <p className="text-[11px] leading-relaxed">
+                  {MULTI_TOOLTIPS.roads.content}
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="space-y-1.5">
             {ROAD_CATEGORIES.map((cat) => (
@@ -1438,10 +1479,20 @@ const MapItem = ({
 
       {config.layer === 'builtup' && (
         <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-[120] w-[160px]">
-          <div className="flex flex-col mb-2">
+          <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
               Built-up Area
             </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={12} className="max-w-[200px]">
+                <p className="text-[11px] leading-relaxed">
+                  {MULTI_TOOLTIPS.builtup.content}
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="flex items-center gap-2">
             <div

@@ -2,7 +2,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/immutability */
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Info } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '../ui/tooltip';
+import { COMPARE_TOOLTIPS } from '../../data/tooltipInfo';
 import maplibregl from 'maplibre-gl';
 import { PMTiles, Protocol as PMTilesProtocol } from 'pmtiles';
 import { cogProtocol, locationValues } from '@geomatico/maplibre-cog-protocol';
@@ -1561,8 +1567,20 @@ export default function MapCompare({
           {/* ROADS LEGEND — bottom-left */}
           {activeLayer === 'roads' && (
             <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-40 w-[180px]">
-              <div className="text-[10px] font-black text-gray-700 uppercase tracking-wider mb-2">
-                Road Network
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
+                  Road Network
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={12} className="max-w-[200px]">
+                    <p className="text-[11px] leading-relaxed">
+                      {COMPARE_TOOLTIPS.roads.content}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <div className="space-y-1.5">
                 {ROAD_CATEGORIES.map((cat) => (
@@ -1583,8 +1601,20 @@ export default function MapCompare({
           {/* NIGHTLIGHT LEGEND — bottom-left */}
           {activeLayer === 'nightlight' && (
             <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-40 w-[180px]">
-              <div className="text-[10px] font-black text-gray-700 uppercase tracking-wider mb-2">
-                Night Light Intensity
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
+                  Night Light Intensity
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={12} className="max-w-[200px]">
+                    <p className="text-[11px] leading-relaxed">
+                      {COMPARE_TOOLTIPS.nightlight.content}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <div className="space-y-1.5">
                 {NTL_CLASSES.map((cls) => (
@@ -1608,14 +1638,32 @@ export default function MapCompare({
             activeLayer === 'forest' ||
             activeLayer === 'lulc') && (
             <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-40 w-[180px]">
-              <div className="text-[10px] font-black text-gray-700 uppercase tracking-wider mb-2">
-                {activeLayer === 'builtup'
-                  ? 'Built Area'
-                  : activeLayer === 'cropland'
-                    ? 'Crops'
-                    : activeLayer === 'forest'
-                      ? 'Trees'
-                      : 'Land Use'}
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
+                  {activeLayer === 'builtup'
+                    ? 'Built Area'
+                    : activeLayer === 'cropland'
+                      ? 'Crops'
+                      : activeLayer === 'forest'
+                        ? 'Trees'
+                        : 'Land Use'}
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={12} className="max-w-[200px]">
+                    <p className="text-[11px] leading-relaxed">
+                      {activeLayer === 'builtup'
+                        ? COMPARE_TOOLTIPS.builtup.content
+                        : activeLayer === 'cropland'
+                          ? COMPARE_TOOLTIPS.cropland.content
+                          : activeLayer === 'forest'
+                            ? COMPARE_TOOLTIPS.forest.content
+                            : COMPARE_TOOLTIPS.lulc.content}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
