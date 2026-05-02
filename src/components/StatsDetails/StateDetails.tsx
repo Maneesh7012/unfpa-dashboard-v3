@@ -135,14 +135,13 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     const val = String(y);
     if (val.includes('q')) {
       const [year, q] = val.split(' ');
-      if (!isQuarterly) return year;
       const monthMap: Record<string, string> = {
         q1: 'March',
         q2: 'June',
         q3: 'September',
         q4: 'December',
       };
-      return `${monthMap[q]} ${year} - ${q.toUpperCase()}`;
+      return `${monthMap[q]} - ${year}`;
     }
     return val;
   };
