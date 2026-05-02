@@ -18,13 +18,65 @@ import {
   Calendar,
   Info,
 } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '../ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { MULTI_TOOLTIPS } from '../../data/tooltipInfo';
 import { DISTRICT_NAME_VARIANTS } from '../../data/comparativeData';
+import smodClasses from './ghsl_smod_classes.json';
+
+const SettlementTooltip = () => {
+  return (
+    <div className="flex flex-col gap-4 p-1 max-w-[320px]">
+      <div>
+        <h4 className="text-[13px] font-bold text-gray-900 mb-1 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-[#F76000]" />
+          What is this layer?
+        </h4>
+        <p className="text-[11px] leading-relaxed text-gray-600">
+          The Global Human Settlement Layer (GHS-SMOD) provides a specialized
+          classification of human settlements. It goes beyond simple "Urban vs
+          Rural" by categorizing land based on actual population density and the
+          density of built structures.
+        </p>
+      </div>
+
+      <div>
+        <h4 className="text-[13px] font-bold text-gray-900 mb-1 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-[#F76000]" />
+          How is it measured?
+        </h4>
+        <p className="text-[11px] leading-relaxed text-gray-600 mb-2">
+          Data is calculated in 1km² blocks using satellite-derived building
+          footprints and census data.
+        </p>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-2">
+          {Object.entries(smodClasses.classes).map(([key, info]) => (
+            <div key={key} className="flex items-center gap-1.5">
+              <div
+                className="w-2.5 h-2.5 rounded-sm border border-gray-100 shrink-0"
+                style={{ backgroundColor: info.color }}
+              />
+              <span className="text-[10px] text-gray-500 font-medium leading-none">
+                {info.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="pt-2 border-t border-gray-100">
+        <h4 className="text-[13px] font-bold text-gray-900 mb-1 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-[#F76000]" />
+          Why it matters?
+        </h4>
+        <p className="text-[11px] leading-relaxed text-gray-600 italic">
+          "Crucial for identifying urban sprawl and planning regional
+          infrastructure. It helps researchers understand how human habitats
+          evolve over decades."
+        </p>
+      </div>
+    </div>
+  );
+};
 
 // Protocols setup
 let protocolsAdded = false;
@@ -1143,7 +1195,11 @@ const MapItem = ({
                 ['get', 'highway'],
                 ['literal', ['trunk', 'primary', 'trunk_link', 'primary_link']],
               ],
-              ['in', ['get', 'highway'], ['literal', ['secondary', 'secondary_link']]],
+              [
+                'in',
+                ['get', 'highway'],
+                ['literal', ['secondary', 'secondary_link']],
+              ],
             ],
             paint: {
               'line-color': [
@@ -1371,7 +1427,11 @@ const MapItem = ({
               <TooltipTrigger asChild>
                 <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
               </TooltipTrigger>
-              <TooltipContent side="top" sideOffset={12} className="max-w-[200px]">
+              <TooltipContent
+                side="top"
+                sideOffset={12}
+                className="max-w-[200px]"
+              >
                 <p className="text-[11px] leading-relaxed">
                   {MULTI_TOOLTIPS.nightlight.content}
                 </p>
@@ -1420,10 +1480,12 @@ const MapItem = ({
               <TooltipTrigger asChild>
                 <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
               </TooltipTrigger>
-              <TooltipContent side="top" sideOffset={12} className="max-w-[200px]">
-                <p className="text-[11px] leading-relaxed">
-                  {MULTI_TOOLTIPS.ghsl.content}
-                </p>
+              <TooltipContent
+                side="top"
+                sideOffset={18}
+                className="max-w-[340px] p-4"
+              >
+                <SettlementTooltip />
               </TooltipContent>
             </Tooltip>
           </div>
@@ -1454,7 +1516,11 @@ const MapItem = ({
               <TooltipTrigger asChild>
                 <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
               </TooltipTrigger>
-              <TooltipContent side="top" sideOffset={12} className="max-w-[200px]">
+              <TooltipContent
+                side="top"
+                sideOffset={12}
+                className="max-w-[200px]"
+              >
                 <p className="text-[11px] leading-relaxed">
                   {MULTI_TOOLTIPS.roads.content}
                 </p>
@@ -1487,7 +1553,11 @@ const MapItem = ({
               <TooltipTrigger asChild>
                 <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
               </TooltipTrigger>
-              <TooltipContent side="top" sideOffset={12} className="max-w-[200px]">
+              <TooltipContent
+                side="top"
+                sideOffset={12}
+                className="max-w-[200px]"
+              >
                 <p className="text-[11px] leading-relaxed">
                   {MULTI_TOOLTIPS.builtup.content}
                 </p>
