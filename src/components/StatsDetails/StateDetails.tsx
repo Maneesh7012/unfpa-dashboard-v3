@@ -54,6 +54,7 @@ interface StatsDetailsProps {
   onDistrictSelect?: (district: string) => void;
   data?: any;
   allDistrictsData?: any[];
+  isQuarterly?: boolean;
 }
 
 export const StatsDetails: React.FC<StatsDetailsProps> = ({
@@ -61,6 +62,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
   onDistrictSelect,
   data,
   allDistrictsData,
+  isQuarterly = true,
 }) => {
   const [year1, setYear1] = useState<number | string>('2018 q1');
   const [year2, setYear2] = useState<number | string>('2026 q1');
@@ -114,6 +116,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     const val = String(y);
     if (val.includes('q')) {
       const [year, q] = val.split(' ');
+      if (!isQuarterly) return year;
       const monthMap: Record<string, string> = {
         q1: 'March',
         q2: 'June',
@@ -1142,6 +1145,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                   onDistrictSelect={onDistrictSelect}
                   viewMode={viewMode}
                   onMapClick={() => setShowSentinel(true)}
+                  isQuarterly={isQuarterly}
                 />
               </div>
             </section>

@@ -267,12 +267,14 @@ interface MapCompareProps {
   resetTrigger?: number;
   viewMode?: 'map' | 'compare' | 'change_analysis';
   onMapClick?: (lngLat: maplibregl.LngLat) => void;
+  isQuarterly?: boolean;
 }
 
-export const formatLulcLabel = (y: string | number) => {
+export const formatLulcLabel = (y: string | number, isQuarterly = true) => {
   const val = String(y);
   if (val.includes('q')) {
     const [year, q] = val.split(' ');
+    if (!isQuarterly) return year;
     const monthMap: Record<string, string> = {
       q1: 'March',
       q2: 'June',
@@ -295,6 +297,7 @@ export default function MapCompare({
   resetTrigger,
   viewMode = 'map',
   onMapClick,
+  isQuarterly = true,
 }: MapCompareProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const leftMapRef = useRef<HTMLDivElement>(null);
@@ -1496,14 +1499,14 @@ export default function MapCompare({
           {/* LEFT LABEL */}
           {viewMode === 'compare' && (
             <div className="absolute top-4 left-4 z-40 bg-white/20 backdrop-blur-sm text-white px-4 py-1.5 rounded-md text-sm font-medium shadow border border-white/30 uppercase font-mono tracking-wider">
-              {formatLulcLabel(y1)}
+              {formatLulcLabel(y1, isQuarterly)}
             </div>
           )}
 
           {/* RIGHT LABEL */}
           {(viewMode === 'compare' || viewMode === 'map') && (
             <div className="absolute top-4 right-4 z-40 bg-white/20 backdrop-blur-sm text-white px-4 py-1.5 rounded-md text-sm font-medium shadow border border-white/30 uppercase font-mono tracking-wider">
-              {viewMode === 'map' ? '2024' : formatLulcLabel(y2)}
+              {viewMode === 'map' ? '2024' : formatLulcLabel(y2, isQuarterly)}
             </div>
           )}
 
