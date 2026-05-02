@@ -105,7 +105,7 @@ export const LULC_YEARS = [
   '2024',
 ];
 
-export const getDistrictConfig = (district: string, isQuarterly = true) => {
+export const getDistrictConfig = (district: string, isQuarterly = false) => {
   const d = district === 'Odisha' ? 'Anugul' : district;
   const formattedDistrict = d.replace(/\s+/g, '').trim();
 
@@ -320,7 +320,7 @@ interface MapCompareProps {
   isQuarterly?: boolean;
 }
 
-export const formatLulcLabel = (y: string | number, isQuarterly = true) => {
+export const formatLulcLabel = (y: string | number, isQuarterly = false) => {
   const val = String(y);
   if (val.includes('q')) {
     const [year, q] = val.split(' ');

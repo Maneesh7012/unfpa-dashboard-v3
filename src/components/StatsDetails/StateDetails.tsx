@@ -67,8 +67,12 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
   allDistrictsData,
   isQuarterly = false,
 }) => {
-  const [year1, setYear1] = useState<number | string>('2018 q1');
-  const [year2, setYear2] = useState<number | string>('2026 q1');
+  const [year1, setYear1] = useState<number | string>(
+    isQuarterly ? '2018 q1' : '2017',
+  );
+  const [year2, setYear2] = useState<number | string>(
+    isQuarterly ? '2026 q1' : '2024',
+  );
   const [compareLayer, setCompareLayer] = useState<
     LayerType | 'builtup' | 'lulc'
   >('builtup' as any);
