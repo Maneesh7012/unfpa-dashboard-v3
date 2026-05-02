@@ -166,6 +166,7 @@ const SUBDISTRICT_URL =
 interface MapSentinelQuaterlyProps {
   targetDistrict?: string;
   targetBounds?: any;
+  isQuarterly?: boolean;
 }
 
 /**Against each class just the value
@@ -179,6 +180,7 @@ interface MapSentinelQuaterlyProps {
 export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
   targetDistrict = 'Odisha',
   targetBounds,
+  isQuarterly = false,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -1217,7 +1219,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
             const isYear2026 = currentQuarter.year === 2026;
             const targetYear = isYear2026 ? 2025 : currentQuarter.year;
             const currentYear = targetYear.toString();
-            
+
             const prevYears = [targetYear - 1, targetYear - 2, targetYear - 3];
             // const lastYear = availableYears[availableYears.length - 1];
 
@@ -1262,7 +1264,9 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                 const raw = districtStats[y.toString()];
                 return raw ? { year: y, data: aggregateData(raw) } : null;
               })
-              .filter((item): item is { year: number; data: any } => item !== null);
+              .filter(
+                (item): item is { year: number; data: any } => item !== null,
+              );
 
             const getCategoryColor = (label: string) => {
               const lower = label.toLowerCase();
@@ -1683,9 +1687,11 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                         key={q.key}
                         className="relative flex flex-col items-center"
                       >
-                        <div
-                          className={`w-[2px] h-3 rounded-full mb-1 transition-all ${idx === selectedIdx ? 'bg-[#F76000] h-4' : 'bg-gray-300'}`}
-                        />
+                        {(isQuarterly || q.q === 1) && (
+                          <div
+                            className={`w-[2px] h-3 rounded-full mb-1 transition-all ${idx === selectedIdx ? 'bg-[#F76000] h-4' : 'bg-gray-300'}`}
+                          />
+                        )}
 
                         {/* Year Indicator Above (Only on Q1) */}
                         {q.q === 1 && (
@@ -1697,13 +1703,15 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                         )}
 
                         {/* Month Initials Below */}
-                        <div className="absolute -bottom-5">
-                          <span
-                            className={`text-[8px] font-bold transition-all ${idx === selectedIdx ? 'text-[#F76000] scale-110' : 'text-gray-400 opacity-60'}`}
-                          >
-                            {q.label.charAt(0)}
-                          </span>
-                        </div>
+                        {isQuarterly && (
+                          <div className="absolute -bottom-5">
+                            <span
+                              className={`text-[8px] font-bold transition-all ${idx === selectedIdx ? 'text-[#F76000] scale-110' : 'text-gray-400 opacity-60'}`}
+                            >
+                              {q.label.charAt(0)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
