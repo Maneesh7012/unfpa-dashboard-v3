@@ -284,18 +284,6 @@ const ROAD_CATEGORIES = [
     color: '#f59e0b',
     width: 2.0,
   },
-  {
-    label: 'Major Roads',
-    values: ['tertiary', 'tertiary_link'],
-    color: '#10b981',
-    width: 1.5,
-  },
-  {
-    label: 'Local Roads',
-    values: ['residential', 'living_street', 'unclassified', 'road'],
-    color: '#94a3b8',
-    width: 1.0,
-  },
 ];
 
 const NTL_CLASSES = [
@@ -321,6 +309,7 @@ interface MapCompareProps {
 }
 
 export const formatLulcLabel = (y: string | number, isQuarterly = false) => {
+  console.log(isQuarterly);
   const val = String(y);
   if (val.includes('q')) {
     const [year, q] = val.split(' ');
@@ -770,6 +759,22 @@ export default function MapCompare({
                 type: 'line',
                 source: sourceId,
                 'source-layer': 'zcta',
+                filter: [
+                  'any',
+                  [
+                    'in',
+                    ['get', 'highway'],
+                    [
+                      'literal',
+                      ['trunk', 'primary', 'trunk_link', 'primary_link'],
+                    ],
+                  ],
+                  [
+                    'in',
+                    ['get', 'highway'],
+                    ['literal', ['secondary', 'secondary_link']],
+                  ],
+                ],
                 paint: {
                   'line-color': [
                     'match',
@@ -778,10 +783,6 @@ export default function MapCompare({
                     '#ef4444',
                     ['secondary', 'secondary_link'],
                     '#f59e0b',
-                    ['tertiary', 'tertiary_link'],
-                    '#10b981',
-                    ['residential', 'living_street', 'unclassified', 'road'],
-                    '#94a3b8',
                     '#94a3b8',
                   ],
                   'line-width': [
@@ -791,8 +792,6 @@ export default function MapCompare({
                     2.5,
                     ['secondary'],
                     2,
-                    ['tertiary'],
-                    1.5,
                     1,
                   ],
                 },

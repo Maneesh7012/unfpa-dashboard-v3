@@ -199,18 +199,6 @@ const ROAD_CATEGORIES = [
     color: '#f59e0b',
     width: 2.0,
   },
-  {
-    label: 'Major Roads',
-    values: ['tertiary', 'tertiary_link'],
-    color: '#10b981',
-    width: 1.5,
-  },
-  {
-    label: 'Local Roads',
-    values: ['residential', 'living_street', 'unclassified', 'road'],
-    color: '#94a3b8',
-    width: 1.0,
-  },
 ];
 
 const BASE_MAP_STYLE: any = {
@@ -1141,6 +1129,15 @@ const MapItem = ({
             type: 'line',
             source: sourceId,
             'source-layer': sourceLayerName,
+            filter: [
+              'any',
+              [
+                'in',
+                ['get', 'highway'],
+                ['literal', ['trunk', 'primary', 'trunk_link', 'primary_link']],
+              ],
+              ['in', ['get', 'highway'], ['literal', ['secondary', 'secondary_link']]],
+            ],
             paint: {
               'line-color': [
                 'match',
@@ -1149,10 +1146,6 @@ const MapItem = ({
                 '#ef4444',
                 ['secondary', 'secondary_link'],
                 '#f59e0b',
-                ['tertiary', 'tertiary_link'],
-                '#10b981',
-                ['residential', 'living_street', 'unclassified', 'road'],
-                '#94a3b8',
                 activeColor,
               ],
               'line-width': [
@@ -1162,8 +1155,6 @@ const MapItem = ({
                 2.5,
                 ['secondary'],
                 2,
-                ['tertiary'],
-                1.5,
                 1,
               ],
             },
