@@ -94,9 +94,30 @@ export const LULC_QUARTERS = [
   '2026 q1',
 ];
 
-export const getDistrictConfig = (district: string) => {
+export const LULC_YEARS = [
+  '2017',
+  '2018',
+  '2019',
+  '2020',
+  '2021',
+  '2022',
+  '2023',
+  '2024',
+];
+
+export const getDistrictConfig = (district: string, isQuarterly = true) => {
   const d = district === 'Odisha' ? 'Anugul' : district;
   const formattedDistrict = d.replace(/\s+/g, '').trim();
+
+  const buildYearlyLulcUrls = () => {
+    const urls: Record<string, string> = {};
+    LULC_YEARS.forEach((year) => {
+      urls[year] =
+        `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc_yearly/${formattedDistrict}/${formattedDistrict}_lulc_${year}.tif`;
+    });
+    return urls;
+  };
+
   const buildQuarterlyUrls = (path: string, suffix: string) => {
     const urls: Record<string, string> = {};
     LULC_QUARTERS.forEach((qLabel) => {
@@ -107,8 +128,14 @@ export const getDistrictConfig = (district: string) => {
     return urls;
   };
 
-  const lulcUrls = buildQuarterlyUrls('lulc', 'lulc');
+  const lulcUrls = isQuarterly
+    ? buildQuarterlyUrls('lulc', 'lulc')
+    : buildYearlyLulcUrls();
   const ntlUrls = buildQuarterlyUrls('ntl', 'ntl');
+
+  const builtupPixel = isQuarterly ? 6 : 7;
+  const croplandPixel = isQuarterly ? 4 : 5;
+  const forestPixel = isQuarterly ? 1 : 2;
 
   const buildYearlyUrls = (
     basePath: string,
@@ -145,20 +172,20 @@ export const getDistrictConfig = (district: string) => {
     },
     builtup: {
       urls: lulcUrls,
-      params: buildCategoricalParams(6, '#0868ac'),
-      targetPixel: 6,
+      params: buildCategoricalParams(builtupPixel, '#0868ac'),
+      targetPixel: builtupPixel,
       type: 'dynamic_lulc',
     },
     cropland: {
       urls: lulcUrls,
-      params: buildCategoricalParams(4, '#0868ac'),
-      targetPixel: 4,
+      params: buildCategoricalParams(croplandPixel, '#0868ac'),
+      targetPixel: croplandPixel,
       type: 'dynamic_lulc',
     },
     forest: {
       urls: lulcUrls,
-      params: buildCategoricalParams(1, '#0868ac'),
-      targetPixel: 1,
+      params: buildCategoricalParams(forestPixel, '#0868ac'),
+      targetPixel: forestPixel,
       type: 'dynamic_lulc',
     },
   };
@@ -174,13 +201,28 @@ const LULC_2018_URL =
 const LULC_2024_URL =
   'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/odisha_lulc_20240101.tif';
 
-const getLulcName = (val: number) => {
-  const lulcMap: Record<number, string> = {
-    1: 'Forest',
-    4: 'Cropland',
-    6: 'Builtup',
-  };
-  return lulcMap[val] || String(val);
+const getLulcName = (val: number, isQuarterly = true) => {
+  if (isQuarterly) {
+    const lulcMap: Record<number, string> = {
+      1: 'Forest',
+      4: 'Cropland',
+      6: 'Builtup',
+    };
+    return lulcMap[val] || String(val);
+  } else {
+    const lulcMap: Record<number, string> = {
+      1: 'Water',
+      2: 'Trees',
+      4: 'Flooded Vegetation',
+      5: 'Crops',
+      7: 'Built Area',
+      8: 'Bare Ground',
+      9: 'Snow/Ice',
+      10: 'Clouds',
+      11: 'Rangeland',
+    };
+    return lulcMap[val] || String(val);
+  }
 };
 
 const getDisplayData = (
@@ -297,7 +339,7 @@ export default function MapCompare({
   resetTrigger,
   viewMode = 'map',
   onMapClick,
-  isQuarterly = true,
+  isQuarterly = false,
 }: MapCompareProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const leftMapRef = useRef<HTMLDivElement>(null);
@@ -386,7 +428,7 @@ export default function MapCompare({
   }
 
   const currentDistrict = targetDistrict || selectedDistrict || 'Anugul';
-  const dynamicConfig = getDistrictConfig(currentDistrict);
+  const dynamicConfig = getDistrictConfig(currentDistrict, isQuarterly);
 
   const currentLayerKey = dynamicConfig[
     resolvedLayerKey as keyof typeof dynamicConfig
@@ -406,7 +448,7 @@ export default function MapCompare({
   if (!y2 || !config.urls[y2]) y2 = availableYears[availableYears.length - 1];
 
   const getLayerUrl = (year: string, side: 'left' | 'right' = 'left') => {
-    const baseUrl = config?.urls[year];
+    const baseUrl = config.urls[year];
     if (!baseUrl) return '';
 
     if (currentLayerKey === 'urbansprawl' || currentLayerKey === 'roads') {
@@ -1646,7 +1688,9 @@ export default function MapCompare({
                     </div>
                     <div className="flex flex-col text-left uppercase text-[13px] mt-2 bg-black/30 p-2.5 rounded border border-white/10 w-auto">
                       <span className="font-medium text-gray-200">
-                        {lulc2018Val !== null ? getLulcName(lulc2018Val) : ''}
+                        {lulc2018Val !== null
+                          ? getLulcName(lulc2018Val, isQuarterly)
+                          : ''}
                       </span>
                     </div>
                   </div>
@@ -1739,7 +1783,9 @@ export default function MapCompare({
                     </div>
                     <div className="flex flex-col text-right uppercase text-[13px] mt-2 bg-black/30 p-2.5 rounded border border-white/10 w-auto">
                       <span className="font-medium text-gray-200">
-                        {lulc2024Val !== null ? getLulcName(lulc2024Val) : ''}
+                        {lulc2024Val !== null
+                          ? getLulcName(lulc2024Val, isQuarterly)
+                          : ''}
                       </span>
                     </div>
                   </div>
