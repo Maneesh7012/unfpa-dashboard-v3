@@ -298,6 +298,14 @@ const ROAD_CATEGORIES = [
   },
 ];
 
+const NTL_CLASSES = [
+  { label: '< 5', min: 0, max: 5, color: '#000000' },
+  { label: '5 - 25', min: 5, max: 25, color: '#48485d' },
+  { label: '26 - 50', min: 26, max: 50, color: '#f6eaaf' },
+  { label: '> 50', min: 50, max: 9999, color: '#fe0000' },
+  { label: 'No Data', noData: true, color: '#b44ef1' },
+];
+
 interface MapCompareProps {
   targetBounds?: maplibregl.LngLatBoundsLike;
   targetDistrict?: string;
@@ -1570,6 +1578,66 @@ export default function MapCompare({
                     </span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* NIGHTLIGHT LEGEND — bottom-left */}
+          {activeLayer === 'nightlight' && (
+            <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-40 w-[180px]">
+              <div className="text-[10px] font-black text-gray-700 uppercase tracking-wider mb-2">
+                Night Light Intensity
+              </div>
+              <div className="space-y-1.5">
+                {NTL_CLASSES.map((cls) => (
+                  <div key={cls.label} className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-sm border border-gray-200"
+                      style={{ backgroundColor: cls.color }}
+                    />
+                    <span className="text-[10px] font-medium text-gray-700">
+                      {cls.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* LULC LEGEND — bottom-left */}
+          {(activeLayer === 'builtup' ||
+            activeLayer === 'cropland' ||
+            activeLayer === 'forest' ||
+            activeLayer === 'lulc') && (
+            <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-40 w-[180px]">
+              <div className="text-[10px] font-black text-gray-700 uppercase tracking-wider mb-2">
+                {activeLayer === 'builtup'
+                  ? 'Built Area'
+                  : activeLayer === 'cropland'
+                    ? 'Crops'
+                    : activeLayer === 'forest'
+                      ? 'Trees'
+                      : 'Land Use'}
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-sm border border-gray-200"
+                    style={{ backgroundColor: '#0868ac' }}
+                  />
+                  <span className="text-[10px] font-medium text-gray-700">
+                    Reference State
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-sm border border-gray-200"
+                    style={{ backgroundColor: '#ED022A' }}
+                  />
+                  <span className="text-[10px] font-medium text-gray-700">
+                    Comparison State
+                  </span>
+                </div>
               </div>
             </div>
           )}
