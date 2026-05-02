@@ -249,13 +249,13 @@ const ROAD_CATEGORIES = [
   {
     label: 'National Highway',
     values: ['trunk', 'primary', 'trunk_link', 'primary_link'],
-    color: '#ef4444',
+    color: '#ED022A',
     width: 2.5,
   },
   {
     label: 'State Highway',
     values: ['secondary', 'secondary_link'],
-    color: '#f59e0b',
+    color: '#0868ac',
     width: 2.0,
   },
 ];
@@ -1206,10 +1206,10 @@ const MapItem = ({
                 'match',
                 ['get', 'highway'],
                 ['trunk', 'primary', 'trunk_link', 'primary_link'],
-                '#ef4444',
+                '#ED022A',
                 ['secondary', 'secondary_link'],
-                '#f59e0b',
-                activeColor,
+                '#0868ac',
+                '#94a3b8',
               ],
               'line-width': [
                 'match',
