@@ -451,15 +451,21 @@ export default function MapCompare({
   if (!y2 || !config.urls[y2]) y2 = availableYears[availableYears.length - 1];
 
   const getLayerUrl = (year: string, side: 'left' | 'right' = 'left') => {
-    const baseUrl = config.urls[year];
+    let baseUrl = config.urls[year];
     if (!baseUrl) return '';
 
+    // Append a unique parameter to ensure the underlying COG source is not shared
+    // with other components (like MapSentinelQuaterly), localizing the color logic.
+    const uniqueBaseUrl = baseUrl.includes('?')
+      ? `${baseUrl}&view=compare`
+      : `${baseUrl}?view=compare`;
+
     if (currentLayerKey === 'urbansprawl' || currentLayerKey === 'roads') {
-      return `pmtiles://${baseUrl}`;
+      return `pmtiles://${uniqueBaseUrl}`;
     }
 
     if (config.type === 'sentinel') {
-      return baseUrl;
+      return uniqueBaseUrl;
     }
 
     let params = config.params || '';
@@ -477,7 +483,7 @@ export default function MapCompare({
       }
     }
 
-    return `cog://${baseUrl}${params}`;
+    return `cog://${uniqueBaseUrl}${params}`;
   };
 
   const leftUrl = getLayerUrl(y1, 'left');
