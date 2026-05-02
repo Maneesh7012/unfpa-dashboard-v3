@@ -22,6 +22,7 @@ import {
   DISTRICT_DEMOGRAPHICS,
   ALLOWED_DISTRICTS,
   LULC_STATS,
+  LULC_STATS_YEARLY,
 } from '../../data/comparativeData';
 import { Layers } from 'lucide-react';
 // import {
@@ -1426,9 +1427,9 @@ export default function MapCompare({
     if (!category) return null;
 
     const distData =
-      LULC_STATS[dist] ||
+      LULC_STATS_YEARLY[dist] ||
       (DISTRICT_NAME_VARIANTS[dist] &&
-        LULC_STATS[DISTRICT_NAME_VARIANTS[dist]]) ||
+        LULC_STATS_YEARLY[DISTRICT_NAME_VARIANTS[dist]]) ||
       LULC_STATS['Odisha'];
     if (!distData) return null;
 

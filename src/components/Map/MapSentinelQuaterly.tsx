@@ -41,7 +41,7 @@ import {
   cogProtocol,
   setColorFunction,
 } from '@geomatico/maplibre-cog-protocol';
-import { DISTRICT_NAME_VARIANTS, LULC_STATS } from '../../data/comparativeData';
+import { DISTRICT_NAME_VARIANTS, LULC_STATS, LULC_STATS_YEARLY } from '../../data/comparativeData';
 
 try {
   const protocol = new pmtiles.Protocol();
@@ -640,7 +640,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
   const chartData = useMemo(() => {
     const normalizedDistrict =
       DISTRICT_NAME_VARIANTS[targetDistrict] || targetDistrict;
-    const stats = LULC_STATS[normalizedDistrict] || LULC_STATS['Odisha'];
+    const stats = LULC_STATS_YEARLY[normalizedDistrict] || LULC_STATS['Odisha'];
 
     const data = QUARTERS.map((q, index) => {
       const item: any = {
@@ -655,7 +655,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
       const yearStats = stats ? stats[yearKey] : null;
 
       if (yearStats) {
-        // Map LULC_STATS keys to chart keys
+        // Map LULC_STATS_YEARLY keys to chart keys
         item['water'] = yearStats['Water'] || 0;
         item['trees'] = yearStats['Trees'] || 0;
         item['flooded_vegetation'] = yearStats['Flooded Vegetation'] || 0;
@@ -1205,11 +1205,11 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         {/* ── LULC CHANGE SUMMARY (Top Right Overlay) ────────────────────── */}
         {!selectedPoint &&
           (() => {
-            // Normalize district name to match LULC_STATS keys
+            // Normalize district name to match LULC_STATS_YEARLY keys
             const normalizedDistrict =
               DISTRICT_NAME_VARIANTS[targetDistrict] || targetDistrict;
             const districtStats =
-              LULC_STATS[normalizedDistrict] || LULC_STATS['Odisha'];
+              LULC_STATS_YEARLY[normalizedDistrict] || LULC_STATS['Odisha'];
 
             if (!districtStats) return null;
 
