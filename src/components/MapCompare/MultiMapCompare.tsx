@@ -27,24 +27,22 @@ const SettlementTooltip = () => {
   return (
     <div className="flex flex-col gap-4 p-1 max-w-[320px]">
       <div>
-        <h4 className="text-[13px] font-bold text-gray-900 mb-1 flex items-center gap-2">
+        <h4 className="text-[12px] font-bold text-gray-900 mb-1 flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-[#F76000]" />
-          What is this layer?
+          Source
         </h4>
-        <p className="text-[11px] leading-relaxed text-gray-600">
+        <p className="text-[10px] leading-relaxed text-gray-600">
           The Global Human Settlement Layer (GHS-SMOD) provides a specialized
-          classification of human settlements. It goes beyond simple "Urban vs
-          Rural" by categorizing land based on actual population density and the
-          density of built structures.
+          classification of human settlements.
         </p>
       </div>
 
       <div>
-        <h4 className="text-[13px] font-bold text-gray-900 mb-1 flex items-center gap-2">
+        <h4 className="text-[12px] font-bold text-gray-900 mb-1 flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-[#F76000]" />
-          How is it measured?
+          Settlement Types
         </h4>
-        <p className="text-[11px] leading-relaxed text-gray-600 mb-2">
+        <p className="text-[10px] leading-relaxed text-gray-600 mb-2">
           Data is calculated in 1km² blocks using satellite-derived building
           footprints and census data.
         </p>
@@ -63,15 +61,39 @@ const SettlementTooltip = () => {
         </div>
       </div>
 
-      <div className="pt-2 border-t border-gray-100">
-        <h4 className="text-[13px] font-bold text-gray-900 mb-1 flex items-center gap-2">
+      <div className="pt-2 border-t border-gray-100 space-y-2">
+        {/* <h4 className="text-[12px] font-bold text-gray-900 mb-1 flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-[#F76000]" />
           Why it matters?
-        </h4>
-        <p className="text-[11px] leading-relaxed text-gray-600 italic">
-          "Crucial for identifying urban sprawl and planning regional
-          infrastructure. It helps researchers understand how human habitats
-          evolve over decades."
+        </h4> */}
+        <p className="text-[10px] leading-relaxed text-gray-600 ">
+          <span className="font-medium text-gray-900">
+            Urban centre (or high density cluster)
+          </span>{' '}
+          : Consists of contiguous grid cells with a density of at least 1500
+          inhabitants per km2. An urban centre has population of at least
+          50,000. Gaps in this cluster are filled and edges are smoothed. If
+          needed, cells that are 50% built-up can be added.
+        </p>
+
+        <p className="text-[10px] leading-relaxed text-gray-600 ">
+          <span className="font-medium text-gray-900">
+            Urban cluster (or moderate density clusters)
+          </span>{' '}
+          : Consists of contiguous grid cells with a density of at least 300
+          inhabitants per km2 and has a population of at least 5000 in the
+          cluster (The urban centres are subsets of the corresponding urban
+          clusters).
+        </p>
+
+        <p className="text-[10px] leading-relaxed text-gray-600 ">
+          <span className="font-medium text-gray-900">
+            Rural grid cells (mostly low density cells)
+          </span>{' '}
+          : Cells that do not belong to an urban cluster. Most of these will
+          have a density below 300 inhabitants per km2. Some rural cells will
+          have a higher density, but they are not part of cluster with a large
+          enough population size to be classified as an urban cluster.
         </p>
       </div>
     </div>
@@ -174,7 +196,6 @@ const buildYearlyUrls = (
 
 const GHSL_YEARS = ['2010', '2015', '2020', '2025', '2030'];
 const GHSL_CLASSES: any = {
-  '10': { label: 'Water surface', color: '#4a90d9' },
   '11': { label: 'Very low density rural', color: '#d9d9b3' },
   '12': { label: 'Low density rural', color: '#cccc66' },
   '13': { label: 'Rural cluster', color: '#a3a347' },
@@ -1481,7 +1502,7 @@ const MapItem = ({
                 <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
               </TooltipTrigger>
               <TooltipContent
-                side="top"
+                side="right"
                 sideOffset={18}
                 className="max-w-[340px] p-4"
               >

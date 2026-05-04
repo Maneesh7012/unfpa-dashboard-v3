@@ -14,10 +14,6 @@
     "Sundargarh"
   ],
   "classes": {
-    "10": {
-      "label": "Water surface",
-      "color": "#4a90d9"
-    },
     "11": {
       "label": "Very low density rural",
       "color": "#d9d9b3"
