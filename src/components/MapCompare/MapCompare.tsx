@@ -110,7 +110,6 @@ export const LULC_YEARS = [
   '2022',
   '2023',
   '2024',
-  '2025',
 ];
 
 export const getDistrictConfig = (district: string, isQuarterly = false) => {

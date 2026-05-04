@@ -152,7 +152,7 @@ function generateQuarters(startYear: number, endYear: number): Quarter[] {
   return quarters;
 }
 
-const QUARTERS = generateQuarters(2017, 2025);
+const QUARTERS = generateQuarters(2017, 2024);
 const PMTILES_URL =
   'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc_quarterly/od_district_lulc_quarterly.pmtiles';
 const ODISHA_CENTER: [number, number] = [84.8, 20.5];
@@ -1216,8 +1216,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
             const availableYears = Object.keys(districtStats).sort();
             if (availableYears.length < 2) return null;
 
-            const isYear2026 = currentQuarter.year === 2026;
-            const targetYear = isYear2026 ? 2025 : currentQuarter.year;
+            const targetYear = currentQuarter.year;
             const currentYear = targetYear.toString();
 
             const prevYears = [targetYear - 1, targetYear - 2, targetYear - 3];
