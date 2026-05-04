@@ -293,12 +293,19 @@ const ROAD_CATEGORIES = [
   },
 ];
 
+// const NTL_CLASSES = [
+//   { label: '< 5', min: 0, max: 5, color: '#000000' },
+//   { label: '5 - 25', min: 5, max: 25, color: '#48485d' },
+//   { label: '26 - 50', min: 26, max: 50, color: '#f6eaaf' },
+//   { label: '> 50', min: 50, max: 9999, color: '#fe0000' },
+//   { label: 'No Data', noData: true, color: '#b44ef1' },
+// ];
 const NTL_CLASSES = [
-  { label: '< 5', min: 0, max: 5, color: '#000000' },
-  { label: '5 - 25', min: 5, max: 25, color: '#48485d' },
-  { label: '26 - 50', min: 26, max: 50, color: '#f6eaaf' },
-  { label: '> 50', min: 50, max: 9999, color: '#fe0000' },
-  { label: 'No Data', noData: true, color: '#b44ef1' },
+  { label: 'Very Low Intensity', min: 0, max: 5, color: '#000000' },
+  { label: 'Low Intensity', min: 5, max: 25, color: '#48485d' },
+  { label: 'High Intensity', min: 26, max: 50, color: '#f6eaaf' },
+  { label: 'Very High Intensity', min: 50, max: 9999, color: '#fe0000' },
+  // { label: 'No Data', noData: true, color: '#b44ef1' },
 ];
 
 interface MapCompareProps {
@@ -1644,56 +1651,56 @@ export default function MapCompare({
             activeLayer === 'cropland' ||
             activeLayer === 'forest' ||
             activeLayer === 'lulc') && (
-            <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-40 w-[180px]">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
-                  {activeLayer === 'builtup'
-                    ? 'Built Area'
-                    : activeLayer === 'cropland'
-                      ? 'Crops'
-                      : activeLayer === 'forest'
-                        ? 'Trees'
-                        : 'Land Use'}
-                </span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" sideOffset={12} className="max-w-[200px]">
-                    <p className="text-[11px] leading-relaxed">
-                      {activeLayer === 'builtup'
-                        ? COMPARE_TOOLTIPS.builtup.content
-                        : activeLayer === 'cropland'
-                          ? COMPARE_TOOLTIPS.cropland.content
-                          : activeLayer === 'forest'
-                            ? COMPARE_TOOLTIPS.forest.content
-                            : COMPARE_TOOLTIPS.lulc.content}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-sm border border-gray-200"
-                    style={{ backgroundColor: '#0868ac' }}
-                  />
-                  <span className="text-[10px] font-medium text-gray-700">
-                    Reference State
+              <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-40 w-[180px]">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
+                    {activeLayer === 'builtup'
+                      ? 'Built Area'
+                      : activeLayer === 'cropland'
+                        ? 'Crops'
+                        : activeLayer === 'forest'
+                          ? 'Trees'
+                          : 'Land Use'}
                   </span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" sideOffset={12} className="max-w-[200px]">
+                      <p className="text-[11px] leading-relaxed">
+                        {activeLayer === 'builtup'
+                          ? COMPARE_TOOLTIPS.builtup.content
+                          : activeLayer === 'cropland'
+                            ? COMPARE_TOOLTIPS.cropland.content
+                            : activeLayer === 'forest'
+                              ? COMPARE_TOOLTIPS.forest.content
+                              : COMPARE_TOOLTIPS.lulc.content}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-sm border border-gray-200"
-                    style={{ backgroundColor: '#ED022A' }}
-                  />
-                  <span className="text-[10px] font-medium text-gray-700">
-                    Comparison State
-                  </span>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-sm border border-gray-200"
+                      style={{ backgroundColor: '#0868ac' }}
+                    />
+                    <span className="text-[10px] font-medium text-gray-700">
+                      Reference State
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-sm border border-gray-200"
+                      style={{ backgroundColor: '#ED022A' }}
+                    />
+                    <span className="text-[10px] font-medium text-gray-700">
+                      Comparison State
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* LEFT MAP */}
           <div
@@ -1877,11 +1884,10 @@ export default function MapCompare({
                 {/* % change badge — always shown */}
                 <div className="flex justify-end mb-3">
                   <span
-                    className={`flex items-center gap-1.5 px-2 py-1 rounded-sm text-[10px] font-black tracking-wide shadow-sm ${
-                      isPos
-                        ? 'bg-white/20 text-[#a7f3d0] border border-[#a7f3d0]/30'
-                        : 'bg-white/20 text-red-300 border border-red-300/30'
-                    }`}
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded-sm text-[10px] font-black tracking-wide shadow-sm ${isPos
+                      ? 'bg-white/20 text-[#a7f3d0] border border-[#a7f3d0]/30'
+                      : 'bg-white/20 text-red-300 border border-red-300/30'
+                      }`}
                   >
                     {isPos ? (
                       <ArrowUpRight className="w-4 h-4" strokeWidth={3} />
@@ -1938,11 +1944,10 @@ export default function MapCompare({
                           setBasemap(option.id);
                           setIsDropdownOpen(false);
                         }}
-                        className={`w-full px-4 py-2 text-left text-[11px] font-black transition-colors flex items-center justify-between ${
-                          basemap === option.id
-                            ? 'bg-orange-50'
-                            : 'text-gray-600 hover:bg-gray-50'
-                        }`}
+                        className={`w-full px-4 py-2 text-left text-[11px] font-black transition-colors flex items-center justify-between ${basemap === option.id
+                          ? 'bg-orange-50'
+                          : 'text-gray-600 hover:bg-gray-50'
+                          }`}
                       >
                         {option.label}
                       </button>

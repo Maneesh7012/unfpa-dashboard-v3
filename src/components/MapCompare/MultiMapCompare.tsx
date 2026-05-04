@@ -693,16 +693,23 @@ const MapItem = ({
   const [isBasemapOpen, setIsBasemapOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // const NTL_CLASSES = [
+  //   { label: '< 5', min: 0, max: 5, color: '#000000' },
+  //   { label: '5 - 25', min: 5, max: 25, color: '#48485d' },
+  //   { label: '26 - 50', min: 26, max: 50, color: '#f6eaaf' },
+  //   { label: '> 50', min: 50, max: 9999, color: '#fe0000' },
+  //   { label: 'No Data', noData: true, color: '#b44ef1' },
+  // ];
   const NTL_CLASSES = [
-    { label: '< 5', min: 0, max: 5, color: '#000000' },
-    { label: '5 - 25', min: 5, max: 25, color: '#48485d' },
-    { label: '26 - 50', min: 26, max: 50, color: '#f6eaaf' },
-    { label: '> 50', min: 50, max: 9999, color: '#fe0000' },
-    { label: 'No Data', noData: true, color: '#b44ef1' },
+    { label: 'Very Low Intensity', min: 0, max: 5, color: '#000000' },
+    { label: 'Low Intensity', min: 5, max: 25, color: '#48485d' },
+    { label: 'High Intensity', min: 26, max: 50, color: '#f6eaaf' },
+    { label: 'Very High Intensity', min: 50, max: 9999, color: '#fe0000' },
+    // { label: 'No Data', noData: true, color: '#b44ef1' },
   ];
 
   const classifyNtl = (val: number): string => {
-    if (val == null || Number.isNaN(val)) return '#b44ef1';
+    // if (val == null || Number.isNaN(val)) return '#b44ef1';
     if (val < 5) return '#000000';
     if (val <= 25) return '#48485d';
     if (val <= 50) return '#f6eaaf';
