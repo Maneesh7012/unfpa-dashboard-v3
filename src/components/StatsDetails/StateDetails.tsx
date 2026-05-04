@@ -1037,7 +1037,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                   { label: 'Night Light', layer: 'nightlight' },
                   { label: 'Roads', layer: 'roads' },
                   { label: 'Cropland', layer: 'cropland' },
-                  { label: 'Forest', layer: 'forest' },
+                  // { label: 'Forest', layer: 'forest' },
                 ].map((cat) => (
                   <button
                     key={cat.layer}

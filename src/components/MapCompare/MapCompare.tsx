@@ -110,6 +110,7 @@ export const LULC_YEARS = [
   '2022',
   '2023',
   '2024',
+  '2025',
 ];
 
 export const getDistrictConfig = (district: string, isQuarterly = false) => {
@@ -170,7 +171,7 @@ export const getDistrictConfig = (district: string, isQuarterly = false) => {
     nightlight: {
       urls: ntlUrls,
       params:
-        '#color:["#e0f7fa", "#b2ebf2", "#80deea", "#4dd0e1", "#26c6da"],0,20,c',
+        '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000", "#fe0000"],0,100,c',
     },
     roads: {
       urls: roadUrls,
@@ -472,7 +473,7 @@ export default function MapCompare({
     if (side === 'right') {
       if (currentLayerKey === 'nightlight') {
         params =
-          '#color:["#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15"],0,20,c';
+          '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000", "#fe0000"],0,100,c';
       } else if (config.type === 'dynamic_lulc') {
         params = buildCategoricalParams(config.targetPixel, '#ED022A');
       } else {
