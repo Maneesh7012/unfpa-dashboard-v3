@@ -152,16 +152,7 @@ function generateQuarters(startYear: number, endYear: number): Quarter[] {
   return quarters;
 }
 
-const QUARTERS = [
-  ...generateQuarters(2018, 2025),
-  {
-    key: '2026-M1',
-    label: 'March 2026',
-    time: '2026-01-01/2026-03-31',
-    year: 2026,
-    q: 1,
-  },
-];
+const QUARTERS = generateQuarters(2018, 2024);
 const PMTILES_URL =
   'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc_quarterly/od_district_lulc_quarterly.pmtiles';
 const ODISHA_CENTER: [number, number] = [84.8, 20.5];
@@ -1258,15 +1249,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
 
             const categories =
               selectedLulcCategory === 'all'
-                ? [
-                    'Water',
-                    'Trees',
-                    'Flooded Vegetation',
-                    'Crops',
-                    'Rangeland',
-                    'Built Area',
-                    'Bare Ground',
-                  ]
+                ? ['Water', 'Vegetation', 'Built Area', 'Bare Ground']
                 : valueToCategory[selectedLulcCategory] || [];
 
             if (categories.length === 0) return null;
