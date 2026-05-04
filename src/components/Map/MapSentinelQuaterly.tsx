@@ -41,7 +41,7 @@ import {
   cogProtocol,
   setColorFunction,
 } from '@geomatico/maplibre-cog-protocol';
-import { DISTRICT_NAME_VARIANTS, LULC_STATS } from '../../data/comparativeData';
+import { DISTRICT_NAME_VARIANTS, LULC_STATS, LULC_STATS_YEARLY } from '../../data/comparativeData';
 
 try {
   const protocol = new pmtiles.Protocol();
@@ -166,6 +166,7 @@ const SUBDISTRICT_URL =
 interface MapSentinelQuaterlyProps {
   targetDistrict?: string;
   targetBounds?: any;
+  isQuarterly?: boolean;
 }
 
 /**Against each class just the value
@@ -179,6 +180,7 @@ interface MapSentinelQuaterlyProps {
 export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
   targetDistrict = 'Odisha',
   targetBounds,
+  isQuarterly = false,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -638,7 +640,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
   const chartData = useMemo(() => {
     const normalizedDistrict =
       DISTRICT_NAME_VARIANTS[targetDistrict] || targetDistrict;
-    const stats = LULC_STATS[normalizedDistrict] || LULC_STATS['Odisha'];
+    const stats = LULC_STATS_YEARLY[normalizedDistrict] || LULC_STATS['Odisha'];
 
     const data = QUARTERS.map((q, index) => {
       const item: any = {
@@ -653,7 +655,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
       const yearStats = stats ? stats[yearKey] : null;
 
       if (yearStats) {
-        // Map LULC_STATS keys to chart keys
+        // Map LULC_STATS_YEARLY keys to chart keys
         item['water'] = yearStats['Water'] || 0;
         item['trees'] = yearStats['Trees'] || 0;
         item['flooded_vegetation'] = yearStats['Flooded Vegetation'] || 0;
@@ -1203,11 +1205,11 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         {/* ── LULC CHANGE SUMMARY (Top Right Overlay) ────────────────────── */}
         {!selectedPoint &&
           (() => {
-            // Normalize district name to match LULC_STATS keys
+            // Normalize district name to match LULC_STATS_YEARLY keys
             const normalizedDistrict =
               DISTRICT_NAME_VARIANTS[targetDistrict] || targetDistrict;
             const districtStats =
-              LULC_STATS[normalizedDistrict] || LULC_STATS['Odisha'];
+              LULC_STATS_YEARLY[normalizedDistrict] || LULC_STATS['Odisha'];
 
             if (!districtStats) return null;
 
@@ -1215,12 +1217,10 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
             if (availableYears.length < 2) return null;
 
             const isYear2026 = currentQuarter.year === 2026;
-            const currentYear = isYear2026
-              ? '2025'
-              : currentQuarter.year.toString();
-            const prevYear = isYear2026
-              ? '2024'
-              : (currentQuarter.year - 1).toString();
+            const targetYear = isYear2026 ? 2025 : currentQuarter.year;
+            const currentYear = targetYear.toString();
+
+            const prevYears = [targetYear - 1, targetYear - 2, targetYear - 3];
             // const lastYear = availableYears[availableYears.length - 1];
 
             // Helper to process data for display
@@ -1255,12 +1255,18 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
             if (categories.length === 0) return null;
 
             const currentDataRaw = districtStats[currentYear];
-            const prevDataRaw = districtStats[prevYear];
-
             if (!currentDataRaw) return null;
 
             const currentData = aggregateData(currentDataRaw);
-            const prevData = prevDataRaw ? aggregateData(prevDataRaw) : null;
+
+            const prevYearsData = prevYears
+              .map((y) => {
+                const raw = districtStats[y.toString()];
+                return raw ? { year: y, data: aggregateData(raw) } : null;
+              })
+              .filter(
+                (item): item is { year: number; data: any } => item !== null,
+              );
 
             const getCategoryColor = (label: string) => {
               const lower = label.toLowerCase();
@@ -1293,9 +1299,6 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                 <div className="space-y-4">
                   {categories.map((cat) => {
                     const area = currentData[cat] || 0;
-                    const prevArea = prevData ? prevData[cat] || 0 : 0;
-                    const diff = prevArea > 0 ? area - prevArea : 0;
-                    const pct = prevArea > 0 ? (diff / prevArea) * 100 : 0;
                     const color = getCategoryColor(cat);
 
                     return (
@@ -1321,26 +1324,37 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                           </div>
                         </div>
 
-                        {prevData && (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <span className="text-[8px] font-black text-gray-500 uppercase">
-                              vs {prevYear}
-                            </span>
-                            <span
-                              className={`text-[10px] font-black ${
-                                pct >= 0 ? 'text-emerald-600' : 'text-rose-500'
-                              }`}
-                            >
-                              {pct >= 0 ? '+' : ''}
-                              {pct.toFixed(1)}%
-                            </span>
-                            {pct !== 0 && (
-                              <div
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  pct >= 0 ? 'bg-emerald-500' : 'bg-rose-500'
-                                }`}
-                              />
-                            )}
+                        {prevYearsData.length > 0 && (
+                          <div className="flex items-center justify-end mt-1 gap-4 border-t border-gray-50 pt-1.5">
+                            {prevYearsData.map((py) => {
+                              const prevArea = py.data[cat] || 0;
+                              const diff = prevArea > 0 ? area - prevArea : 0;
+                              const pct =
+                                prevArea > 0 ? (diff / prevArea) * 100 : 0;
+
+                              return (
+                                <div
+                                  key={py.year}
+                                  className="flex flex-col items-end gap-0.5"
+                                >
+                                  <span className="text-[7px] font-black text-gray-400 uppercase leading-none text-right w-full">
+                                    vs {py.year}
+                                  </span>
+                                  <div className="flex items-center justify-end gap-0.5 w-full">
+                                    <span
+                                      className={`text-[9px] font-black leading-none text-right ${
+                                        pct >= 0
+                                          ? 'text-emerald-600'
+                                          : 'text-rose-500'
+                                      }`}
+                                    >
+                                      {pct >= 0 ? '+' : ''}
+                                      {pct.toFixed(1)}%
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -1673,9 +1687,11 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                         key={q.key}
                         className="relative flex flex-col items-center"
                       >
-                        <div
-                          className={`w-[2px] h-3 rounded-full mb-1 transition-all ${idx === selectedIdx ? 'bg-[#F76000] h-4' : 'bg-gray-300'}`}
-                        />
+                        {(isQuarterly || q.q === 1) && (
+                          <div
+                            className={`w-[2px] h-3 rounded-full mb-1 transition-all ${idx === selectedIdx ? 'bg-[#F76000] h-4' : 'bg-gray-300'}`}
+                          />
+                        )}
 
                         {/* Year Indicator Above (Only on Q1) */}
                         {q.q === 1 && (
@@ -1687,13 +1703,15 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                         )}
 
                         {/* Month Initials Below */}
-                        <div className="absolute -bottom-5">
-                          <span
-                            className={`text-[8px] font-bold transition-all ${idx === selectedIdx ? 'text-[#F76000] scale-110' : 'text-gray-400 opacity-60'}`}
-                          >
-                            {q.label.charAt(0)}
-                          </span>
-                        </div>
+                        {isQuarterly && (
+                          <div className="absolute -bottom-5">
+                            <span
+                              className={`text-[8px] font-bold transition-all ${idx === selectedIdx ? 'text-[#F76000] scale-110' : 'text-gray-400 opacity-60'}`}
+                            >
+                              {q.label.charAt(0)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

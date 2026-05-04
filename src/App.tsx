@@ -11,6 +11,7 @@ import AnalyticsPage from './pages/Analytics/Analytics';
 import DataCatalogPage from './pages/DataCatalog/DataCatalog';
 import type { ViewType } from '../types';
 import { StateDemographics_v3 } from './components/Hero/StateDemographics/StateDemographics_v3';
+import { TooltipProvider } from './components/ui/tooltip';
 
 import { HeroSection_v3 } from './components/Hero/HeroSection_v3';
 
@@ -106,7 +107,8 @@ const Dashboard: React.FC = () => {
 const App: React.FC = () => {
   return (
     <Router basename="/odisha/">
-      <div className="flex flex-col min-h-screen bg-background">
+      <TooltipProvider>
+        <div className="flex flex-col min-h-screen bg-background">
         <Header />
 
         <div className="flex-1">
@@ -120,8 +122,9 @@ const App: React.FC = () => {
           <Footer />
         </div>
       </div>
-    </Router>
-  );
+    </TooltipProvider>
+  </Router>
+);
 };
 
 export default App;

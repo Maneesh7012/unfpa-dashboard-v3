@@ -16,8 +16,67 @@ import {
   Layers,
   Map as MapIcon,
   Calendar,
+  Info,
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { MULTI_TOOLTIPS } from '../../data/tooltipInfo';
 import { DISTRICT_NAME_VARIANTS } from '../../data/comparativeData';
+import smodClasses from './ghsl_smod_classes.json';
+
+const SettlementTooltip = () => {
+  return (
+    <div className="flex flex-col gap-4 p-1 max-w-[320px]">
+      <div>
+        <h4 className="text-[13px] font-bold text-gray-900 mb-1 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-[#F76000]" />
+          What is this layer?
+        </h4>
+        <p className="text-[11px] leading-relaxed text-gray-600">
+          The Global Human Settlement Layer (GHS-SMOD) provides a specialized
+          classification of human settlements. It goes beyond simple "Urban vs
+          Rural" by categorizing land based on actual population density and the
+          density of built structures.
+        </p>
+      </div>
+
+      <div>
+        <h4 className="text-[13px] font-bold text-gray-900 mb-1 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-[#F76000]" />
+          How is it measured?
+        </h4>
+        <p className="text-[11px] leading-relaxed text-gray-600 mb-2">
+          Data is calculated in 1km² blocks using satellite-derived building
+          footprints and census data.
+        </p>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-2">
+          {Object.entries(smodClasses.classes).map(([key, info]) => (
+            <div key={key} className="flex items-center gap-1.5">
+              <div
+                className="w-2.5 h-2.5 rounded-sm border border-gray-100 shrink-0"
+                style={{ backgroundColor: info.color }}
+              />
+              <span className="text-[10px] text-gray-500 font-medium leading-none">
+                {info.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="pt-2 border-t border-gray-100">
+        <h4 className="text-[13px] font-bold text-gray-900 mb-1 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-[#F76000]" />
+          Why it matters?
+        </h4>
+        <p className="text-[11px] leading-relaxed text-gray-600 italic">
+          "Crucial for identifying urban sprawl and planning regional
+          infrastructure. It helps researchers understand how human habitats
+          evolve over decades."
+        </p>
+      </div>
+    </div>
+  );
+};
 
 // Protocols setup
 let protocolsAdded = false;
@@ -190,26 +249,14 @@ const ROAD_CATEGORIES = [
   {
     label: 'National Highway',
     values: ['trunk', 'primary', 'trunk_link', 'primary_link'],
-    color: '#ef4444',
+    color: '#ED022A',
     width: 2.5,
   },
   {
     label: 'State Highway',
     values: ['secondary', 'secondary_link'],
-    color: '#f59e0b',
+    color: '#0868ac',
     width: 2.0,
-  },
-  {
-    label: 'Major Roads',
-    values: ['tertiary', 'tertiary_link'],
-    color: '#10b981',
-    width: 1.5,
-  },
-  {
-    label: 'Local Roads',
-    values: ['residential', 'living_street', 'unclassified', 'road'],
-    color: '#94a3b8',
-    width: 1.0,
   },
 ];
 
@@ -1141,19 +1188,28 @@ const MapItem = ({
             type: 'line',
             source: sourceId,
             'source-layer': sourceLayerName,
+            filter: [
+              'any',
+              [
+                'in',
+                ['get', 'highway'],
+                ['literal', ['trunk', 'primary', 'trunk_link', 'primary_link']],
+              ],
+              [
+                'in',
+                ['get', 'highway'],
+                ['literal', ['secondary', 'secondary_link']],
+              ],
+            ],
             paint: {
               'line-color': [
                 'match',
                 ['get', 'highway'],
                 ['trunk', 'primary', 'trunk_link', 'primary_link'],
-                '#ef4444',
+                '#ED022A',
                 ['secondary', 'secondary_link'],
-                '#f59e0b',
-                ['tertiary', 'tertiary_link'],
-                '#10b981',
-                ['residential', 'living_street', 'unclassified', 'road'],
+                '#0868ac',
                 '#94a3b8',
-                activeColor,
               ],
               'line-width': [
                 'match',
@@ -1162,8 +1218,6 @@ const MapItem = ({
                 2.5,
                 ['secondary'],
                 2,
-                ['tertiary'],
-                1.5,
                 1,
               ],
             },
@@ -1360,13 +1414,29 @@ const MapItem = ({
       {config.layer === 'nightlight' && (
         <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-[120] w-[170px]">
           {/* Title + Unit */}
-          <div className="flex flex-col mb-2">
-            <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
-              Nightlight Intensity
-            </span>
-            <span className="text-[9px] text-gray-400 font-medium">
-              <span className="text-gray-700">Unit : </span>nW·cm⁻²·sr⁻¹
-            </span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
+                Nightlight Intensity
+              </span>
+              <span className="text-[9px] text-gray-400 font-medium">
+                <span className="text-gray-700">Unit : </span>nW·cm⁻²·sr⁻¹
+              </span>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                sideOffset={12}
+                className="max-w-[200px]"
+              >
+                <p className="text-[11px] leading-relaxed">
+                  {MULTI_TOOLTIPS.nightlight.content}
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Legend Items */}
@@ -1397,13 +1467,27 @@ const MapItem = ({
 
       {config.layer === 'ghsl' && (
         <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-[120] w-[200px]">
-          <div className="flex flex-col mb-2">
-            <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
-              Settlement
-            </span>
-            <span className="text-[9px] text-gray-400 font-medium">
-              Source: GHS-SMOD R2023A
-            </span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
+                Settlement
+              </span>
+              <span className="text-[9px] text-gray-400 font-medium">
+                Source: GHS-SMOD R2023A
+              </span>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                sideOffset={18}
+                className="max-w-[340px] p-4"
+              >
+                <SettlementTooltip />
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           <div className="space-y-1">
@@ -1424,10 +1508,24 @@ const MapItem = ({
 
       {config.layer === 'roads' && (
         <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-[120] w-[180px]">
-          <div className="flex flex-col mb-2">
+          <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
               Road Network
             </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                sideOffset={12}
+                className="max-w-[200px]"
+              >
+                <p className="text-[11px] leading-relaxed">
+                  {MULTI_TOOLTIPS.roads.content}
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="space-y-1.5">
             {ROAD_CATEGORIES.map((cat) => (
@@ -1447,10 +1545,24 @@ const MapItem = ({
 
       {config.layer === 'builtup' && (
         <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-[120] w-[160px]">
-          <div className="flex flex-col mb-2">
+          <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
               Built-up Area
             </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                sideOffset={12}
+                className="max-w-[200px]"
+              >
+                <p className="text-[11px] leading-relaxed">
+                  {MULTI_TOOLTIPS.builtup.content}
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="flex items-center gap-2">
             <div

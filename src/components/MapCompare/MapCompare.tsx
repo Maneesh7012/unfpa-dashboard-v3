@@ -2,7 +2,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/immutability */
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Info } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '../ui/tooltip';
+import { COMPARE_TOOLTIPS } from '../../data/tooltipInfo';
 import maplibregl from 'maplibre-gl';
 import { PMTiles, Protocol as PMTilesProtocol } from 'pmtiles';
 import { cogProtocol, locationValues } from '@geomatico/maplibre-cog-protocol';
@@ -16,6 +22,7 @@ import {
   DISTRICT_DEMOGRAPHICS,
   ALLOWED_DISTRICTS,
   LULC_STATS,
+  LULC_STATS_YEARLY,
 } from '../../data/comparativeData';
 import { Layers } from 'lucide-react';
 // import {
@@ -94,9 +101,30 @@ export const LULC_QUARTERS = [
   '2026 q1',
 ];
 
-export const getDistrictConfig = (district: string) => {
+export const LULC_YEARS = [
+  '2017',
+  '2018',
+  '2019',
+  '2020',
+  '2021',
+  '2022',
+  '2023',
+  '2024',
+];
+
+export const getDistrictConfig = (district: string, isQuarterly = false) => {
   const d = district === 'Odisha' ? 'Anugul' : district;
   const formattedDistrict = d.replace(/\s+/g, '').trim();
+
+  const buildYearlyLulcUrls = () => {
+    const urls: Record<string, string> = {};
+    LULC_YEARS.forEach((year) => {
+      urls[year] =
+        `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc_yearly/${formattedDistrict}/${formattedDistrict}_lulc_${year}.tif`;
+    });
+    return urls;
+  };
+
   const buildQuarterlyUrls = (path: string, suffix: string) => {
     const urls: Record<string, string> = {};
     LULC_QUARTERS.forEach((qLabel) => {
@@ -107,8 +135,14 @@ export const getDistrictConfig = (district: string) => {
     return urls;
   };
 
-  const lulcUrls = buildQuarterlyUrls('lulc', 'lulc');
+  const lulcUrls = isQuarterly
+    ? buildQuarterlyUrls('lulc', 'lulc')
+    : buildYearlyLulcUrls();
   const ntlUrls = buildQuarterlyUrls('ntl', 'ntl');
+
+  const builtupPixel = isQuarterly ? 6 : 7;
+  const croplandPixel = isQuarterly ? 4 : 5;
+  const forestPixel = isQuarterly ? 1 : 2;
 
   const buildYearlyUrls = (
     basePath: string,
@@ -145,20 +179,20 @@ export const getDistrictConfig = (district: string) => {
     },
     builtup: {
       urls: lulcUrls,
-      params: buildCategoricalParams(6, '#0868ac'),
-      targetPixel: 6,
+      params: buildCategoricalParams(builtupPixel, '#0868ac'),
+      targetPixel: builtupPixel,
       type: 'dynamic_lulc',
     },
     cropland: {
       urls: lulcUrls,
-      params: buildCategoricalParams(4, '#0868ac'),
-      targetPixel: 4,
+      params: buildCategoricalParams(croplandPixel, '#0868ac'),
+      targetPixel: croplandPixel,
       type: 'dynamic_lulc',
     },
     forest: {
       urls: lulcUrls,
-      params: buildCategoricalParams(1, '#0868ac'),
-      targetPixel: 1,
+      params: buildCategoricalParams(forestPixel, '#0868ac'),
+      targetPixel: forestPixel,
       type: 'dynamic_lulc',
     },
   };
@@ -174,13 +208,28 @@ const LULC_2018_URL =
 const LULC_2024_URL =
   'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/Data/odisha_lulc_20240101.tif';
 
-const getLulcName = (val: number) => {
-  const lulcMap: Record<number, string> = {
-    1: 'Forest',
-    4: 'Cropland',
-    6: 'Builtup',
-  };
-  return lulcMap[val] || String(val);
+const getLulcName = (val: number, isQuarterly = true) => {
+  if (isQuarterly) {
+    const lulcMap: Record<number, string> = {
+      1: 'Forest',
+      4: 'Cropland',
+      6: 'Builtup',
+    };
+    return lulcMap[val] || String(val);
+  } else {
+    const lulcMap: Record<number, string> = {
+      1: 'Water',
+      2: 'Trees',
+      4: 'Flooded Vegetation',
+      5: 'Crops',
+      7: 'Built Area',
+      8: 'Bare Ground',
+      9: 'Snow/Ice',
+      10: 'Clouds',
+      11: 'Rangeland',
+    };
+    return lulcMap[val] || String(val);
+  }
 };
 
 const getDisplayData = (
@@ -233,27 +282,23 @@ const ROAD_CATEGORIES = [
   {
     label: 'National Highway',
     values: ['trunk', 'primary', 'trunk_link', 'primary_link'],
-    color: '#ef4444',
+    color: '#ED022A',
     width: 2.5,
   },
   {
     label: 'State Highway',
     values: ['secondary', 'secondary_link'],
-    color: '#f59e0b',
+    color: '#0868ac',
     width: 2.0,
   },
-  {
-    label: 'Major Roads',
-    values: ['tertiary', 'tertiary_link'],
-    color: '#10b981',
-    width: 1.5,
-  },
-  {
-    label: 'Local Roads',
-    values: ['residential', 'living_street', 'unclassified', 'road'],
-    color: '#94a3b8',
-    width: 1.0,
-  },
+];
+
+const NTL_CLASSES = [
+  { label: '< 5', min: 0, max: 5, color: '#000000' },
+  { label: '5 - 25', min: 5, max: 25, color: '#48485d' },
+  { label: '26 - 50', min: 26, max: 50, color: '#f6eaaf' },
+  { label: '> 50', min: 50, max: 9999, color: '#fe0000' },
+  { label: 'No Data', noData: true, color: '#b44ef1' },
 ];
 
 interface MapCompareProps {
@@ -267,9 +312,11 @@ interface MapCompareProps {
   resetTrigger?: number;
   viewMode?: 'map' | 'compare' | 'change_analysis';
   onMapClick?: (lngLat: maplibregl.LngLat) => void;
+  isQuarterly?: boolean;
 }
 
-export const formatLulcLabel = (y: string | number) => {
+export const formatLulcLabel = (y: string | number, isQuarterly = false) => {
+  console.log(isQuarterly);
   const val = String(y);
   if (val.includes('q')) {
     const [year, q] = val.split(' ');
@@ -279,7 +326,7 @@ export const formatLulcLabel = (y: string | number) => {
       q3: 'September',
       q4: 'December',
     };
-    return `${monthMap[q]} ${year} - ${q.toUpperCase()}`;
+    return `${monthMap[q]} - ${year}`;
   }
   return val;
 };
@@ -295,6 +342,7 @@ export default function MapCompare({
   resetTrigger,
   viewMode = 'map',
   onMapClick,
+  isQuarterly = false,
 }: MapCompareProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const leftMapRef = useRef<HTMLDivElement>(null);
@@ -383,7 +431,7 @@ export default function MapCompare({
   }
 
   const currentDistrict = targetDistrict || selectedDistrict || 'Anugul';
-  const dynamicConfig = getDistrictConfig(currentDistrict);
+  const dynamicConfig = getDistrictConfig(currentDistrict, isQuarterly);
 
   const currentLayerKey = dynamicConfig[
     resolvedLayerKey as keyof typeof dynamicConfig
@@ -403,15 +451,21 @@ export default function MapCompare({
   if (!y2 || !config.urls[y2]) y2 = availableYears[availableYears.length - 1];
 
   const getLayerUrl = (year: string, side: 'left' | 'right' = 'left') => {
-    const baseUrl = config?.urls[year];
+    let baseUrl = config.urls[year];
     if (!baseUrl) return '';
 
+    // Append a unique parameter to ensure the underlying COG source is not shared
+    // with other components (like MapSentinelQuaterly), localizing the color logic.
+    const uniqueBaseUrl = baseUrl.includes('?')
+      ? `${baseUrl}&view=compare`
+      : `${baseUrl}?view=compare`;
+
     if (currentLayerKey === 'urbansprawl' || currentLayerKey === 'roads') {
-      return `pmtiles://${baseUrl}`;
+      return `pmtiles://${uniqueBaseUrl}`;
     }
 
     if (config.type === 'sentinel') {
-      return baseUrl;
+      return uniqueBaseUrl;
     }
 
     let params = config.params || '';
@@ -429,7 +483,7 @@ export default function MapCompare({
       }
     }
 
-    return `cog://${baseUrl}${params}`;
+    return `cog://${uniqueBaseUrl}${params}`;
   };
 
   const leftUrl = getLayerUrl(y1, 'left');
@@ -718,18 +772,30 @@ export default function MapCompare({
                 type: 'line',
                 source: sourceId,
                 'source-layer': 'zcta',
+                filter: [
+                  'any',
+                  [
+                    'in',
+                    ['get', 'highway'],
+                    [
+                      'literal',
+                      ['trunk', 'primary', 'trunk_link', 'primary_link'],
+                    ],
+                  ],
+                  [
+                    'in',
+                    ['get', 'highway'],
+                    ['literal', ['secondary', 'secondary_link']],
+                  ],
+                ],
                 paint: {
                   'line-color': [
                     'match',
                     ['get', 'highway'],
                     ['trunk', 'primary', 'trunk_link', 'primary_link'],
-                    '#ef4444',
+                    '#ED022A',
                     ['secondary', 'secondary_link'],
-                    '#f59e0b',
-                    ['tertiary', 'tertiary_link'],
-                    '#10b981',
-                    ['residential', 'living_street', 'unclassified', 'road'],
-                    '#94a3b8',
+                    '#0868ac',
                     '#94a3b8',
                   ],
                   'line-width': [
@@ -739,8 +805,6 @@ export default function MapCompare({
                     2.5,
                     ['secondary'],
                     2,
-                    ['tertiary'],
-                    1.5,
                     1,
                   ],
                 },
@@ -1369,9 +1433,9 @@ export default function MapCompare({
     if (!category) return null;
 
     const distData =
-      LULC_STATS[dist] ||
+      LULC_STATS_YEARLY[dist] ||
       (DISTRICT_NAME_VARIANTS[dist] &&
-        LULC_STATS[DISTRICT_NAME_VARIANTS[dist]]) ||
+        LULC_STATS_YEARLY[DISTRICT_NAME_VARIANTS[dist]]) ||
       LULC_STATS['Odisha'];
     if (!distData) return null;
 
@@ -1496,22 +1560,34 @@ export default function MapCompare({
           {/* LEFT LABEL */}
           {viewMode === 'compare' && (
             <div className="absolute top-4 left-4 z-40 bg-white/20 backdrop-blur-sm text-white px-4 py-1.5 rounded-md text-sm font-medium shadow border border-white/30 uppercase font-mono tracking-wider">
-              {formatLulcLabel(y1)}
+              {formatLulcLabel(y1, isQuarterly)}
             </div>
           )}
 
           {/* RIGHT LABEL */}
           {(viewMode === 'compare' || viewMode === 'map') && (
             <div className="absolute top-4 right-4 z-40 bg-white/20 backdrop-blur-sm text-white px-4 py-1.5 rounded-md text-sm font-medium shadow border border-white/30 uppercase font-mono tracking-wider">
-              {viewMode === 'map' ? '2024' : formatLulcLabel(y2)}
+              {viewMode === 'map' ? '2024' : formatLulcLabel(y2, isQuarterly)}
             </div>
           )}
 
           {/* ROADS LEGEND — bottom-left */}
           {activeLayer === 'roads' && (
             <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-40 w-[180px]">
-              <div className="text-[10px] font-black text-gray-700 uppercase tracking-wider mb-2">
-                Road Network
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
+                  Road Network
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={12} className="max-w-[200px]">
+                    <p className="text-[11px] leading-relaxed">
+                      {COMPARE_TOOLTIPS.roads.content}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <div className="space-y-1.5">
                 {ROAD_CATEGORIES.map((cat) => (
@@ -1525,6 +1601,96 @@ export default function MapCompare({
                     </span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* NIGHTLIGHT LEGEND — bottom-left */}
+          {activeLayer === 'nightlight' && (
+            <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-40 w-[180px]">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
+                  Night Light Intensity
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={12} className="max-w-[200px]">
+                    <p className="text-[11px] leading-relaxed">
+                      {COMPARE_TOOLTIPS.nightlight.content}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <div className="space-y-1.5">
+                {NTL_CLASSES.map((cls) => (
+                  <div key={cls.label} className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-sm border border-gray-200"
+                      style={{ backgroundColor: cls.color }}
+                    />
+                    <span className="text-[10px] font-medium text-gray-700">
+                      {cls.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* LULC LEGEND — bottom-left */}
+          {(activeLayer === 'builtup' ||
+            activeLayer === 'cropland' ||
+            activeLayer === 'forest' ||
+            activeLayer === 'lulc') && (
+            <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-4 py-3 z-40 w-[180px]">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-black text-gray-700 uppercase tracking-wider">
+                  {activeLayer === 'builtup'
+                    ? 'Built Area'
+                    : activeLayer === 'cropland'
+                      ? 'Crops'
+                      : activeLayer === 'forest'
+                        ? 'Trees'
+                        : 'Land Use'}
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3.5 h-3.5 text-gray-400 cursor-help hover:text-[#F76000] transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={12} className="max-w-[200px]">
+                    <p className="text-[11px] leading-relaxed">
+                      {activeLayer === 'builtup'
+                        ? COMPARE_TOOLTIPS.builtup.content
+                        : activeLayer === 'cropland'
+                          ? COMPARE_TOOLTIPS.cropland.content
+                          : activeLayer === 'forest'
+                            ? COMPARE_TOOLTIPS.forest.content
+                            : COMPARE_TOOLTIPS.lulc.content}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-sm border border-gray-200"
+                    style={{ backgroundColor: '#0868ac' }}
+                  />
+                  <span className="text-[10px] font-medium text-gray-700">
+                    Reference State
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-sm border border-gray-200"
+                    style={{ backgroundColor: '#ED022A' }}
+                  />
+                  <span className="text-[10px] font-medium text-gray-700">
+                    Comparison State
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -1643,7 +1809,9 @@ export default function MapCompare({
                     </div>
                     <div className="flex flex-col text-left uppercase text-[13px] mt-2 bg-black/30 p-2.5 rounded border border-white/10 w-auto">
                       <span className="font-medium text-gray-200">
-                        {lulc2018Val !== null ? getLulcName(lulc2018Val) : ''}
+                        {lulc2018Val !== null
+                          ? getLulcName(lulc2018Val, isQuarterly)
+                          : ''}
                       </span>
                     </div>
                   </div>
@@ -1736,7 +1904,9 @@ export default function MapCompare({
                     </div>
                     <div className="flex flex-col text-right uppercase text-[13px] mt-2 bg-black/30 p-2.5 rounded border border-white/10 w-auto">
                       <span className="font-medium text-gray-200">
-                        {lulc2024Val !== null ? getLulcName(lulc2024Val) : ''}
+                        {lulc2024Val !== null
+                          ? getLulcName(lulc2024Val, isQuarterly)
+                          : ''}
                       </span>
                     </div>
                   </div>

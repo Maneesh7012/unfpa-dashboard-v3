@@ -43,7 +43,10 @@ import {
 import type { LayerType } from '../../../types';
 // import MapLulc from './MapLulc';
 // import { ChangeAnalysis } from './ChangeAnalysis';
-import MapCompare, { LULC_QUARTERS } from '../MapCompare/MapCompare';
+import MapCompare, {
+  LULC_QUARTERS,
+  LULC_YEARS,
+} from '../MapCompare/MapCompare';
 import { MultiMapCompare } from '../MapCompare/MultiMapCompare';
 
 import { MapSentinelQuaterly } from '../Map/MapSentinelQuaterly';
@@ -54,6 +57,7 @@ interface StatsDetailsProps {
   onDistrictSelect?: (district: string) => void;
   data?: any;
   allDistrictsData?: any[];
+  isQuarterly?: boolean;
 }
 
 export const StatsDetails: React.FC<StatsDetailsProps> = ({
@@ -61,9 +65,14 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
   onDistrictSelect,
   data,
   allDistrictsData,
+  isQuarterly = false,
 }) => {
-  const [year1, setYear1] = useState<number | string>('2018 q1');
-  const [year2, setYear2] = useState<number | string>('2026 q1');
+  const [year1, setYear1] = useState<number | string>(
+    isQuarterly ? '2018 q1' : '2017',
+  );
+  const [year2, setYear2] = useState<number | string>(
+    isQuarterly ? '2026 q1' : '2024',
+  );
   const [compareLayer, setCompareLayer] = useState<
     LayerType | 'builtup' | 'lulc'
   >('builtup' as any);
@@ -106,9 +115,21 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     forest: LULC_QUARTERS,
   };
 
-  const validYears = layerYearMap[compareLayer] || ['2018', '2024'];
+  const currentLulcYears = isQuarterly ? LULC_QUARTERS : LULC_YEARS;
+
+  const validYears = React.useMemo(() => {
+    if (
+      ['builtup', 'cropland', 'forest', 'lulc'].includes(compareLayer as string)
+    ) {
+      return currentLulcYears;
+    }
+    return layerYearMap[compareLayer] || ['2018', '2024'];
+  }, [compareLayer, currentLulcYears]);
+
   const availableYears = validYears;
-  const isLulcLayer = validYears === LULC_QUARTERS;
+  const isLulcLayer = ['builtup', 'cropland', 'forest', 'lulc'].includes(
+    compareLayer as string,
+  );
 
   const formatLulcLabel = (y: string | number) => {
     const val = String(y);
@@ -120,7 +141,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
         q3: 'September',
         q4: 'December',
       };
-      return `${monthMap[q]} ${year} - ${q.toUpperCase()}`;
+      return `${monthMap[q]} - ${year}`;
     }
     return val;
   };
@@ -128,8 +149,10 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
   // Update years if current selection is not available for new layer
   React.useEffect(() => {
     if (isLulcLayer) {
-      if (!LULC_QUARTERS.includes(String(year1))) setYear1('2018 q1');
-      if (!LULC_QUARTERS.includes(String(year2))) setYear2('2026 q1');
+      if (!currentLulcYears.includes(String(year1)))
+        setYear1(currentLulcYears[0]);
+      if (!currentLulcYears.includes(String(year2)))
+        setYear2(currentLulcYears[currentLulcYears.length - 1]);
     } else {
       if (!validYears.includes(String(year1))) {
         setYear1(
@@ -1142,6 +1165,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                   onDistrictSelect={onDistrictSelect}
                   viewMode={viewMode}
                   onMapClick={() => setShowSentinel(true)}
+                  isQuarterly={isQuarterly}
                 />
               </div>
             </section>
