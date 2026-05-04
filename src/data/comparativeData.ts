@@ -12581,6 +12581,17 @@ export const LULC_STATS_YEARLY: Record<
       'Bare Ground': 18.52,
       Rangeland: 1531.55,
     },
+    '2025': {
+      Water: 235.09,
+      Trees: 3309.79,
+      'Flooded Vegetation': 5.07,
+      Crops: 1304.28,
+      'Built Area': 320.84,
+      'Bare Ground': 19.02,
+      'Snow/Ice': 0,
+      Clouds: 0,
+      Rangeland: 1318.19,
+    },
   },
   Balangir: {
     '2017': {
@@ -12654,6 +12665,17 @@ export const LULC_STATS_YEARLY: Record<
       'Built Area': 294.8,
       'Bare Ground': 9.76,
       Rangeland: 1698.57,
+    },
+    '2025': {
+      Water: 71.04,
+      Trees: 1645.11,
+      'Flooded Vegetation': 1.39,
+      Crops: 3107.23,
+      'Built Area': 280.69,
+      'Bare Ground': 9.3,
+      'Snow/Ice': 0,
+      Clouds: 0,
+      Rangeland: 1559.7,
     },
   },
   Cuttack: {
@@ -12729,6 +12751,17 @@ export const LULC_STATS_YEARLY: Record<
       'Bare Ground': 106.07,
       Rangeland: 346.68,
     },
+    '2025': {
+      Water: 157.38,
+      Trees: 1085.03,
+      'Flooded Vegetation': 8.48,
+      Crops: 1819.59,
+      'Built Area': 448.67,
+      'Bare Ground': 107.28,
+      'Snow/Ice': 0,
+      Clouds: 0,
+      Rangeland: 298.8,
+    },
   },
   Kendujhar: {
     '2017': {
@@ -12803,6 +12836,17 @@ export const LULC_STATS_YEARLY: Record<
       'Bare Ground': 13.8,
       Rangeland: 1444.9,
     },
+    '2025': {
+      Water: 105.6,
+      Trees: 3747.46,
+      'Flooded Vegetation': 1.73,
+      Crops: 2700.13,
+      'Built Area': 447.41,
+      'Bare Ground': 12.7,
+      'Snow/Ice': 0,
+      Clouds: 0,
+      Rangeland: 1499.4,
+    },
   },
   Khordha: {
     '2017': {
@@ -12876,6 +12920,17 @@ export const LULC_STATS_YEARLY: Record<
       'Built Area': 462.8,
       'Bare Ground': 2.83,
       Rangeland: 255.47,
+    },
+    '2025': {
+      Water: 86.32,
+      Trees: 873.15,
+      'Flooded Vegetation': 36.89,
+      Crops: 1287.27,
+      'Built Area': 449.98,
+      'Bare Ground': 2.65,
+      'Snow/Ice': 0,
+      Clouds: 0,
+      Rangeland: 189.93,
     },
   },
   Mayurbhanj: {
@@ -12952,6 +13007,17 @@ export const LULC_STATS_YEARLY: Record<
       'Bare Ground': 1.37,
       Rangeland: 1299.06,
     },
+    '2025': {
+      Water: 117.6,
+      Trees: 5184.54,
+      'Flooded Vegetation': 3.6,
+      Crops: 3777.65,
+      'Built Area': 502.45,
+      'Bare Ground': 1.62,
+      'Snow/Ice': 0,
+      Clouds: 0,
+      Rangeland: 1114.98,
+    },
   },
   Sambalpur: {
     '2017': {
@@ -13026,6 +13092,17 @@ export const LULC_STATS_YEARLY: Record<
       'Bare Ground': 0.78,
       Rangeland: 1186.9,
     },
+    '2025': {
+      Water: 207.33,
+      Trees: 3451.63,
+      'Flooded Vegetation': 16.01,
+      Crops: 1626.44,
+      'Built Area': 259.7,
+      'Bare Ground': 0.78,
+      'Snow/Ice': 0,
+      Clouds: 0,
+      Rangeland: 1183.31,
+    },
   },
   Sundargarh: {
     '2017': {
@@ -13099,6 +13176,17 @@ export const LULC_STATS_YEARLY: Record<
       'Built Area': 473.54,
       'Bare Ground': 35.75,
       Rangeland: 2012.85,
+    },
+    '2025': {
+      Water: 116.96,
+      Trees: 4973.4,
+      'Flooded Vegetation': 22.97,
+      Crops: 2551.13,
+      'Built Area': 448.13,
+      'Bare Ground': 32.57,
+      'Snow/Ice': 0,
+      Clouds: 0,
+      Rangeland: 1864.69,
     },
   },
 };
