@@ -409,11 +409,22 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
             ];
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, []);
 
-  const lastFittedRef = useRef<string>('');
+  const handleResetView = () => {
+    if (sharedInitialBoundsRef.current) {
+      const options: any = { padding: 20, duration: 1200 };
+      mapInstances.current.forEach((map) => {
+        map.fitBounds(sharedInitialBoundsRef.current!, options);
+      });
+    } else {
+      mapInstances.current.forEach((map) => {
+        map.flyTo({ center: [85.0985, 20.9517], zoom: 6 });
+      });
+    }
+  };
 
   // Reset maps count and instances when district changes to handle re-mounting
   useEffect(() => {
@@ -422,97 +433,17 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
   }, [selectedDistrict]);
 
   useEffect(() => {
-    // Create a fingerprint of the current state that should trigger a refocus
-    const layerFingerprint = mapConfigs.map((m) => m.layer).join('|');
-    const refocusFingerprint = `${selectedDistrict || 'odisha'}_${layerFingerprint}`;
+    if (mapInstances.current.size === 0) return;
 
-    // Only refocus if the district or any layer has changed
-    if (refocusFingerprint === lastFittedRef.current) return;
-
-    const performFit = (bounds: maplibregl.LngLatBoundsLike) => {
-      mapInstances.current.forEach((map) => {
-        if (map.isStyleLoaded()) {
-          map.fitBounds(bounds, {
-            padding: 40,
-            duration: 1200,
-            essential: true,
-          });
-        } else {
-          map.once('load', () => {
-            map.fitBounds(bounds, { padding: 40, duration: 1200 });
-          });
-        }
-      });
-      lastFittedRef.current = refocusFingerprint;
-    };
-
-    const tryFitFromFeatures = (map: maplibregl.Map) => {
-      const source = map.getSource('districts-source');
-      if (!source) return false;
-
-      const features = map.querySourceFeatures('districts-source', {
-        sourceLayer: 'zcta',
-        filter: [
-          'any',
-          ['==', ['get', 'district_name'], selectedDistrict || ''],
-          ['==', ['get', 'DIST_NAME'], selectedDistrict || ''],
-          ['==', ['get', 'District'], selectedDistrict || ''],
-          ['==', ['get', 'NAME'], selectedDistrict || ''],
-          ['==', ['get', 'name'], selectedDistrict || ''],
-          ['==', ['get', 'district'], selectedDistrict || ''],
-        ],
-      });
-
-      if (features && features.length > 0) {
-        const bounds = new maplibregl.LngLatBounds();
-        features.forEach((f: any) => {
-          if (f.geometry?.type === 'Polygon') {
-            f.geometry.coordinates[0].forEach((coord: any) =>
-              bounds.extend(coord as [number, number]),
-            );
-          } else if (f.geometry?.type === 'MultiPolygon') {
-            f.geometry.coordinates.forEach((poly: any) => {
-              poly[0].forEach((coord: any) =>
-                bounds.extend(coord as [number, number]),
-              );
-            });
-          }
-        });
-        if (!bounds.isEmpty()) {
-          performFit(bounds.toArray() as any);
-          return true;
-        }
-      }
-      return false;
-    };
-
-    // 1. If we have explicit targetBounds from prop, use them first
     if (targetBounds) {
-      performFit(targetBounds);
-      return;
+      const options: any = { padding: 40, duration: 1200 };
+      mapInstances.current.forEach((map) => {
+        map.fitBounds(targetBounds, options);
+      });
+    } else {
+      handleResetView();
     }
-
-    // 2. If we have a district, try to fit to its features
-    if (selectedDistrict && selectedDistrict.toLowerCase() !== 'odisha') {
-      const anyMap = Array.from(mapInstances.current.values())[0];
-      if (anyMap) {
-        if (anyMap.isStyleLoaded()) {
-          const success = tryFitFromFeatures(anyMap);
-          if (!success) {
-            // Wait for data to load
-            anyMap.once('idle', () => tryFitFromFeatures(anyMap));
-          }
-        } else {
-          anyMap.once('load', () => {
-            anyMap.once('idle', () => tryFitFromFeatures(anyMap));
-          });
-        }
-      }
-    } else if (sharedInitialBoundsRef.current) {
-      // 3. Fallback to initial bounds (Odisha)
-      performFit(sharedInitialBoundsRef.current);
-    }
-  }, [targetBounds, mapsLoadedCount, selectedDistrict, mapConfigs]);
+  }, [targetBounds, mapsLoadedCount]);
 
   const syncMaps = (sourceId: string) => {
     if (isSyncing.current) return;
@@ -688,29 +619,29 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
                   >
                     {pendingConfig.layer === 'degree_urbanization'
                       ? MONTHLY_DATES.map((y) => (
-                          <option key={y} value={y}>
-                            {y}
-                          </option>
-                        ))
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))
                       : pendingConfig.layer === 'nightlight'
                         ? NTL_YEAR_OPTIONS.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))
                         : pendingConfig.layer === 'ghsl'
                           ? GHSL_YEARS.map((y) => (
-                              <option key={y} value={y}>
-                                {y}
-                              </option>
-                            ))
+                            <option key={y} value={y}>
+                              {y}
+                            </option>
+                          ))
                           : Object.keys(
-                              LAYER_CONFIGS[pendingConfig.layer]?.urls || {},
-                            ).map((y) => (
-                              <option key={y} value={y}>
-                                {y}
-                              </option>
-                            ))}
+                            LAYER_CONFIGS[pendingConfig.layer]?.urls || {},
+                          ).map((y) => (
+                            <option key={y} value={y}>
+                              {y}
+                            </option>
+                          ))}
                   </select>
                   <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none group-hover:text-orange-500 transition-colors" />
                 </div>
