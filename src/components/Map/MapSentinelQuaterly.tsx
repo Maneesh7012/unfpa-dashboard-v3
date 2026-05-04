@@ -152,7 +152,7 @@ function generateQuarters(startYear: number, endYear: number): Quarter[] {
   return quarters;
 }
 
-const QUARTERS = generateQuarters(2018, 2024);
+const QUARTERS = generateQuarters(2017, 2025);
 const PMTILES_URL =
   'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc_quarterly/od_district_lulc_quarterly.pmtiles';
 const ODISHA_CENTER: [number, number] = [84.8, 20.5];
