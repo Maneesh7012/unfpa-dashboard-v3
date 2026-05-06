@@ -11,7 +11,7 @@ import {
 import { COMPARE_TOOLTIPS } from '../../data/tooltipInfo';
 import maplibregl from 'maplibre-gl';
 import { PMTiles, Protocol as PMTilesProtocol } from 'pmtiles';
-import { cogProtocol, locationValues } from '@geomatico/maplibre-cog-protocol';
+import { cogProtocol, locationValues, setColorFunction } from '@geomatico/maplibre-cog-protocol';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {
   COMPARATIVE_DATA,
@@ -51,6 +51,19 @@ const basemapOptions: { id: 'grey' | 'satellite' | 'osm'; label: string }[] = [
   { id: 'satellite', label: 'Satellite' },
   { id: 'osm', label: 'OSM' },
 ];
+
+// const LULC_RGBA: Record<number, number[]> = {
+//   1: [65, 155, 223, 255], // Water (#419BDF)
+//   2: [57, 125, 73, 255], // Trees (#397D49)
+//   4: [122, 135, 198, 255], // Flooded vegetation (#7A87C6)
+//   5: [228, 150, 53, 255], // Crops (#E49635)
+//   6: [196, 40, 27, 255], // Built (#C4281B)
+//   7: [196, 40, 27, 255], // Built (#C4281B)
+//   8: [165, 155, 143, 255], // Bare (#A59B8F)
+//   9: [240, 240, 240, 255], // Snow/Ice (#F0F0F0)
+//   10: [255, 255, 255, 255], // Clouds (#FFFFFF)
+//   11: [223, 195, 90, 255], // Rangeland (#DFC35A)
+// };
 
 const buildCategoricalParams = (
   targetValue: number,
@@ -254,28 +267,42 @@ const getDisplayData = (
 
 // ─── Helper: get road length from NEW_DISTRICT_ROAD_DATA ──────────────────────
 // district: e.g. "Anugul", year: e.g. "2015"
-// Key format inside each district object: "Anugul_road_2015"
-const getRoadLength = (district: string, year: string): number | null => {
+// Key format inside each district object: "Anugul_nh_2015" and "Anugul_sh_2015"
+const getRoadLength = (district: string, year: string): { nh: number; sh: number } | null => {
   if (!district || district === 'Odisha') {
     // State-level: sum all districts for that year
-    let total = 0;
+    let nhTotal = 0;
+    let shTotal = 0;
     let found = false;
     for (const [distName, distData] of Object.entries(NEW_DISTRICT_ROAD_DATA)) {
-      const key = `${distName}_road_${year}` as keyof typeof distData;
-      const val = distData[key];
-      if (val !== undefined && val !== null) {
-        total += val as number;
+      const nhKey = `${distName}_nh_${year}` as keyof typeof distData;
+      const shKey = `${distName}_sh_${year}` as keyof typeof distData;
+      const nhVal = distData[nhKey];
+      const shVal = distData[shKey];
+      if (nhVal !== undefined && nhVal !== null) {
+        nhTotal += nhVal as number;
+        found = true;
+      }
+      if (shVal !== undefined && shVal !== null) {
+        shTotal += shVal as number;
         found = true;
       }
     }
-    return found ? total : null;
+    return found ? { nh: nhTotal, sh: shTotal } : null;
   }
 
   const distData = (NEW_DISTRICT_ROAD_DATA as any)[district];
   if (!distData) return null;
-  const key = `${district}_road_${year}`;
-  const val = distData[key];
-  return val !== undefined && val !== null ? (val as number) : null;
+  const nhKey = `${district}_nh_${year}`;
+  const shKey = `${district}_sh_${year}`;
+  const nhVal = distData[nhKey];
+  const shVal = distData[shKey];
+  if (nhVal === undefined && shVal === undefined) return null;
+
+  return {
+    nh: nhVal !== undefined && nhVal !== null ? (nhVal as number) : 0,
+    sh: shVal !== undefined && shVal !== null ? (shVal as number) : 0,
+  };
 };
 
 const ROAD_CATEGORIES = [
@@ -374,6 +401,7 @@ export default function MapCompare({
   const [lulc2018Val, setLulc2018Val] = useState<number | null>(null);
   const [lulc2024Val, setLulc2024Val] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showDifference, setShowDifference] = useState(false);
 
   const layerInfoRef = useRef({
     currentLayerKey: '',
@@ -390,6 +418,7 @@ export default function MapCompare({
 
   useEffect(() => {
     setSelectedLngLat(null);
+    setShowDifference(false);
   }, [activeLayer, activeLulcPixel, viewMode]);
 
   useEffect(() => {
@@ -457,15 +486,21 @@ export default function MapCompare({
   let y2 = year2;
   if (!y2 || !config.urls[y2]) y2 = availableYears[availableYears.length - 1];
 
-  const getLayerUrl = (year: string, side: 'left' | 'right' = 'left') => {
+  const getLayerUrl = (year: string, side: 'left' | 'right' = 'left', isDiffMode = false) => {
     let baseUrl = config.urls[year];
     if (!baseUrl) return '';
 
-    // Append a unique parameter to ensure the underlying COG source is not shared
-    // with other components (like MapSentinelQuaterly), localizing the color logic.
-    const uniqueBaseUrl = baseUrl.includes('?')
-      ? `${baseUrl}&view=compare`
-      : `${baseUrl}?view=compare`;
+    // Create unique URL for protocol caching and namespacing
+    let uniqueBaseUrl = baseUrl.includes('?')
+      ? `${baseUrl}&view=compare&side=${side}`
+      : `${baseUrl}?view=compare&side=${side}`;
+
+    if (isDiffMode) {
+      uniqueBaseUrl += '&mode=diff';
+    } else if (side === 'right' && showDifference) {
+      // Add a param to force reload and unique setColorFunction for right map in diff mode
+      uniqueBaseUrl += '&diff=true';
+    }
 
     if (currentLayerKey === 'urbansprawl' || currentLayerKey === 'roads') {
       return `pmtiles://${uniqueBaseUrl}`;
@@ -475,13 +510,16 @@ export default function MapCompare({
       return uniqueBaseUrl;
     }
 
+    if (config.type === 'dynamic_lulc') {
+      // Use setColorFunction for LULC layers
+      return `cog://${uniqueBaseUrl}`;
+    }
+
     let params = config.params || '';
     if (side === 'right') {
       if (currentLayerKey === 'nightlight') {
         params =
           '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000", "#fe0000"],0,100,c';
-      } else if (config.type === 'dynamic_lulc') {
-        params = buildCategoricalParams(config.targetPixel, '#ED022A');
       } else {
         params = params.replace(
           /#color:\["[^\]]+"\]/,
@@ -705,12 +743,20 @@ export default function MapCompare({
   ) => {
     const sourceId = `main-source-${side}`;
     const layerId = `main-layer-${side}`;
+    const leftDiffSourceId = `main-source-left-diff`;
+    const leftDiffLayerId = `main-layer-left-diff`;
 
     if (map.getLayer(layerId)) {
       map.removeLayer(layerId);
     }
     if (map.getSource(sourceId)) {
       map.removeSource(sourceId);
+    }
+    if (map.getLayer(leftDiffLayerId)) {
+      map.removeLayer(leftDiffLayerId);
+    }
+    if (map.getSource(leftDiffSourceId)) {
+      map.removeSource(leftDiffSourceId);
     }
 
     if (activeLayerKey === 'sentinel2') {
@@ -733,22 +779,91 @@ export default function MapCompare({
       );
       setIsLoading(true);
     } else if (type === 'raster') {
+      if (activeLayerKey === 'builtup' || activeLayerKey === 'cropland' || activeLayerKey === 'forest' || activeLayerKey === 'dynamic_lulc') {
+        const pureUrl = url.replace('cog://', '');
+        const targetPixel = config.targetPixel;
+        const isDiffActive = url.includes('diff=true') || url.includes('mode=diff');
+
+        // Determine color based on side and mode
+        let rgba = [8, 104, 172, 255]; // Default Blue #0868ac (Reference)
+        if (side === 'right') {
+          if (showDifference && isDiffActive) {
+            rgba = [34, 197, 94, 255]; // Green #22c55e (Expansion)
+          } else if (!showDifference) {
+            rgba = [237, 2, 42, 255]; // Red #ED022A (Comparison)
+          }
+        }
+
+        setColorFunction(pureUrl, (pixel: any, color: any, metadata: any) => {
+          const val = pixel[0];
+          if (val === metadata.noData || val < 0 || val > 11) {
+            color.set([0, 0, 0, 0]);
+            return;
+          }
+
+          if (val === targetPixel) {
+            color.set(rgba);
+          } else {
+            color.set([0, 0, 0, 0]);
+          }
+        });
+      }
+
       map.addSource(sourceId, {
         type: 'raster',
         url: url,
         tileSize: 128,
       });
+      const paintProps: any = { 'raster-opacity': 1 };
+      if (activeLayerKey === 'builtup' || activeLayerKey === 'cropland' || activeLayerKey === 'forest' || activeLayerKey === 'dynamic_lulc') {
+        paintProps['raster-resampling'] = 'nearest';
+      }
+
       map.addLayer(
         {
           id: layerId,
           type: 'raster',
           source: sourceId,
-          paint: { 'raster-opacity': 1 },
+          paint: paintProps,
           minzoom: 0,
           maxzoom: 22,
         },
         map.getLayer('vector-fill-' + side) ? 'vector-fill-' + side : undefined,
       );
+
+      // Handle raster difference overlay for LULC
+      if (side === 'right' && showDifference && (activeLayerKey === 'builtup' || activeLayerKey === 'cropland')) {
+        const leftDiffUrl = getLayerUrl(layerInfoRef.current.y1, 'left', true);
+        const pureLeftUrl = leftDiffUrl.replace('cog://', '');
+        const targetPixel = config.targetPixel;
+        const rgba = [8, 104, 172, 255]; // Blue for reference state (Old)
+
+        setColorFunction(pureLeftUrl, (pixel: any, color: any, metadata: any) => {
+          const val = pixel[0];
+          if (val === metadata.noData || val !== targetPixel) {
+            color.set([0, 0, 0, 0]);
+            return;
+          }
+          color.set(rgba);
+        });
+
+        map.addSource(leftDiffSourceId, {
+          type: 'raster',
+          url: leftDiffUrl,
+          tileSize: 128,
+        });
+        map.addLayer(
+          {
+            id: leftDiffLayerId,
+            type: 'raster',
+            source: leftDiffSourceId,
+            paint: { 'raster-opacity': 1, 'raster-resampling': 'nearest' },
+            minzoom: 0,
+            maxzoom: 22,
+          },
+          map.getLayer('vector-fill-' + side) ? 'vector-fill-' + side : undefined,
+        );
+      }
       setIsLoading(true);
     } else {
       map.addSource(sourceId, {
@@ -773,6 +888,8 @@ export default function MapCompare({
 
         if (map.getSource(sourceId)) {
           if (activeLayerKey === 'roads') {
+            const isDiffMode = side === 'right' && showDifference;
+
             map.addLayer(
               {
                 id: layerId,
@@ -796,7 +913,7 @@ export default function MapCompare({
                   ],
                 ],
                 paint: {
-                  'line-color': [
+                  'line-color': isDiffMode ? '#22c55e' : [
                     'match',
                     ['get', 'highway'],
                     ['trunk', 'primary', 'trunk_link', 'primary_link'],
@@ -809,11 +926,12 @@ export default function MapCompare({
                     'match',
                     ['get', 'highway'],
                     ['trunk', 'primary'],
-                    2.5,
+                    isDiffMode ? 3.5 : 2.5,
                     ['secondary'],
-                    2,
+                    isDiffMode ? 3 : 2,
                     1,
                   ],
+                  ...(isDiffMode && { 'line-dasharray': [1, 2] }),
                 },
                 minzoom: 0,
                 maxzoom: 22,
@@ -822,6 +940,62 @@ export default function MapCompare({
                 ? 'vector-fill-' + side
                 : undefined,
             );
+
+            if (isDiffMode && urlsRef.current.left) {
+              map.addSource(leftDiffSourceId, {
+                type: 'vector',
+                url: urlsRef.current.left,
+              });
+              map.addLayer(
+                {
+                  id: leftDiffLayerId,
+                  type: 'line',
+                  source: leftDiffSourceId,
+                  'source-layer': 'zcta',
+                  filter: [
+                    'any',
+                    [
+                      'in',
+                      ['get', 'highway'],
+                      [
+                        'literal',
+                        ['trunk', 'primary', 'trunk_link', 'primary_link'],
+                      ],
+                    ],
+                    [
+                      'in',
+                      ['get', 'highway'],
+                      ['literal', ['secondary', 'secondary_link']],
+                    ],
+                  ],
+                  paint: {
+                    'line-color': [
+                      'match',
+                      ['get', 'highway'],
+                      ['trunk', 'primary', 'trunk_link', 'primary_link'],
+                      '#ED022A',
+                      ['secondary', 'secondary_link'],
+                      '#0868ac',
+                      '#94a3b8',
+                    ],
+                    'line-width': [
+                      'match',
+                      ['get', 'highway'],
+                      ['trunk', 'primary'],
+                      2.5,
+                      ['secondary'],
+                      2,
+                      1,
+                    ],
+                  },
+                  minzoom: 0,
+                  maxzoom: 22,
+                },
+                map.getLayer('vector-fill-' + side)
+                  ? 'vector-fill-' + side
+                  : undefined,
+              );
+            }
           } else {
             map.addLayer(
               {
@@ -1247,7 +1421,7 @@ export default function MapCompare({
       type,
       currentLayerKey,
     );
-  }, [leftUrl, rightUrl, currentLayerKey, activeLulcPixel, viewMode]);
+  }, [leftUrl, rightUrl, currentLayerKey, activeLulcPixel, viewMode, showDifference]);
 
   useEffect(() => {
     if (!leftMapObj.current) return;
@@ -1478,7 +1652,7 @@ export default function MapCompare({
   // ─── Displayed values ────────────────────────────────────────────────────────
   const activeAreaOld = isRoadsLayer
     ? roadLen1 !== null
-      ? roadLen1.toFixed(1)
+      ? `NH: ${roadLen1.nh.toFixed(1)} | SH: ${roadLen1.sh.toFixed(1)}`
       : '—'
     : lulc1
       ? lulc1.sqKm.toFixed(0)
@@ -1486,7 +1660,7 @@ export default function MapCompare({
 
   const activeAreaNew = isRoadsLayer
     ? roadLen2 !== null
-      ? roadLen2.toFixed(1)
+      ? `NH: ${roadLen2.nh.toFixed(1)} | SH: ${roadLen2.sh.toFixed(1)}`
       : '—'
     : lulc2
       ? lulc2.sqKm.toFixed(0)
@@ -1506,17 +1680,27 @@ export default function MapCompare({
 
   // ─── % change calculation ─────────────────────────────────────────────────────
   const prevVal = isRoadsLayer
-    ? (roadLen1 ?? 0)
+    ? (roadLen1 ? (roadLen1.nh + roadLen1.sh) : 0)
     : lulc1
       ? lulc1.sqKm
       : randLow || 0;
   const currVal = isRoadsLayer
-    ? (roadLen2 ?? 0)
+    ? (roadLen2 ? (roadLen2.nh + roadLen2.sh) : 0)
     : lulc2
       ? lulc2.sqKm
       : randHigh || 0;
   const change = prevVal > 0 ? ((currVal - prevVal) / prevVal) * 100 : 0;
   const isPos = change >= 0;
+
+  const nhPrev = roadLen1?.nh || 0;
+  const nhCurr = roadLen2?.nh || 0;
+  const nhChange = nhPrev > 0 ? ((nhCurr - nhPrev) / nhPrev) * 100 : 0;
+  const isNhPos = nhChange >= 0;
+
+  const shPrev = roadLen1?.sh || 0;
+  const shCurr = roadLen2?.sh || 0;
+  const shChange = shPrev > 0 ? ((shCurr - shPrev) / shPrev) * 100 : 0;
+  const isShPos = shChange >= 0;
 
   // Handle Basemap Visibility
   useEffect(() => {
@@ -1573,8 +1757,10 @@ export default function MapCompare({
 
           {/* RIGHT LABEL */}
           {(viewMode === 'compare' || viewMode === 'map') && (
-            <div className="absolute top-4 right-4 z-40 bg-white/20 backdrop-blur-sm text-white px-4 py-1.5 rounded-md text-sm font-medium shadow border border-white/30 uppercase font-mono tracking-wider">
-              {viewMode === 'map' ? '2024' : formatLulcLabel(y2, isQuarterly)}
+            <div className="absolute top-4 right-4 z-40 flex flex-col items-end gap-2">
+              <div className="bg-white/20 backdrop-blur-sm text-white px-4 py-1.5 rounded-md text-sm font-medium shadow border border-white/30 uppercase font-mono tracking-wider">
+                {viewMode === 'map' ? '2024' : formatLulcLabel(y2, isQuarterly)}
+              </div>
             </div>
           )}
 
@@ -1608,6 +1794,16 @@ export default function MapCompare({
                     </span>
                   </div>
                 ))}
+                {showDifference && (
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-4 h-0 border-t-2 border-dotted border-[#22c55e]"
+                    />
+                    <span className="text-[10px] font-medium text-gray-700">
+                      Changes
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1689,15 +1885,28 @@ export default function MapCompare({
                       Reference State
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-sm border border-gray-200"
-                      style={{ backgroundColor: '#ED022A' }}
-                    />
-                    <span className="text-[10px] font-medium text-gray-700">
-                      Comparison State
-                    </span>
-                  </div>
+                  {!showDifference && (
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-sm border border-gray-200"
+                        style={{ backgroundColor: '#ED022A' }}
+                      />
+                      <span className="text-[10px] font-medium text-gray-700">
+                        Comparison State
+                      </span>
+                    </div>
+                  )}
+                  {showDifference && (
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-sm border border-gray-200"
+                        style={{ backgroundColor: '#22c55e' }}
+                      />
+                      <span className="text-[10px] font-medium text-gray-700">
+                        Changes
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1765,31 +1974,47 @@ export default function MapCompare({
                   <span className="text-sm font-normal">M</span>
                 </div>
 
-                {/* Layer label — roads shows "road network length", others show "X coverage" */}
-                <div className="text-xs text-gray-100 mb-2">
-                  {isRoadsLayer
-                    ? 'road network length'
-                    : `${layerNameStr.toLowerCase()} coverage`}
-                </div>
+                {/* Layer label */}
+                {!isRoadsLayer && (
+                  <div className="text-xs text-gray-100 mb-2">
+                    {`${layerNameStr.toLowerCase()} coverage`}
+                  </div>
+                )}
 
                 {/* Main metric */}
-                <div className="flex items-baseline gap-2 mb-3">
-                  <span className="text-xl font-bold">
-                    <span className="font-mono">{activeAreaOld} </span>
-                    <span className="text-sm font-normal">
-                      {isRoadsLayer ? 'km' : 'km.sq.'}
+                {!isRoadsLayer ? (
+                  <div className="flex items-baseline gap-2 mb-3">
+                    <span className="text-xl font-bold">
+                      <span className="font-mono">{activeAreaOld} </span>
+                      <span className="text-sm font-normal">km.sq.</span>
                     </span>
-                  </span>
-                  {/* Only show percentage for non-roads layers */}
-                  {!isRoadsLayer && activePercentOld !== null && (
-                    <>
-                      <span className="text-gray-400">|</span>
-                      <span className="text-xl font-bold font-mono">
-                        {activePercentOld}%
-                      </span>
-                    </>
-                  )}
-                </div>
+                    {activePercentOld !== null && (
+                      <>
+                        <span className="text-gray-400">|</span>
+                        <span className="text-xl font-bold font-mono">
+                          {activePercentOld}%
+                        </span>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3 mb-3 mt-1">
+                    <div>
+                      <div className="text-xs text-gray-100 mb-0.5">National Highway</div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm font-bold font-mono text-white">{roadLen1?.nh?.toFixed(1) || '—'}</span>
+                        <span className="text-sm font-normal text-white">km</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-100 mb-0.5">State Highway</div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm font-bold font-mono text-white">{roadLen1?.sh?.toFixed(1) || '—'}</span>
+                        <span className="text-sm font-normal text-white">km</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Progress bar — only for non-roads layers */}
                 {!isRoadsLayer && (
@@ -1843,60 +2068,95 @@ export default function MapCompare({
                 </div>
 
                 {/* Layer label */}
-                <div className="text-xs text-gray-100 mb-2">
-                  {isRoadsLayer
-                    ? 'road network length'
-                    : `${layerNameStr.toLowerCase()} coverage`}
-                </div>
-
-                {/* Main metric */}
-                <div className="flex items-baseline justify-end gap-2 mb-3 w-full">
-                  <span className="text-xl font-bold">
-                    <span className="font-mono">{activeAreaNew}</span>{' '}
-                    <span className="text-sm font-normal">
-                      {isRoadsLayer ? 'km' : 'km.sq.'}
-                    </span>
-                  </span>
-                  {/* Only show percentage for non-roads layers */}
-                  {!isRoadsLayer && activePercentNew !== null && (
-                    <>
-                      <span className="text-gray-400">|</span>
-                      <span className="text-xl font-bold font-mono">
-                        {activePercentNew}%
-                      </span>
-                    </>
-                  )}
-                </div>
-
-                {/* Progress bar — only for non-roads layers */}
                 {!isRoadsLayer && (
-                  <div className="w-3/4 h-1.5 bg-gray-600/50 rounded-full mb-3 flex justify-end">
-                    <div
-                      className="h-full rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(255,255,255,0.3)]"
-                      style={{
-                        width: `${Math.min(Number(activePercentNew) || 0, 100)}%`,
-                        backgroundColor: '#dcfce7',
-                      }}
-                    ></div>
+                  <div className="text-xs text-gray-100 mb-2">
+                    {`${layerNameStr.toLowerCase()} coverage`}
                   </div>
                 )}
 
-                {/* % change badge — always shown */}
-                <div className="flex justify-end mb-3">
-                  <span
-                    className={`flex items-center gap-1.5 px-2 py-1 rounded-sm text-[10px] font-black tracking-wide shadow-sm ${isPos
-                      ? 'bg-white/20 text-[#a7f3d0] border border-[#a7f3d0]/30'
-                      : 'bg-white/20 text-red-300 border border-red-300/30'
-                      }`}
-                  >
-                    {isPos ? (
-                      <ArrowUpRight className="w-4 h-4" strokeWidth={3} />
-                    ) : (
-                      <ArrowDownRight className="w-4 h-4" strokeWidth={3} />
-                    )}
-                    {Math.abs(change).toFixed(1)}%
-                  </span>
-                </div>
+                {/* Main metric */}
+                {!isRoadsLayer ? (
+                  <>
+                    <div className="flex items-baseline justify-end gap-2 mb-3 w-full">
+                      <span className="text-xl font-bold">
+                        <span className="font-mono">{activeAreaNew}</span>{' '}
+                        <span className="text-sm font-normal">km.sq.</span>
+                      </span>
+                      {activePercentNew !== null && (
+                        <>
+                          <span className="text-gray-400">|</span>
+                          <span className="text-xl font-bold font-mono">
+                            {activePercentNew}%
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Progress bar — only for non-roads layers */}
+                    <div className="w-3/4 h-1.5 bg-gray-600/50 rounded-full mb-3 flex justify-end">
+                      <div
+                        className="h-full rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(255,255,255,0.3)]"
+                        style={{
+                          width: `${Math.min(Number(activePercentNew) || 0, 100)}%`,
+                          backgroundColor: '#dcfce7',
+                        }}
+                      ></div>
+                    </div>
+
+                    {/* % change badge */}
+                    <div className="flex justify-end mb-3">
+                      <span
+                        className={`flex items-center gap-1.5 px-2 py-1 rounded-sm text-[10px] font-black tracking-wide shadow-sm ${isPos
+                          ? 'bg-white/20 text-[#a7f3d0] border border-[#a7f3d0]/30'
+                          : 'bg-white/20 text-red-300 border border-red-300/30'
+                          }`}
+                      >
+                        {isPos ? (
+                          <ArrowUpRight className="w-4 h-4" strokeWidth={3} />
+                        ) : (
+                          <ArrowDownRight className="w-4 h-4" strokeWidth={3} />
+                        )}
+                        {Math.abs(change).toFixed(1)}%
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col gap-3 mb-3 mt-1 w-full items-end">
+                    <div className="flex flex-col items-end">
+                      <div className="text-xs text-gray-100 mb-0.5">National Highway</div>
+                      <div className="flex items-center gap-3">
+
+                        <div className="flex items-baseline gap-1">
+                          <span className={`text-sm font-bold font-mono text-white}`}>
+                            {(roadLen2?.nh?.toFixed(1) || '—')}
+                          </span>
+                          <span className="text-sm font-normal text-white">km</span>
+                          {/* Percentage Change for NH */}
+                          <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-black tracking-wide shadow-sm ${isNhPos ? 'bg-white/20 text-[#a7f3d0] border border-[#a7f3d0]/30' : 'bg-white/20 text-red-300 border border-red-300/30'}`}>
+                            {isNhPos ? <ArrowUpRight className="w-3 h-3" strokeWidth={3} /> : <ArrowDownRight className="w-3 h-3" strokeWidth={3} />}
+                            {Math.abs(nhChange).toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <div className="text-xs text-gray-100 mb-0.5">State Highway</div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-baseline gap-1">
+                          <span className={`text-sm font-bold font-mono text-white}`}>
+                            {(roadLen2?.sh?.toFixed(1) || '—')}
+                          </span>
+                          <span className="text-sm font-normal text-white">km</span>
+                          {/* Percentage Change for SH */}
+                          <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-black tracking-wide shadow-sm ${isShPos ? 'bg-white/20 text-[#a7f3d0] border border-[#a7f3d0]/30' : 'bg-white/20 text-red-300 border border-red-300/30'}`}>
+                            {isShPos ? <ArrowUpRight className="w-3 h-3" strokeWidth={3} /> : <ArrowDownRight className="w-3 h-3" strokeWidth={3} />}
+                            {Math.abs(shChange).toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Clicked coordinate + LULC value */}
                 {selectedLngLat ? (
@@ -1925,7 +2185,21 @@ export default function MapCompare({
 
           {/* Basemap Toggle - Bottom Right */}
           {currentLayerKey !== 'sentinel2' && (
-            <div className="absolute bottom-4 right-4 z-40 flex flex-col items-end gap-2">
+            <div className="absolute bottom-4 right-4 z-40 flex flex-row items-end gap-2">
+              {(activeLayer === 'roads' || activeLayer === 'builtup' || activeLayer === 'cropland') && (
+                <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-lg border border-gray-100 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="showChanges"
+                    checked={showDifference}
+                    onChange={() => setShowDifference(!showDifference)}
+                    className="w-4 h-5 rounded border-gray-300 accent-[#F96000] focus:ring-[#F96000] cursor-pointer"
+                  />
+                  <label htmlFor="showChanges" className="text-[10px] font-black text-gray-700 uppercase tracking-wider cursor-pointer select-none">
+                    Show changes
+                  </label>
+                </div>
+              )}
               <div className="relative">
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}

@@ -229,7 +229,7 @@ const LAYER_CONFIGS: any = {
     // We keep a placeholder so year-validation logic knows available options
     urls: Object.fromEntries(NTL_YEAR_OPTIONS.map((opt) => [opt, ''])),
     params:
-      '#color:["#000000","#333333","#663300","#ccaa00","#ffff00"],0,200,c',
+      '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000", "#fe0000"],0,100,c',
     type: 'raster',
     isNightlight: true, // flag to trigger dynamic URL build
   },
@@ -708,13 +708,6 @@ const MapItem = ({
     // { label: 'No Data', noData: true, color: '#b44ef1' },
   ];
 
-  const classifyNtl = (val: number): string => {
-    // if (val == null || Number.isNaN(val)) return '#b44ef1';
-    if (val < 5) return '#000000';
-    if (val <= 25) return '#48485d';
-    if (val <= 50) return '#f6eaaf';
-    return '#fe0000';
-  };
 
   // const palettes = [
   //   ['#f7fbff', '#4292c6', '#2171b5', '#053b81'],
@@ -1066,26 +1059,7 @@ const MapItem = ({
       if (config.layer === 'nightlight') {
         // ✅ Build dynamic URL from district + quarterly label
         url = buildNtlUrl(yearKey, selectedDistrict || 'Anugul');
-        rasterParams = ''; // Colors handled by setColorFunction (class-based)
-
-        setColorFunction(url, (pixel: any, color: any, metadata: any) => {
-          const val = pixel[0];
-          const nd = metadata?.noData;
-          if (
-            val == null ||
-            Number.isNaN(val) ||
-            (nd != null && val === nd) ||
-            val === 0
-          ) {
-            // leave pixel as the default transparent (rgba buffer is pre-zeroed)
-            return;
-          }
-          const hex = classifyNtl(val).replace('#', '');
-          const r = parseInt(hex.substring(0, 2), 16);
-          const g = parseInt(hex.substring(2, 4), 16);
-          const b = parseInt(hex.substring(4, 6), 16);
-          color.set([r, g, b, 255]);
-        });
+        rasterParams = '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000", "#fe0000"],0,100,c';
       } else if (config.layer === 'ghsl') {
         url = buildGhslUrl(yearKey, selectedDistrict || 'Anugul');
         rasterParams = ''; // Colors handled by setColorFunction
@@ -1118,11 +1092,16 @@ const MapItem = ({
         url: `cog://${url}${rasterParams}`,
         tileSize: 256,
       });
+      const paintProps: any = { 'raster-opacity': 1 };
+      if (config.layer === 'ghsl' || config.layer === 'builtup') {
+        paintProps['raster-resampling'] = 'nearest';
+      }
+
       map.addLayer({
         id: layerId,
         type: 'raster',
         source: sourceId,
-        paint: { 'raster-opacity': 0.8 },
+        paint: paintProps,
       });
     } else {
       const url =
