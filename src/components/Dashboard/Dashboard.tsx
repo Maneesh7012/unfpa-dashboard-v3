@@ -41,6 +41,7 @@ import {
   CENSUS_PROJECTION_DATA,
   CENSUS_URBAN_RURAL_DATA,
   CENSUS_STATS_DATA,
+  getRecord,
 } from '../../data/comparativeData';
 import {
   MODEL_DATA,
@@ -405,7 +406,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
       const name = DISTRICT_NAME_VARIANTS[districtName] || districtName;
       const nameForLookup = name === 'All Districts' ? 'Odisha' : name;
       const yearInt = parseInt(year);
-      const censusVal = CENSUS_PROJECTION_DATA[nameForLookup]?.[yearInt];
+      const censusVal = getRecord(CENSUS_PROJECTION_DATA, nameForLookup)?.[yearInt];
       if (censusVal !== undefined) {
         if (gender === 'Male') return censusVal * 0.5;
         if (gender === 'Female') return censusVal * 0.5;
@@ -425,7 +426,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
       const name = DISTRICT_NAME_VARIANTS[districtName] || districtName;
       const nameForLookup = name === 'All Districts' ? 'Odisha' : name;
       const yearInt = parseInt(year);
-      const modelVal = MODEL_DATA[nameForLookup]?.[yearInt];
+      const modelVal = getRecord(MODEL_DATA, nameForLookup)?.[yearInt];
       if (modelVal !== undefined && modelVal !== null) return modelVal;
     }
 
@@ -463,9 +464,10 @@ export const MapSection: React.FC<MapSectionProps> = ({
     }
 
     // Priority 3: Static GENDER data
-    if (gender !== 'sum' && GENDER[districtName]) {
+    const genderRecord = getRecord(GENDER, districtName);
+    if (gender !== 'sum' && genderRecord) {
       const key = gender === 'Male' ? `${year}_male` : `${year}_female`;
-      const staticVal = GENDER[districtName][key];
+      const staticVal = genderRecord[key];
       if (staticVal !== undefined) return staticVal;
     }
 
@@ -479,16 +481,16 @@ export const MapSection: React.FC<MapSectionProps> = ({
         ? selectedDistrictName
         : districtData
           ? districtData.district_name ||
-            districtData.NAME ||
-            districtData.name ||
-            'Selected Area'
+          districtData.NAME ||
+          districtData.name ||
+          'Selected Area'
           : 'All Districts';
     const name = DISTRICT_NAME_VARIANTS[dName] || dName;
     const yearSuffix = appliedFilters.year;
     const yearInt = parseInt(yearSuffix);
 
     const nameForLookup = name === 'All Districts' ? 'Odisha' : name;
-    const demo = DISTRICT_DEMOGRAPHICS[nameForLookup];
+    const demo = getRecord(DISTRICT_DEMOGRAPHICS, nameForLookup);
 
     const getPopDataForYear = (year: number) => {
       if (!demo) return null;
@@ -533,14 +535,15 @@ export const MapSection: React.FC<MapSectionProps> = ({
       ) as number;
 
       // Fallback to static demographics if missing model data
+      const nameDemoRecord = getRecord(DISTRICT_DEMOGRAPHICS, name);
       if (
         !modelMaleCount &&
         !modelFemaleCount &&
-        DISTRICT_DEMOGRAPHICS[name] &&
-        DISTRICT_DEMOGRAPHICS[name][yearInt]
+        nameDemoRecord &&
+        nameDemoRecord[yearInt]
       ) {
-        modelMaleCount = DISTRICT_DEMOGRAPHICS[name][yearInt].male;
-        modelFemaleCount = DISTRICT_DEMOGRAPHICS[name][yearInt].female;
+        modelMaleCount = nameDemoRecord[yearInt].male;
+        modelFemaleCount = nameDemoRecord[yearInt].female;
       } else {
         modelMaleCount = modelMaleCount || latestModelPop * 0.51;
         modelFemaleCount = modelFemaleCount || latestModelPop * 0.49;
@@ -559,7 +562,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
         districtData?.['area'] ||
         (nameForLookup === 'Odisha' ? 155707 : 5000);
       const censusStat =
-        CENSUS_STATS_DATA[nameForLookup]?.[appliedFilters.year];
+        getRecord(CENSUS_STATS_DATA, nameForLookup)?.[appliedFilters.year];
       let censusDensity = censusStat?.density;
 
       if (censusDensity === undefined && totalP > 0 && area > 0) {
@@ -594,8 +597,8 @@ export const MapSection: React.FC<MapSectionProps> = ({
       maleCount: formatNumber(mP),
       femaleCount: formatNumber(fP),
       density:
-        MODEL_STATS_DATA[nameForLookup]?.[yearSuffix]?.density.toString() ??
-        DEMOGRAPHIC_STATS['Odisha']?.[yearInt]?.density ??
+        getRecord(MODEL_STATS_DATA, nameForLookup)?.[yearSuffix]?.density.toString() ??
+        getRecord(DEMOGRAPHIC_STATS, 'Odisha')?.[yearInt]?.density ??
         '270',
     };
 
@@ -621,14 +624,15 @@ export const MapSection: React.FC<MapSectionProps> = ({
     let femalePop = femaleCount || latestPop * 0.49;
 
     // Explicitly set absolute male/female population figures for baseline display if pmtiles is missing
+    const statsDemoRecord = getRecord(DISTRICT_DEMOGRAPHICS, name);
     if (
       !maleCount &&
       !femaleCount &&
-      DISTRICT_DEMOGRAPHICS[name] &&
-      DISTRICT_DEMOGRAPHICS[name][yearInt]
+      statsDemoRecord &&
+      statsDemoRecord[yearInt]
     ) {
-      malePop = DISTRICT_DEMOGRAPHICS[name][yearInt].male;
-      femalePop = DISTRICT_DEMOGRAPHICS[name][yearInt].female;
+      malePop = statsDemoRecord[yearInt].male;
+      femalePop = statsDemoRecord[yearInt].female;
       // Update the total population implicitly to match the sum of exact demographic points
       if (!getPopForYear(name, yearSuffix, 'sum')) {
         latestPop = malePop + femalePop;
@@ -643,7 +647,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
     let densityValue: string | number = '—';
 
     if (!isCensusSource) {
-      const modelStat = MODEL_STATS_DATA[name]?.[yearSuffix];
+      const modelStat = getRecord(MODEL_STATS_DATA, name)?.[yearSuffix];
       if (modelStat?.density !== undefined) {
         densityValue = modelStat.density;
       }
@@ -661,13 +665,12 @@ export const MapSection: React.FC<MapSectionProps> = ({
     }
 
     // Fallback or Odisha default
+    const demoStatRecord = getRecord(DEMOGRAPHIC_STATS, name === 'All Districts' ? 'Odisha' : name);
     if (
       densityValue === '—' &&
-      DEMOGRAPHIC_STATS[name === 'All Districts' ? 'Odisha' : name]?.[yearInt]
+      demoStatRecord?.[yearInt]
     ) {
-      densityValue =
-        DEMOGRAPHIC_STATS[name === 'All Districts' ? 'Odisha' : name][yearInt]
-          .density;
+      densityValue = demoStatRecord[yearInt].density;
     }
 
     return {
@@ -1068,10 +1071,10 @@ export const MapSection: React.FC<MapSectionProps> = ({
                 </div>
 
                 {/* Divider */}
-                <div className="w-full mx-auto h-px bg-gray-200 shrink-0"></div>
+                {/* <div className="w-full mx-auto h-px bg-gray-200 shrink-0"></div> */}
 
                 <div
-                  className={`w-full ${activeLayer === 'deg_urbanisation' ? 'opacity-50 pointer-events-none grayscale-[0.5]' : ''}`}
+                  className={`hidden w-full ${activeLayer === 'deg_urbanisation' ? 'opacity-50 pointer-events-none grayscale-[0.5]' : ''}`}
                 >
                   <span className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-70 block">
                     Gender
@@ -1081,15 +1084,14 @@ export const MapSection: React.FC<MapSectionProps> = ({
                       <button
                         key={g}
                         onClick={() => setSelectedGender(g)}
-                        className={`px-3 py-1 text-[12px] font-bold rounded-md tracking-wide transition-all ${
-                          selectedGender === g
+                        className={`px-3 py-1 text-[12px] font-bold rounded-md tracking-wide transition-all ${selectedGender === g
                             ? g === 'Male'
                               ? 'bg-[#F96000] text-[#ffffff]'
                               : g === 'Female'
                                 ? 'bg-[#F96000] text-[#ffffff] '
                                 : 'bg-[#F96000] text-[#ffffff] ' // Default/All
                             : 'bg-gray-100 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-whit'
-                        }`}
+                          }`}
                       >
                         {g}
                       </button>
@@ -1121,13 +1123,23 @@ export const MapSection: React.FC<MapSectionProps> = ({
                         ? ' sq.km'
                         : '';
 
-                const labels = [
-                  `${formatNum(steps[0])} - ${formatNum(steps[1])} ${unit}`,
-                  `${formatNum(steps[1])} - ${formatNum(steps[2])} ${unit}`,
-                  `${formatNum(steps[2])} - ${formatNum(steps[3])} ${unit}`,
-                  `${formatNum(steps[3])} - ${formatNum(steps[4])} ${unit}`,
-                  `> ${formatNum(steps[4])} ${unit}`,
-                ];
+                let labels: string[] = [];
+                if (activeLayer === 'pop') {
+                  labels = [
+                    `${formatNum(steps[0])} to <${formatNum(steps[1])}`,
+                    `${formatNum(steps[1])} to <${formatNum(steps[2])}`,
+                    `${formatNum(steps[2])} to <${formatNum(steps[3])}`,
+                    `${formatNum(steps[3])} to <${formatNum(steps[4])}`
+                  ];
+                } else {
+                  labels = [
+                    `${formatNum(steps[0])} - ${formatNum(steps[1])} ${unit}`,
+                    `${formatNum(steps[1])} - ${formatNum(steps[2])} ${unit}`,
+                    `${formatNum(steps[2])} - ${formatNum(steps[3])} ${unit}`,
+                    `${formatNum(steps[3])} - ${formatNum(steps[4])} ${unit}`,
+                    `> ${formatNum(steps[4])} ${unit}`,
+                  ];
+                }
 
                 return (
                   <div className="p-4 sticky bottom-0 bg-white/90 backdrop-blur-md z-[70] shrink-0 border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(255,255,255,0.9)]">
@@ -1144,13 +1156,18 @@ export const MapSection: React.FC<MapSectionProps> = ({
                           </span>
                         </div>
                       ) : (
-                        [
+                        (activeLayer === 'pop' ? [
+                          { color: '#f0f9e8', label: labels[0] },
+                          { color: '#bae4bc', label: labels[1] },
+                          { color: '#7bccc4', label: labels[2] },
+                          { color: '#0868ac', label: labels[3] },
+                        ] : [
                           { color: '#f0f9e8', label: labels[0] },
                           { color: '#bae4bc', label: labels[1] },
                           { color: '#7bccc4', label: labels[2] },
                           { color: '#43a2ca', label: labels[3] },
                           { color: '#0868ac', label: labels[4] },
-                        ].map((item, id) => (
+                        ]).map((item, id) => (
                           <div key={id} className="flex items-center gap-2.5">
                             <div
                               className="w-6 h-3 rounded-full"
@@ -1279,11 +1296,11 @@ export const MapSection: React.FC<MapSectionProps> = ({
                   if (isCensusSource) {
                     const censusStat =
                       CENSUS_STATS_DATA[districtNameForStats]?.[
-                        selectedYear.toString()
+                      selectedYear.toString()
                       ];
                     growth =
                       censusStat?.growth !== null &&
-                      censusStat?.growth !== undefined
+                        censusStat?.growth !== undefined
                         ? censusStat.growth
                         : 1.25;
                   } else if (popCurr && popPrev && popPrev !== 0) {
@@ -1291,7 +1308,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                   } else {
                     // Fallback to DEMOGRAPHIC_STATS if specific year data is missing
                     const statRecord =
-                      DEMOGRAPHIC_STATS[districtNameForStats]?.[selectedYear];
+                      getRecord(DEMOGRAPHIC_STATS, districtNameForStats)?.[selectedYear];
                     growth = statRecord?.pop_total_growth || 0;
                   }
 
@@ -1381,7 +1398,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                             if (isCensusSource) {
                               const censusStat =
                                 CENSUS_STATS_DATA[dName]?.[
-                                  currentYear.toString()
+                                currentYear.toString()
                                 ];
                               if (censusStat?.growth === null)
                                 growthValue = '—';
@@ -1394,7 +1411,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                             if (!isCensusSource && growthValue === null) {
                               const modelStat =
                                 MODEL_STATS_DATA[dName]?.[
-                                  currentYear.toString()
+                                currentYear.toString()
                                 ];
                               if (modelStat?.growth === null) growthValue = '—';
                               else if (modelStat?.growth !== undefined) {
@@ -1429,7 +1446,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
 
                               if (val === undefined || val === null) {
                                 val =
-                                  DEMOGRAPHIC_STATS[dName]?.[currentYear]
+                                  getRecord(DEMOGRAPHIC_STATS, dName)?.[currentYear]
                                     ?.growth;
                               }
                               growthValue =
@@ -1473,37 +1490,36 @@ export const MapSection: React.FC<MapSectionProps> = ({
                   selectedDistrictName === 'All Districts' ||
                   selectedDistrictName === 'Odisha';
                 const currentName = isAllDistricts ? 'Odisha' : stats.name;
-                const demographicData =
-                  DEMOGRAPHIC_STATS[currentName]?.[
-                    parseInt(appliedFilters.year)
-                  ];
+                const demographicData = getRecord(DEMOGRAPHIC_STATS, currentName)?.[
+                  parseInt(appliedFilters.year)
+                ];
+                const modelUrbanData = getRecord(MODEL_URBAN_RURAL_DATA, currentName)?.[appliedFilters.year];
                 if (
                   !isCensusSource &&
-                  (!demographicData || !demographicData.urban)
+                  (!demographicData || !demographicData.urban) &&
+                  (!modelUrbanData || !modelUrbanData.urban)
                 )
                   return null;
 
                 const urbanData = isCensusSource
-                  ? CENSUS_URBAN_RURAL_DATA[currentName]?.[appliedFilters.year]
+                  ? getRecord(CENSUS_URBAN_RURAL_DATA, currentName)?.[appliedFilters.year]
                   : null;
                 const urban = isCensusSource
                   ? urbanData?.urban ||
-                    0.6 *
-                      (getPopForYear(
-                        currentName,
-                        appliedFilters.year,
-                      ) as number)
-                  : (MODEL_URBAN_RURAL_DATA[currentName]?.[appliedFilters.year]
-                      ?.urban ?? demographicData.urban);
+                  0.6 *
+                  (getPopForYear(
+                    currentName,
+                    appliedFilters.year,
+                  ) as number)
+                  : (modelUrbanData?.urban ?? demographicData.urban);
                 const rural = isCensusSource
                   ? urbanData?.rural ||
-                    0.4 *
-                      (getPopForYear(
-                        currentName,
-                        appliedFilters.year,
-                      ) as number)
-                  : (MODEL_URBAN_RURAL_DATA[currentName]?.[appliedFilters.year]
-                      ?.rural ?? demographicData.rural);
+                  0.4 *
+                  (getPopForYear(
+                    currentName,
+                    appliedFilters.year,
+                  ) as number)
+                  : (modelUrbanData?.rural ?? demographicData.rural);
                 const total = urban + rural;
                 const urbanPercent = Math.round((urban / total) * 100);
                 const ruralPercent = 100 - urbanPercent;

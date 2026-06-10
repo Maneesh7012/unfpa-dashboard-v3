@@ -365,13 +365,11 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         }
       });
 
-      /*
-            const distPopup = new maplibregl.Popup({
-                closeButton: false,
-                closeOnClick: false,
-                className: 'district-popup'
-            });
-            */
+      const distPopup = new maplibregl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        className: 'district-popup'
+      });
 
       map.on('mousemove', 'districts-fill', (e) => {
         const feature = e.features?.[0];
@@ -379,26 +377,26 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           const props = feature.properties;
           const rawName = props.district_name || props.NAME || props.name;
           const name = DISTRICT_NAME_VARIANTS[rawName] || rawName;
+          const isAllowed = ALLOWED_DISTRICTS.includes(name);
 
-          if (ALLOWED_DISTRICTS.includes(name)) {
-            map.getCanvas().style.cursor = 'pointer';
+          map.getCanvas().style.cursor = isAllowed ? 'pointer' : '';
+
+          if (!showSubdistrictRef.current) {
+            const content = `
+                <div style="padding: 6px 10px; font-family: 'Inter', sans-serif; border-radius: 8px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase;">${name}</div>
+                </div>
+            `;
+            distPopup.setLngLat(e.lngLat).setHTML(content).addTo(map);
           } else {
-            map.getCanvas().style.cursor = '';
+            distPopup.remove();
           }
-
-          // --- District tooltip disabled per user request ---
-          /*
-                    if (!showSubdistrictRef.current) {
-                        ...
-                        distPopup.setLngLat(e.lngLat).setHTML(content).addTo(map);
-                    }
-                    */
         }
       });
 
       map.on('mouseleave', 'districts-fill', () => {
         map.getCanvas().style.cursor = '';
-        // distPopup.remove();
+        distPopup.remove();
       });
     }
 
@@ -871,15 +869,48 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       // Build match expressions for GENDER data fallbacks
       const valueMatch: any[] = ['match', nameExpr];
       const sValueMatch: any[] = ['match', nameExpr];
+      const valueMatchLabels = new Set<string>();
+      const sValueMatchLabels = new Set<string>();
 
       ALLOWED_DISTRICTS.forEach((distName) => {
         const val = GENDER[distName]?.[genderKey] || 0;
-        valueMatch.push(distName, val);
-        valueMatch.push(distName.toUpperCase(), val);
+
+        const pushLabel = (label: string, value: number) => {
+          if (!valueMatchLabels.has(label)) {
+            valueMatchLabels.add(label);
+            valueMatch.push(label, value);
+          }
+        };
+
+        pushLabel(distName, val);
+        pushLabel(distName.toUpperCase(), val);
+
+        // Map variants for fallback match expressions to align with shapefile/vector tile names
+        Object.keys(DISTRICT_NAME_VARIANTS).forEach((variantKey) => {
+          if (DISTRICT_NAME_VARIANTS[variantKey] === distName) {
+            pushLabel(variantKey, val);
+            pushLabel(variantKey.toUpperCase(), val);
+          }
+        });
 
         const sVal = Math.floor(val / 8);
-        sValueMatch.push(distName, sVal);
-        sValueMatch.push(distName.toUpperCase(), sVal);
+
+        const pushSLabel = (label: string, value: number) => {
+          if (!sValueMatchLabels.has(label)) {
+            sValueMatchLabels.add(label);
+            sValueMatch.push(label, value);
+          }
+        };
+
+        pushSLabel(distName, sVal);
+        pushSLabel(distName.toUpperCase(), sVal);
+
+        Object.keys(DISTRICT_NAME_VARIANTS).forEach((variantKey) => {
+          if (DISTRICT_NAME_VARIANTS[variantKey] === distName) {
+            pushSLabel(variantKey, sVal);
+            pushSLabel(variantKey.toUpperCase(), sVal);
+          }
+        });
       });
       valueMatch.push(0);
       sValueMatch.push(0);
@@ -888,6 +919,20 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       const districtColorExp =
         activeLayer === 'deg_urbanisation'
           ? '#D3D3D3'
+          : activeLayer === 'pop'
+          ? [
+              'interpolate',
+              ['linear'],
+              ['coalesce', ['get', propName], valueMatch],
+              scaleValues[0],
+              '#f0f9e8',
+              scaleValues[1],
+              '#bae4bc',
+              scaleValues[2],
+              '#7bccc4',
+              scaleValues[3],
+              '#0868ac',
+            ]
           : [
               'interpolate',
               ['linear'],
@@ -916,6 +961,20 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         const subColorExp =
           activeLayer === 'deg_urbanisation'
             ? '#E5E7EB'
+            : activeLayer === 'pop'
+            ? [
+                'interpolate',
+                ['linear'],
+                ['coalesce', ['get', subPropName], sValueMatch],
+                sScale[0],
+                '#f0f9e8',
+                sScale[1],
+                '#bae4bc',
+                sScale[2],
+                '#7bccc4',
+                sScale[3],
+                '#0868ac',
+              ]
             : [
                 'interpolate',
                 ['linear'],

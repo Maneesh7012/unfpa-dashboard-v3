@@ -12,7 +12,45 @@ import {
   ChevronRight,
   ChevronDown,
   Check,
+  Info,
 } from 'lucide-react';
+
+const InfoTooltip = ({
+  text,
+  position = 'top',
+  source,
+  content,
+  className = 'w-48',
+}: {
+  text?: string;
+  position?: 'top' | 'bottom';
+  source?: string;
+  content?: React.ReactNode;
+  className?: string;
+}) => (
+  <span className="group/info relative inline-block ml-2 align-middle z-[100]">
+    <Info className="w-4 h-4 text-gray-400 group-hover/info:text-[#F96000] transition-colors cursor-help" />
+    <span
+      className={`absolute left-1/2 -translate-x-1/2 px-1 hidden group-hover/info:flex flex-col items-center animate-in fade-in zoom-in-95 duration-200 pointer-events-none z-[200] ${className} 
+            ${position === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'}`}
+    >
+      <span className="bg-white/98 backdrop-blur-md p-3 rounded-xl shadow-2xl border border-gray-100 w-full block whitespace-normal text-left">
+        {content ? (
+          content
+        ) : (
+          <span className="text-[10px] text-gray-700 leading-relaxed font-semibold block text-center">
+            {text}
+          </span>
+        )}
+        {position === 'top' ? (
+          <span className="absolute top-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 shadow-sm block"></span>
+        ) : (
+          <span className="absolute bottom-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45 shadow-sm block"></span>
+        )}
+      </span>
+    </span>
+  </span>
+);
 import {
   XAxis,
   YAxis,
@@ -33,7 +71,7 @@ import {
   ALLOWED_DISTRICTS,
   DEMOGRAPHIC_STATS,
   CENSUS_PROJECTION_DATA,
-  // GENDER,
+  getRecord,
 } from '../../data/comparativeData';
 import {
   MODEL_STATS_DATA,
@@ -46,6 +84,7 @@ import type { LayerType } from '../../../types';
 import MapCompare, {
   LULC_QUARTERS,
   LULC_YEARS,
+  NTL_QUARTERS,
 } from '../MapCompare/MapCompare';
 import { MultiMapCompare } from '../MapCompare/MultiMapCompare';
 
@@ -95,7 +134,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     'Model Only' | 'Model Vs Census Projection'
   >('Model Only');
   const layerYearMap: Record<string, string[]> = {
-    nightlight: LULC_QUARTERS,
+    nightlight: NTL_QUARTERS,
     roads: [
       '2014',
       '2015',
@@ -399,8 +438,9 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
       const densityKey = `density_${yearForTable}`;
       let latestDensityValue = 0;
 
-      if (MODEL_STATS_DATA[name] && MODEL_STATS_DATA[name]['2025']) {
-        latestDensityValue = MODEL_STATS_DATA[name]['2025'].density;
+      const modelStat2025 = getRecord(MODEL_STATS_DATA, name)?.[2025];
+      if (modelStat2025) {
+        latestDensityValue = modelStat2025.density;
       } else if (selectedDistrict === name && data && data[densityKey]) {
         latestDensityValue = parseFloat(data[densityKey]);
       } else if (districtsLookup.has(name)) {
@@ -410,23 +450,26 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
 
       // Growth calculation from MODEL_STATS_DATA for 2025
       let growthStr = '+0.0%';
-      if (MODEL_STATS_DATA[name] && MODEL_STATS_DATA[name]['2025']) {
-        const growthVal = MODEL_STATS_DATA[name]['2025'].growth;
+      if (modelStat2025) {
+        const growthVal = modelStat2025.growth;
         if (growthVal === null) {
           growthStr = '-';
         } else {
           growthStr = (growthVal >= 0 ? '+' : '') + growthVal.toFixed(2) + '%';
         }
-      } else if (DEMOGRAPHIC_STATS[name] && DEMOGRAPHIC_STATS[name][2025]) {
-        const growthVal = DEMOGRAPHIC_STATS[name][2025].growth;
-        growthStr = (growthVal >= 0 ? '+' : '') + growthVal.toFixed(2) + '%';
-      } else if (pmtilesPop > 0 && pmtilesPop2023 > 0) {
-        // Total growth over 2 years divided by 2 to approximate YoY
-        const totalGrowth =
-          ((pmtilesPop - pmtilesPop2023) / pmtilesPop2023) * 100;
-        const yearlyGrowth = totalGrowth / 2;
-        growthStr =
-          (yearlyGrowth >= 0 ? '+' : '') + yearlyGrowth.toFixed(1) + '%';
+      } else {
+        const demoStatRecord = getRecord(DEMOGRAPHIC_STATS, name)?.[2025];
+        if (demoStatRecord) {
+          const growthVal = demoStatRecord.growth;
+          growthStr = (growthVal >= 0 ? '+' : '') + growthVal.toFixed(2) + '%';
+        } else if (pmtilesPop > 0 && pmtilesPop2023 > 0) {
+          // Total growth over 2 years divided by 2 to approximate YoY
+          const totalGrowth =
+            ((pmtilesPop - pmtilesPop2023) / pmtilesPop2023) * 100;
+          const yearlyGrowth = totalGrowth / 2;
+          growthStr =
+            (yearlyGrowth >= 0 ? '+' : '') + yearlyGrowth.toFixed(1) + '%';
+        }
       }
 
       const latestPop = populationValue;
@@ -438,12 +481,10 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
       // Use Urban/Rural data from MODEL_URBAN_RURAL_DATA
       let urbanPop = 0;
       let ruralPop = 0;
-      if (
-        MODEL_URBAN_RURAL_DATA[name] &&
-        MODEL_URBAN_RURAL_DATA[name]['2025']
-      ) {
-        urbanPop = MODEL_URBAN_RURAL_DATA[name]['2025'].urban;
-        ruralPop = MODEL_URBAN_RURAL_DATA[name]['2025'].rural;
+      const modelUrbanRural2025 = getRecord(MODEL_URBAN_RURAL_DATA, name)?.[2025];
+      if (modelUrbanRural2025) {
+        urbanPop = modelUrbanRural2025.urban;
+        ruralPop = modelUrbanRural2025.rural;
       }
 
       return {
@@ -454,9 +495,9 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
         density:
           latestDensityValue > 0
             ? latestDensityValue.toLocaleString(undefined, {
-                minimumFractionDigits: 1,
-                maximumFractionDigits: 1,
-              }) + '/km²'
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 1,
+            }) + '/km²'
             : (400 + seed * 50).toFixed(0) + '/km²',
         urban: (urbanPop / 1000000).toFixed(2) + 'M',
         rural: (ruralPop / 1000000).toFixed(2) + 'M',
@@ -505,8 +546,9 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
       chartDistricts.forEach((distName) => {
         // Model Data (Only from MODEL_DATA)
         let modelVal = null;
-        if (MODEL_DATA[distName] && MODEL_DATA[distName][y]) {
-          modelVal = MODEL_DATA[distName][y];
+        const modelRecord = getRecord(MODEL_DATA, distName);
+        if (modelRecord && modelRecord[y]) {
+          modelVal = modelRecord[y];
         }
 
         if (modelVal !== null) {
@@ -516,11 +558,12 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
 
         // Census Data (CENSUS_PROJECTION_DATA)
         if (projectionMode === 'Model Vs Census Projection') {
+          const censusRecord = getRecord(CENSUS_PROJECTION_DATA, distName);
           if (
-            CENSUS_PROJECTION_DATA[distName] &&
-            CENSUS_PROJECTION_DATA[distName][y]
+            censusRecord &&
+            censusRecord[y]
           ) {
-            const censusVal = CENSUS_PROJECTION_DATA[distName][y];
+            const censusVal = censusRecord[y];
             if (y <= 2025) row[`${distName}_census_s`] = censusVal;
             if (y >= 2025) row[`${distName}_census_d`] = censusVal;
           }
@@ -550,6 +593,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
               <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
                 <ChartNoAxesColumnIncreasing className="w-6 h-6 text-black" />
                 Population Projections - {selectedDistrict}
+                {/* <InfoTooltip text="Projected demographic trends and statistics." position="top" /> */}
               </h3>
               <p className="text-sm text-gray-500 mt-1 font-medium">
                 District wise demographic projection and growth trajectory
@@ -570,13 +614,12 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                     onClick={() =>
                       setProjectionMode('Model Vs Census Projection')
                     }
-                    className={`px-3 py-1.5 text-[11px] font-black uppercase tracking-wider rounded-md transition-all ${
-                      projectionMode === 'Model Vs Census Projection'
-                        ? 'bg-white text-[#1C68AC] shadow-sm'
-                        : isDistrictSelected
-                          ? 'text-gray-500 hover:text-gray-700'
-                          : 'text-gray-300 cursor-not-allowed'
-                    }`}
+                    className={`px-3 py-1.5 text-[11px] font-black uppercase tracking-wider rounded-md transition-all ${projectionMode === 'Model Vs Census Projection'
+                      ? 'bg-white text-[#1C68AC] shadow-sm'
+                      : isDistrictSelected
+                        ? 'text-gray-500 hover:text-gray-700'
+                        : 'text-gray-300 cursor-not-allowed'
+                      }`}
                   >
                     Model Vs. Census Proj.
                   </button>
@@ -1019,6 +1062,62 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                 <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
                   <MapIcon className="w-6 h-6 text-black" />
                   Comparative Analysis - {selectedDistrict}
+                  <InfoTooltip
+                    position="bottom"
+                    className="w-[280px] sm:w-[380px] md:w-[480px]"
+                    content={
+                      <div className="space-y-4 p-1 text-gray-800">
+                        <div>
+                          <h4 className="text-[11px] font-black uppercase tracking-wider mb-1">
+                            Built-up Area
+                          </h4>
+                          <p className="text-[10px] text-gray-600 leading-relaxed font-semibold">
+                            Built-up area represents land covered by human-made
+                            structures such as residential buildings, commercial
+                            establishments, industrial facilities, roads, and other
+                            impervious surfaces.
+                          </p>
+                        </div>
+                        <div className="border-t border-gray-100 pt-3">
+                          <h4 className="text-[11px] font-black  uppercase tracking-wider mb-1">
+                            Night Lights
+                          </h4>
+                          <p className="text-[10px] text-gray-600 leading-relaxed font-semibold">
+                            Night-Time Light (NTL) data are derived from the Visible
+                            Infrared Imaging Radiometer Suite (VIIRS) sensor onboard the
+                            joint NASA/NOAA satellites. The dataset captures artificial
+                            lighting emitted from human settlements and economic
+                            activities during nighttime. Higher radiance values
+                            generally indicate greater levels of human activity,
+                            infrastructure, and electrification.
+                          </p>
+                        </div>
+                        <div className="border-t border-gray-100 pt-3">
+                          <h4 className="text-[11px] font-black  uppercase tracking-wider mb-1">
+                            Road Network
+                          </h4>
+                          <p className="text-[10px] text-gray-600 leading-relaxed font-semibold">
+                            The road layer represents transportation infrastructure,
+                            including highways, primary roads, secondary roads, and local
+                            road networks. Roads provide connectivity between
+                            settlements, markets, healthcare facilities, schools, and
+                            other services.
+                          </p>
+                        </div>
+                        <div className="border-t border-gray-100 pt-3">
+                          <h4 className="text-[11px] font-black  uppercase tracking-wider mb-1">
+                            Cropland
+                          </h4>
+                          <p className="text-[10px] text-gray-600 leading-relaxed font-semibold">
+                            Cropland represents areas used for agricultural cultivation
+                            and food production. The layer is derived from the LULC
+                            dataset by extracting pixels classified as agricultural land
+                            or cropland.
+                          </p>
+                        </div>
+                      </div>
+                    }
+                  />
                 </h2>
                 <p className="text-sm text-gray-500 mt-1 font-medium">
                   Visualizing spatiotemporal changes in {selectedDistrict}.
@@ -1042,11 +1141,10 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                   <button
                     key={cat.layer}
                     onClick={() => setCompareLayer(cat.layer as any)}
-                    className={`px-4 py-2 text-xs font-bold transition-all whitespace-nowrap border rounded-md ${
-                      compareLayer === cat.layer
-                        ? 'bg-[#F96000] text-white shadow-sm'
-                        : 'bg-gray-100 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-white'
-                    }`}
+                    className={`px-4 py-2 text-xs font-bold transition-all whitespace-nowrap border rounded-md ${compareLayer === cat.layer
+                      ? 'bg-[#F96000] text-white shadow-sm'
+                      : 'bg-gray-100 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-white'
+                      }`}
                   >
                     {cat.label}
                   </button>
@@ -1237,6 +1335,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
               <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
                 <Trophy className="w-6 h-6 text-black" />
                 Regional Performance Matrix
+                {/* <InfoTooltip text="Performance indicators across different regions." position="top" /> */}
               </h3>
               <p className="text-sm text-gray-500 mt-1 font-medium">
                 Comprehensive district-level demographic indicators including
@@ -1346,7 +1445,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                                         selectedDistrict
                                           ?.trim()
                                           .toLowerCase() ===
-                                        d.name.trim().toLowerCase()
+                                          d.name.trim().toLowerCase()
                                           ? '#fff'
                                           : '#F58220'
                                       }
@@ -1358,7 +1457,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                                         selectedDistrict
                                           ?.trim()
                                           .toLowerCase() ===
-                                        d.name.trim().toLowerCase()
+                                          d.name.trim().toLowerCase()
                                           ? '#fff'
                                           : '#F58220'
                                       }
@@ -1371,7 +1470,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                                   dataKey="value"
                                   stroke={
                                     selectedDistrict?.trim().toLowerCase() ===
-                                    d.name.trim().toLowerCase()
+                                      d.name.trim().toLowerCase()
                                       ? '#fff'
                                       : '#F58220'
                                   }
@@ -1405,7 +1504,8 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
             <div>
               <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
                 <AlertCircle className="w-6 h-6 text-black" />
-                Development Activities{' '}
+                Development Activities
+                {/* <InfoTooltip text="Overview of ongoing development activities." position="top" /> */}
               </h3>
               <p className="text-sm text-gray-500 mt-1 font-medium">
                 Core developments in Anugul
@@ -1516,7 +1616,8 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
             <div>
               <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
                 <AlertCircle className="w-6 h-6 text-black" />
-                Insights{' '}
+                Insights
+                {/* <InfoTooltip text="Key insights derived from the data." position="top" /> */}
               </h3>
               <p className="text-sm text-gray-500 mt-1 font-medium">
                 The demographic transformation of Anugul district from 2011 to

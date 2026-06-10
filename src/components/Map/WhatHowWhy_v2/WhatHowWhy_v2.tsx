@@ -14,7 +14,37 @@ import {
   Calendar,
   X,
   ChevronRight,
+  Info,
 } from 'lucide-react';
+
+const InfoTooltip = ({
+  text,
+  position = 'top',
+  source,
+}: {
+  text: string;
+  position?: 'top' | 'bottom';
+  source?: string;
+}) => (
+  <span className="group/info relative inline-block ml-2 align-middle z-[100]">
+    <Info className="w-4 h-4 text-gray-400 group-hover/info:text-[#F96000] transition-colors cursor-help" />
+    <span
+      className={`absolute left-1/2 -translate-x-1/2 w-48 px-1 hidden group-hover/info:flex flex-col items-center animate-in fade-in zoom-in-95 duration-200 pointer-events-none z-[200] 
+            ${position === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'}`}
+    >
+      <span className="bg-white/98 backdrop-blur-md p-3 rounded-xl shadow-2xl border border-gray-100 w-full block whitespace-normal text-center">
+        <span className="text-[10px] text-gray-700 leading-relaxed font-semibold block">
+          {text}
+        </span>
+        {position === 'top' ? (
+          <span className="absolute top-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 shadow-sm block"></span>
+        ) : (
+          <span className="absolute bottom-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45 shadow-sm block"></span>
+        )}
+      </span>
+    </span>
+  </span>
+);
 import * as pmtiles from 'pmtiles';
 import {
   Dialog,
@@ -656,6 +686,7 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
           <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
             <Satellite className="w-6 h-6" />
             Hotspot Analysis
+            {/* <InfoTooltip text="Identification of spatial clusters and hotspots." position="top" /> */}
           </h2>
           <p className="text-[13px] text-gray-500 mt-1 font-medium leading-relaxed">
             Analyze what changed, how it changed, and why using high-resolution
@@ -685,15 +716,13 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
             {isYearDropdownOpen && (
               <>
                 <div
-                  className={`fixed inset-0 ${
-                    isImagePreviewOpen ? 'z-30' : 'z-190'
-                  }`}
+                  className={`fixed inset-0 ${isImagePreviewOpen ? 'z-30' : 'z-190'
+                    }`}
                   onClick={() => setIsYearDropdownOpen(false)}
                 />
                 <div
-                  className={`absolute right-0 top-full mt-3 bg-white rounded-md shadow-xl border border-gray-100 p-3 ${
-                    isImagePreviewOpen ? 'z-30' : 'z-200'
-                  } animate-in fade-in slide-in-from-top-2 min-w-30 transition-all`}
+                  className={`absolute right-0 top-full mt-3 bg-white rounded-md shadow-xl border border-gray-100 p-3 ${isImagePreviewOpen ? 'z-30' : 'z-200'
+                    } animate-in fade-in slide-in-from-top-2 min-w-30 transition-all`}
                 >
                   {YEARS.map((y) => (
                     <button
@@ -725,13 +754,11 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
         {/* Playback Controls & Timeline */}
         {isLoaded && (
           <div
-            className={`absolute bottom-6 ${
-              isImagePreviewOpen ? 'z-30' : 'z-40'
-            } w-[90%] md:w-150 bg-gray-900/80 backdrop-blur-md rounded-2xl border border-white/20 p-4 shadow-2xl flex items-center gap-6 group transition-all duration-300
-              ${
-                selectedPoint
-                  ? 'left-[40%] -translate-x-[50%] md:left-[38%] lg:left-[35%]'
-                  : 'left-1/2 -translate-x-1/2'
+            className={`absolute bottom-6 ${isImagePreviewOpen ? 'z-30' : 'z-40'
+              } w-[90%] md:w-150 bg-gray-900/80 backdrop-blur-md rounded-2xl border border-white/20 p-4 shadow-2xl flex items-center gap-6 group transition-all duration-300
+              ${selectedPoint
+                ? 'left-[40%] -translate-x-[50%] md:left-[38%] lg:left-[35%]'
+                : 'left-1/2 -translate-x-1/2'
               }
             `}
           >
@@ -804,9 +831,8 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
 
         {/* Custom Controls */}
         <div
-          className={`absolute bottom-5 right-5 flex flex-col gap-2 ${
-            isImagePreviewOpen ? 'z-40' : 'z-60'
-          }`}
+          className={`absolute bottom-5 right-5 flex flex-col gap-2 ${isImagePreviewOpen ? 'z-40' : 'z-60'
+            }`}
         >
           <button
             onClick={handleResetView}
@@ -845,9 +871,8 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
 
         {selectedPoint && (
           <div
-            className={`absolute top-0 right-0 h-full w-full md:w-[45%] lg:w-[35%] bg-white border-l border-gray-200 shadow-2xl ${
-              isImagePreviewOpen ? 'z-40' : 'z-150'
-            } flex flex-col overflow-hidden animate-in slide-in-from-right duration-300`}
+            className={`absolute top-0 right-0 h-full w-full md:w-[45%] lg:w-[35%] bg-white border-l border-gray-200 shadow-2xl ${isImagePreviewOpen ? 'z-40' : 'z-150'
+              } flex flex-col overflow-hidden animate-in slide-in-from-right duration-300`}
           >
             {/* Header Tabs & Close */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50">
@@ -862,20 +887,18 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
                       className="flex items-center cursor-pointer justify-center space-x-3 py-2 w-full transition-all group"
                     >
                       <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black border-2 transition-all duration-300 ${
-                          activeModalTab === tab
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black border-2 transition-all duration-300 ${activeModalTab === tab
                             ? 'bg-[#F76000] border-[#F76000] text-white'
                             : 'bg-gray-100 border-gray-200 text-gray-700 group-hover:border-gray-400 group-hover:text-gray-600'
-                        }`}
+                          }`}
                       >
                         {index + 1}
                       </div>
                       <span
-                        className={`text-[11px] font-black uppercase tracking-widest transition-colors ${
-                          activeModalTab === tab
+                        className={`text-[11px] font-black uppercase tracking-widest transition-colors ${activeModalTab === tab
                             ? 'text-black'
                             : 'text-gray-400 group-hover:text-gray-600'
-                        }`}
+                          }`}
                       >
                         {tab}
                       </span>
@@ -997,21 +1020,19 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
                                     <img
                                       src={imageUrl}
                                       alt=""
-                                      className={`w-full transition-transform duration-500 group-hover:scale-105 ${
-                                        activeModalTab === 'Why'
+                                      className={`w-full transition-transform duration-500 group-hover:scale-105 ${activeModalTab === 'Why'
                                           ? 'h-100'
                                           : 'h-70'
-                                      }`}
+                                        }`}
                                     />
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
                                   </div>
                                 </DialogTrigger>
                                 <DialogContent
-                                  className={`border-none p-0 shadow-none overflow-hidden flex items-center justify-center outline-none translate-x-[-50%] translate-y-[-50%] ${
-                                    isGif
+                                  className={`border-none p-0 shadow-none overflow-hidden flex items-center justify-center outline-none translate-x-[-50%] translate-y-[-50%] ${isGif
                                       ? 'max-w-[95vw] w-full max-h-[95vh] h-fit bg-white rounded-lg'
                                       : 'max-w-[95vw] max-h-[95vh] w-fit h-fit sm:max-w-none bg-transparent'
-                                  }`}
+                                    }`}
                                 >
                                   <DialogTitle className="sr-only">
                                     {isGif ? 'GIF Preview' : 'Image Preview'}
@@ -1023,11 +1044,10 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
                                   <img
                                     src={imageUrl}
                                     alt=""
-                                    className={`object-contain block ${
-                                      isGif
+                                    className={`object-contain block ${isGif
                                         ? 'w-full h-auto max-h-[90vh] rounded-none'
                                         : 'max-h-[90vh] max-w-[90vw] w-auto h-auto rounded-lg shadow-2xl'
-                                    }`}
+                                      }`}
                                   />
                                 </DialogContent>
                               </Dialog>

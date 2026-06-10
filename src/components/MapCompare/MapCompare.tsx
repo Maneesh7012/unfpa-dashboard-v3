@@ -114,6 +114,15 @@ export const LULC_QUARTERS = [
   '2026 q1',
 ];
 
+export const NTL_QUARTERS = [
+  ...Array.from({ length: 2026 - 2012 + 1 }, (_, i) => {
+    const year = 2012 + i;
+    const quarters = year === 2026 ? ['q1'] : ['q1', 'q2', 'q3', 'q4'];
+    return quarters.map((q) => `${year} ${q}`);
+  }).flat(),
+];
+
+
 export const LULC_YEARS = [
   '2017',
   '2018',
@@ -138,9 +147,13 @@ export const getDistrictConfig = (district: string, isQuarterly = false) => {
     return urls;
   };
 
-  const buildQuarterlyUrls = (path: string, suffix: string) => {
+  const buildQuarterlyUrls = (
+    path: string,
+    suffix: string,
+    quartersList = LULC_QUARTERS,
+  ) => {
     const urls: Record<string, string> = {};
-    LULC_QUARTERS.forEach((qLabel) => {
+    quartersList.forEach((qLabel) => {
       const [year, q] = qLabel.split(' ');
       urls[qLabel] =
         `https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/${path}/${formattedDistrict}/${formattedDistrict}_${year}_${q}_${suffix}.tif`;
@@ -151,7 +164,7 @@ export const getDistrictConfig = (district: string, isQuarterly = false) => {
   const lulcUrls = isQuarterly
     ? buildQuarterlyUrls('lulc', 'lulc')
     : buildYearlyLulcUrls();
-  const ntlUrls = buildQuarterlyUrls('ntl', 'ntl');
+  const ntlUrls = buildQuarterlyUrls('ntl', 'ntl', NTL_QUARTERS);
 
   const builtupPixel = isQuarterly ? 6 : 7;
   const croplandPixel = isQuarterly ? 4 : 5;

@@ -19,7 +19,37 @@ import {
   Calendar,
   X,
   LineChart as LucideLineChart,
+  Info,
 } from 'lucide-react';
+
+const InfoTooltip = ({
+  text,
+  position = 'top',
+  source,
+}: {
+  text: string;
+  position?: 'top' | 'bottom';
+  source?: string;
+}) => (
+  <span className="group/info relative inline-block ml-2 align-middle z-[100]">
+    <Info className="w-4 h-4 text-gray-400 group-hover/info:text-[#F96000] transition-colors cursor-help" />
+    <span
+      className={`absolute left-1/2 -translate-x-1/2 w-48 px-1 hidden group-hover/info:flex flex-col items-center animate-in fade-in zoom-in-95 duration-200 pointer-events-none z-[200] 
+            ${position === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'}`}
+    >
+      <span className="bg-white/98 backdrop-blur-md p-3 rounded-xl shadow-2xl border border-gray-100 w-full block whitespace-normal text-center">
+        <span className="text-[10px] text-gray-700 leading-relaxed font-semibold block">
+          {text}
+        </span>
+        {position === 'top' ? (
+          <span className="absolute top-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 shadow-sm block"></span>
+        ) : (
+          <span className="absolute bottom-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45 shadow-sm block"></span>
+        )}
+      </span>
+    </span>
+  </span>
+);
 import * as pmtiles from 'pmtiles';
 import {
   ResponsiveContainer,
@@ -361,11 +391,11 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
       try {
         const bboxToUse = targetBounds
           ? [
-              targetBounds[0][0],
-              targetBounds[0][1],
-              targetBounds[1][0],
-              targetBounds[1][1],
-            ]
+            targetBounds[0][0],
+            targetBounds[0][1],
+            targetBounds[1][0],
+            targetBounds[1][1],
+          ]
           : ODISHA_BBOX;
         const tileUrl = await getOrCreateMosaicUrl(q, bboxToUse);
         // const tileUrl =
@@ -1121,6 +1151,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
           <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
             <Satellite className="w-6 h-6" />
             Land Use Analysis – {targetDistrict}
+            <InfoTooltip text="Source: Esri Land Cover 10m Annual Global Land Cover" position="top" />
           </h2>
           <p className="text-[13px] text-gray-500 mt-1 font-medium ">
             Analyze temporal shifts in landscape categories.
@@ -1187,19 +1218,19 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
           {(!isLoaded ||
             tileStatus === 'loading' ||
             lulcStatus === 'loading') && (
-            <div className="absolute inset-0 bg-white/60 backdrop-blur-md flex items-center justify-center z-[100]">
-              <div className="flex flex-col items-center gap-4">
-                <div className="relative w-14 h-14">
-                  <div className="absolute inset-0 border-4 border-gray-100 rounded-full" />
-                  <div className="absolute inset-0 border-4 border-[#F76000] border-t-transparent rounded-full animate-spin" />
-                  {/* <Satellite className="absolute inset-0 m-auto w-6 h-6 text-[#F76000] animate-pulse" /> */}
+              <div className="absolute inset-0 bg-white/60 backdrop-blur-md flex items-center justify-center z-[100]">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="relative w-14 h-14">
+                    <div className="absolute inset-0 border-4 border-gray-100 rounded-full" />
+                    <div className="absolute inset-0 border-4 border-[#F76000] border-t-transparent rounded-full animate-spin" />
+                    {/* <Satellite className="absolute inset-0 m-auto w-6 h-6 text-[#F76000] animate-pulse" /> */}
+                  </div>
+                  <p className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">
+                    {!isLoaded ? '' : ''}
+                  </p>
                 </div>
-                <p className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]">
-                  {!isLoaded ? '' : ''}
-                </p>
               </div>
-            </div>
-          )}
+            )}
         </div>
 
         {/* ── LULC CHANGE SUMMARY (Top Right Overlay) ────────────────────── */}
@@ -1341,11 +1372,10 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                                   </span>
                                   <div className="flex items-center justify-end gap-0.5 w-full">
                                     <span
-                                      className={`text-[9px] font-black leading-none text-right ${
-                                        pct >= 0
-                                          ? 'text-emerald-600'
-                                          : 'text-rose-500'
-                                      }`}
+                                      className={`text-[9px] font-black leading-none text-right ${pct >= 0
+                                        ? 'text-emerald-600'
+                                        : 'text-rose-500'
+                                        }`}
                                     >
                                       {pct >= 0 ? '+' : ''}
                                       {pct.toFixed(1)}%
@@ -1448,11 +1478,10 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         </div>
 
         <div
-          className={`absolute bottom-8 left-8 z-50 flex items-center gap-4 transition-all duration-500 ease-in-out ${
-            selectedPoint
-              ? 'right-[calc(100%+32px)] md:right-[calc(45%+32px)] lg:right-[calc(35%+32px)]'
-              : 'right-8'
-          }`}
+          className={`absolute bottom-8 left-8 z-50 flex items-center gap-4 transition-all duration-500 ease-in-out ${selectedPoint
+            ? 'right-[calc(100%+32px)] md:right-[calc(45%+32px)] lg:right-[calc(35%+32px)]'
+            : 'right-8'
+            }`}
         >
           {/* Timeline Slider */}
           <div
@@ -1640,11 +1669,10 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                           />
                           <Line
                             type="monotone"
-                            dataKey={`${
-                              LULC_LEGEND.find(
-                                (c) => c.value === selectedLulcCategory,
-                              )?.key || ''
-                            }_trend`}
+                            dataKey={`${LULC_LEGEND.find(
+                              (c) => c.value === selectedLulcCategory,
+                            )?.key || ''
+                              }_trend`}
                             stroke={
                               LULC_LEGEND.find(
                                 (c) => c.value === selectedLulcCategory,
@@ -1794,20 +1822,18 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                       className="flex items-center cursor-pointer justify-center space-x-3 py-2 w-full transition-all group"
                     >
                       <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black border-2 transition-all duration-300 ${
-                          activeModalTab === tab
-                            ? 'bg-[#F76000] border-[#F76000] text-white'
-                            : 'bg-gray-100 border-gray-200 text-gray-700 group-hover:border-gray-400 group-hover:text-gray-600'
-                        }`}
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black border-2 transition-all duration-300 ${activeModalTab === tab
+                          ? 'bg-[#F76000] border-[#F76000] text-white'
+                          : 'bg-gray-100 border-gray-200 text-gray-700 group-hover:border-gray-400 group-hover:text-gray-600'
+                          }`}
                       >
                         {index + 1}
                       </div>
                       <span
-                        className={`text-[11px] font-black uppercase tracking-widest transition-colors ${
-                          activeModalTab === tab
-                            ? 'text-black'
-                            : 'text-gray-400 group-hover:text-gray-600'
-                        }`}
+                        className={`text-[11px] font-black uppercase tracking-widest transition-colors ${activeModalTab === tab
+                          ? 'text-black'
+                          : 'text-gray-400 group-hover:text-gray-600'
+                          }`}
                       >
                         {tab}
                       </span>

@@ -23,6 +23,35 @@ import { MULTI_TOOLTIPS } from '../../data/tooltipInfo';
 import { DISTRICT_NAME_VARIANTS } from '../../data/comparativeData';
 import smodClasses from './ghsl_smod_classes.json';
 
+const InfoTooltip = ({
+  text,
+  position = 'top',
+  source,
+}: {
+  text: string;
+  position?: 'top' | 'bottom';
+  source?: string;
+}) => (
+  <span className="group/info relative inline-block ml-2 align-middle z-[100]">
+    <Info className="w-4 h-4 text-gray-400 group-hover/info:text-[#F96000] transition-colors cursor-help" />
+    <span
+      className={`absolute left-1/2 -translate-x-1/2 w-48 px-1 hidden group-hover/info:flex flex-col items-center animate-in fade-in zoom-in-95 duration-200 pointer-events-none z-[200] 
+            ${position === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'}`}
+    >
+      <span className="bg-white/98 backdrop-blur-md p-3 rounded-xl shadow-2xl border border-gray-100 w-full block whitespace-normal text-center">
+        <span className="text-[10px] text-gray-700 leading-relaxed font-semibold block">
+          {text}
+        </span>
+        {position === 'top' ? (
+          <span className="absolute top-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 shadow-sm block"></span>
+        ) : (
+          <span className="absolute bottom-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45 shadow-sm block"></span>
+        )}
+      </span>
+    </span>
+  </span>
+);
+
 const SettlementTooltip = () => {
   return (
     <div className="flex flex-col gap-4 p-1 max-w-[320px]">
@@ -155,11 +184,11 @@ const NTL_QUARTER_LABEL_MAP: Record<string, string> = {
 };
 
 const NTL_QUARTER_MONTHS = ['March', 'June', 'September', 'December'];
-const NTL_YEARS = Array.from({ length: 2026 - 2018 + 1 }, (_, i) =>
-  (2018 + i).toString(),
+const NTL_YEARS = Array.from({ length: 2026 - 2012 + 1 }, (_, i) =>
+  (2012 + i).toString(),
 );
 
-// All dropdown options for nightlight: ["2018 March", "2018 June", ..., "2026 March"]
+// All dropdown options for nightlight: ["2012 March", "2012 June", ..., "2026 March"]
 // Note: 2026 only has q1 data (March), so other quarters are excluded for that year
 const NTL_YEAR_OPTIONS: string[] = NTL_YEARS.flatMap((year) => {
   const months = year === '2026' ? ['March'] : NTL_QUARTER_MONTHS;
@@ -345,7 +374,7 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
   const [mapConfigs, setMapConfigs] = useState<MapConfig[]>([
     {
       id: 'map-1',
-      year: propActiveLayer === 'nightlight' ? '2018 March' : '2017',
+      year: propActiveLayer === 'nightlight' ? '2012 March' : '2017',
       layer: propActiveLayer || 'builtup',
       basemap: 'grey',
     },
@@ -364,24 +393,7 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
     year: '2024',
   });
 
-  useEffect(() => {
-    if (propActiveLayer) {
-      setMapConfigs((prev) =>
-        prev.map((m, idx) => {
-          let year = m.year;
-          if (idx === 0) {
-            year = propActiveLayer === 'nightlight' ? '2018 March' : '2017';
-          } else if (idx === 1) {
-            year = propActiveLayer === 'nightlight' ? '2026 March' : '2025';
-          } else {
-            // For 3rd map or others, default to a sensible middle/latest
-            year = propActiveLayer === 'nightlight' ? '2026 March' : '2024';
-          }
-          return { ...m, layer: propActiveLayer, year };
-        }),
-      );
-    }
-  }, [propActiveLayer]);
+
 
   const mapInstances = useRef<Map<string, maplibregl.Map>>(new Map());
   const isSyncing = useRef(false);
@@ -504,6 +516,7 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
           <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
             <MapIcon className="w-6 h-6" />
             Comparative Analysis - Splitview
+            {/* <InfoTooltip text="Compare different metrics side-by-side." position="top" /> */}
           </h3>
           <p className="text-[13px] text-gray-500 mt-1 font-medium leading-relaxed">
             Simultaneously visualize and compare spatio-temporal demographic
