@@ -15,6 +15,7 @@ import {
   DISTRICT_NAME_VARIANTS,
   ALLOWED_DISTRICTS,
   GENDER,
+  getDistrictBounds,
 } from '../../data/comparativeData';
 
 interface MapComponentProps {
@@ -82,6 +83,11 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const selectedYearRef = useRef(selectedYear);
   const genderRef = useRef(gender);
   const showSubdistrictRef = useRef(showSubdistrict);
+  const targetDistrictRef = useRef(targetDistrict);
+
+  useEffect(() => {
+    targetDistrictRef.current = targetDistrict;
+  }, [targetDistrict]);
 
   useEffect(() => {
     activeLayerRef.current = activeLayer;
@@ -105,8 +111,6 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     const map = mapRef.current;
     if (!map) return;
 
-    let targetFeature: any = null;
-
     if (
       !targetDistrict ||
       targetDistrict === 'Odisha' ||
@@ -119,7 +123,18 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       return;
     }
 
+    // Zoom to static bounds immediately if available
+    const staticBounds = getDistrictBounds(targetDistrict);
+    if (staticBounds) {
+      map.fitBounds(staticBounds, {
+        padding: 120,
+        duration: 1500,
+        essential: true,
+      });
+    }
+
     // Find feature
+    let targetFeature: any = null;
     for (const feature of accumulatedFeaturesRef.current.values()) {
       const rawName =
         feature.properties?.district_name ||
@@ -147,33 +162,18 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         targetFeature.properties.fid,
       ]);
       map.setPaintProperty('selected-district-outline', 'line-opacity', 1);
-    }
 
-    // Zoom to district
-    if (targetFeature?.geometry) {
-      const bounds = new maplibregl.LngLatBounds();
-
-      const extend = (coords: any) => {
-        if (typeof coords[0] === 'number') {
-          bounds.extend(coords as [number, number]);
-        } else {
-          coords.forEach(extend);
-        }
-      };
-
-      extend(targetFeature.geometry.coordinates);
-
-      if (!bounds.isEmpty()) {
-        map.fitBounds(bounds, {
-          padding: { right: 0, left: 100, top: 80, bottom: 80 },
-          duration: 1500,
-          essential: true,
-        });
-        onDistrictClick?.({
+      if (onDistrictClick) {
+        onDistrictClick({
           ...targetFeature.properties,
-          bounds: bounds.toArray(),
+          bounds: staticBounds || null,
         });
       }
+    } else if (staticBounds && onDistrictClick) {
+      onDistrictClick({
+        district_name: targetDistrict,
+        bounds: staticBounds,
+      });
     }
   }, [targetDistrict]);
 
@@ -343,8 +343,14 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           if (!ALLOWED_DISTRICTS.includes(name)) return;
 
           // Calculate bounds for the clicked feature to enable "fit to screen" in other components
-          let boundsArray = null;
-          if (feature.geometry) {
+          let boundsArray = getDistrictBounds(name);
+          if (boundsArray) {
+            map.fitBounds(boundsArray, {
+              padding: 120,
+              duration: 1500,
+              essential: true,
+            });
+          } else if (feature.geometry) {
             const bounds = new maplibregl.LngLatBounds();
             const extend = (coords: any) => {
               if (typeof coords[0] === 'number') {
@@ -356,6 +362,12 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             extend((feature.geometry as any).coordinates);
             if (!bounds.isEmpty()) {
               boundsArray = bounds.toArray();
+              // Zoom directly inside the click handler to fit to screen
+              map.fitBounds(bounds, {
+                padding: 120,
+                duration: 1500,
+                essential: true,
+              });
             }
           }
 
@@ -619,11 +631,75 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             const canonicalName =
               DISTRICT_NAME_VARIANTS[rawDistName] || rawDistName;
             if (!ALLOWED_DISTRICTS.includes(canonicalName)) return;
-            // Find the corresponding district feature in our accumulated features
-            const distFeature =
-              accumulatedFeaturesRef.current.get(canonicalName);
-            if (distFeature && onDistrictClickRef.current) {
-              onDistrictClickRef.current(distFeature.properties);
+
+            // Find the corresponding district feature in our accumulated features (case-insensitive lookup)
+            let distFeature = null;
+            const targetLower = canonicalName.trim().toLowerCase();
+            for (const f of accumulatedFeaturesRef.current.values()) {
+              const nameProp =
+                f.properties?.district_name ||
+                f.properties?.NAME ||
+                f.properties?.name;
+              const normalized = nameProp?.trim();
+              const canonical = DISTRICT_NAME_VARIANTS[normalized] || normalized;
+              if (canonical?.toLowerCase() === targetLower) {
+                distFeature = f;
+                break;
+              }
+            }
+
+            let boundsArray = getDistrictBounds(canonicalName);
+            if (boundsArray) {
+              map.fitBounds(boundsArray, {
+                padding: 130,
+                duration: 1500,
+                essential: true,
+              });
+            } else if (distFeature && distFeature.geometry) {
+              const bounds = new maplibregl.LngLatBounds();
+              const extend = (coords: any) => {
+                if (typeof coords[0] === 'number') {
+                  bounds.extend(coords as [number, number]);
+                } else {
+                  coords.forEach(extend);
+                }
+              };
+              extend(distFeature.geometry.coordinates);
+              if (!bounds.isEmpty()) {
+                boundsArray = bounds.toArray();
+                map.fitBounds(bounds, {
+                  padding: 130,
+                  duration: 1500,
+                  essential: true,
+                });
+              }
+            } else if (feature.geometry) {
+              // Fallback to subdistrict geometry bounds if parent district features are not yet in cache
+              const bounds = new maplibregl.LngLatBounds();
+              const extend = (coords: any) => {
+                if (typeof coords[0] === 'number') {
+                  bounds.extend(coords as [number, number]);
+                } else {
+                  coords.forEach(extend);
+                }
+              };
+              extend((feature.geometry as any).coordinates);
+              if (!bounds.isEmpty()) {
+                boundsArray = bounds.toArray();
+                map.fitBounds(bounds, {
+                  padding: 130,
+                  duration: 1500,
+                  essential: true,
+                });
+              }
+            }
+
+            if (onDistrictClickRef.current) {
+              onDistrictClickRef.current(
+                distFeature
+                  ? { ...distFeature.properties, bounds: boundsArray }
+                  : { ...feature.properties, bounds: boundsArray }
+              );
             }
           }
         }
@@ -657,7 +733,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           ];
           initialBoundsRef.current = bounds;
           map.fitBounds(bounds, {
-            padding: { right: 0, left: 80, top: 80, bottom: 80 },
+            padding: 50,
             duration: 0,
           });
         }
@@ -701,6 +777,38 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                 hasChanges = true;
               }
             });
+
+            // Highlight outline for target district if loaded late
+            const curTarget = targetDistrictRef.current;
+            if (curTarget && curTarget !== 'Odisha' && curTarget !== 'All Districts') {
+              let targetFeature: any = null;
+              for (const feature of currentMap.values()) {
+                const rawName =
+                  feature.properties?.district_name ||
+                  feature.properties?.NAME ||
+                  feature.properties?.name;
+
+                const normalizedRaw = rawName?.trim();
+                const canonicalName =
+                  DISTRICT_NAME_VARIANTS[normalizedRaw] || normalizedRaw;
+
+                if (
+                  canonicalName?.toLowerCase() === curTarget.trim().toLowerCase()
+                ) {
+                  targetFeature = feature;
+                  break;
+                }
+              }
+
+              if (targetFeature && map.getLayer('selected-district-outline')) {
+                map.setFilter('selected-district-outline', [
+                  '==',
+                  'fid',
+                  targetFeature.properties.fid,
+                ]);
+                map.setPaintProperty('selected-district-outline', 'line-opacity', 1);
+              }
+            }
 
             if (hasChanges && onDataLoadRef.current) {
               const uniqueFeaturesArray = Array.from(currentMap.values());
@@ -920,7 +1028,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         activeLayer === 'deg_urbanisation'
           ? '#D3D3D3'
           : activeLayer === 'pop'
-          ? [
+            ? [
               'interpolate',
               ['linear'],
               ['coalesce', ['get', propName], valueMatch],
@@ -933,7 +1041,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
               scaleValues[3],
               '#0868ac',
             ]
-          : [
+            : [
               'interpolate',
               ['linear'],
               ['coalesce', ['get', propName], valueMatch],
@@ -962,7 +1070,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           activeLayer === 'deg_urbanisation'
             ? '#E5E7EB'
             : activeLayer === 'pop'
-            ? [
+              ? [
                 'interpolate',
                 ['linear'],
                 ['coalesce', ['get', subPropName], sValueMatch],
@@ -975,7 +1083,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                 sScale[3],
                 '#0868ac',
               ]
-            : [
+              : [
                 'interpolate',
                 ['linear'],
                 ['coalesce', ['get', subPropName], sValueMatch],
@@ -1143,11 +1251,10 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                     setActiveBasemap(option.id);
                     setIsDropdownOpen(false);
                   }}
-                  className={`w-full px-4 py-2 text-left text-[11px] font-bold transition-colors flex items-center justify-between ${
-                    activeBasemap === option.id
+                  className={`w-full px-4 py-2 text-left text-[11px] font-bold transition-colors flex items-center justify-between ${activeBasemap === option.id
                       ? 'bg-orange-50 text-primary'
                       : 'text-gray-600 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   {option.label}
                 </button>

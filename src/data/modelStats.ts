@@ -363,7 +363,7 @@ export const MODEL_DATA: Record<string, Record<number, number>> = {
     2035: 1322262,
     2036: 1329785,
   },
-  Jajpur: {
+  Jajapur: {
     2011: 1827192,
     2012: 1841312,
     2013: 1855541,

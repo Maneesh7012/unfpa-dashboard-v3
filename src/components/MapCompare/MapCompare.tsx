@@ -825,11 +825,11 @@ export default function MapCompare({
       map.addSource(sourceId, {
         type: 'raster',
         url: url,
-        tileSize: 128,
+        tileSize: 256,
       });
       const paintProps: any = { 'raster-opacity': 1 };
       if (activeLayerKey === 'builtup' || activeLayerKey === 'cropland' || activeLayerKey === 'forest' || activeLayerKey === 'dynamic_lulc') {
-        paintProps['raster-resampling'] = 'nearest';
+        paintProps['raster-resampling'] = 'linear';
       }
 
       map.addLayer(
@@ -863,14 +863,14 @@ export default function MapCompare({
         map.addSource(leftDiffSourceId, {
           type: 'raster',
           url: leftDiffUrl,
-          tileSize: 128,
+          tileSize: 256,
         });
         map.addLayer(
           {
             id: leftDiffLayerId,
             type: 'raster',
             source: leftDiffSourceId,
-            paint: { 'raster-opacity': 1, 'raster-resampling': 'nearest' },
+            paint: { 'raster-opacity': 1, 'raster-resampling': 'linear' },
             minzoom: 0,
             maxzoom: 22,
           },

@@ -18,7 +18,7 @@ import {
 const InfoTooltip = ({
   text,
   position = 'top',
-  source,
+  // source,
   content,
   className = 'w-48',
 }: {
@@ -1049,7 +1049,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
             {/* <MapLulc selectedDistrict={selectedDistrict} onDistrictSelect={onDistrictSelect} /> */}
 
             {/* Quarterly Sentinel-2 TCI Timelapse */}
-            <div className="w-full mb-8">
+            <div className="w-full mb-14">
               <MapSentinelQuaterly
                 targetDistrict={selectedDistrict}
                 targetBounds={mapBounds}
@@ -1320,7 +1320,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
           //   />
           // </div>
 
-          <div className="w-full mb-14">
+          <div className="w-full mb-12">
             <WhatHowWhy_v2
               targetDistrict={selectedDistrict}
               targetBounds={mapBounds}

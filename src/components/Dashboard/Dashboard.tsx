@@ -1085,12 +1085,12 @@ export const MapSection: React.FC<MapSectionProps> = ({
                         key={g}
                         onClick={() => setSelectedGender(g)}
                         className={`px-3 py-1 text-[12px] font-bold rounded-md tracking-wide transition-all ${selectedGender === g
-                            ? g === 'Male'
-                              ? 'bg-[#F96000] text-[#ffffff]'
-                              : g === 'Female'
-                                ? 'bg-[#F96000] text-[#ffffff] '
-                                : 'bg-[#F96000] text-[#ffffff] ' // Default/All
-                            : 'bg-gray-100 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-whit'
+                          ? g === 'Male'
+                            ? 'bg-[#F96000] text-[#ffffff]'
+                            : g === 'Female'
+                              ? 'bg-[#F96000] text-[#ffffff] '
+                              : 'bg-[#F96000] text-[#ffffff] ' // Default/All
+                          : 'bg-gray-100 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-whit'
                           }`}
                       >
                         {g}
@@ -1538,7 +1538,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                         Rural
                       </span>
                       <InfoTooltip
-                        text="Distribution of people living in urban centers versus rural localities."
+                        text="Population living in urban and rural areas. Classification follows the United Nations-endorsed Degree of Urbanisation (DEGURBA) methodology, which defines urban areas based on population density and settlement size. Areas outside these settlements are classified as rural."
                         source={tooltipSource}
                       />
                     </div>

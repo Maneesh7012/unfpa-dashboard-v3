@@ -14,37 +14,37 @@ import {
   Calendar,
   X,
   ChevronRight,
-  Info,
+  // Info,
 } from 'lucide-react';
 
-const InfoTooltip = ({
-  text,
-  position = 'top',
-  source,
-}: {
-  text: string;
-  position?: 'top' | 'bottom';
-  source?: string;
-}) => (
-  <span className="group/info relative inline-block ml-2 align-middle z-[100]">
-    <Info className="w-4 h-4 text-gray-400 group-hover/info:text-[#F96000] transition-colors cursor-help" />
-    <span
-      className={`absolute left-1/2 -translate-x-1/2 w-48 px-1 hidden group-hover/info:flex flex-col items-center animate-in fade-in zoom-in-95 duration-200 pointer-events-none z-[200] 
-            ${position === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'}`}
-    >
-      <span className="bg-white/98 backdrop-blur-md p-3 rounded-xl shadow-2xl border border-gray-100 w-full block whitespace-normal text-center">
-        <span className="text-[10px] text-gray-700 leading-relaxed font-semibold block">
-          {text}
-        </span>
-        {position === 'top' ? (
-          <span className="absolute top-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 shadow-sm block"></span>
-        ) : (
-          <span className="absolute bottom-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45 shadow-sm block"></span>
-        )}
-      </span>
-    </span>
-  </span>
-);
+// const InfoTooltip = ({
+//   text,
+//   position = 'top',
+//   // source,
+// }: {
+//   text: string;
+//   position?: 'top' | 'bottom';
+//   source?: string;
+// }) => (
+//   <span className="group/info relative inline-block ml-2 align-middle z-[100]">
+//     <Info className="w-4 h-4 text-gray-400 group-hover/info:text-[#F96000] transition-colors cursor-help" />
+//     <span
+//       className={`absolute left-1/2 -translate-x-1/2 w-48 px-1 hidden group-hover/info:flex flex-col items-center animate-in fade-in zoom-in-95 duration-200 pointer-events-none z-[200] 
+//             ${position === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'}`}
+//     >
+//       <span className="bg-white/98 backdrop-blur-md p-3 rounded-xl shadow-2xl border border-gray-100 w-full block whitespace-normal text-center">
+//         <span className="text-[10px] text-gray-700 leading-relaxed font-semibold block">
+//           {text}
+//         </span>
+//         {position === 'top' ? (
+//           <span className="absolute top-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 shadow-sm block"></span>
+//         ) : (
+//           <span className="absolute bottom-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45 shadow-sm block"></span>
+//         )}
+//       </span>
+//     </span>
+//   </span>
+// );
 import * as pmtiles from 'pmtiles';
 import {
   Dialog,
@@ -888,16 +888,16 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
                     >
                       <div
                         className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black border-2 transition-all duration-300 ${activeModalTab === tab
-                            ? 'bg-[#F76000] border-[#F76000] text-white'
-                            : 'bg-gray-100 border-gray-200 text-gray-700 group-hover:border-gray-400 group-hover:text-gray-600'
+                          ? 'bg-[#F76000] border-[#F76000] text-white'
+                          : 'bg-gray-100 border-gray-200 text-gray-700 group-hover:border-gray-400 group-hover:text-gray-600'
                           }`}
                       >
                         {index + 1}
                       </div>
                       <span
                         className={`text-[11px] font-black uppercase tracking-widest transition-colors ${activeModalTab === tab
-                            ? 'text-black'
-                            : 'text-gray-400 group-hover:text-gray-600'
+                          ? 'text-black'
+                          : 'text-gray-400 group-hover:text-gray-600'
                           }`}
                       >
                         {tab}
@@ -1021,8 +1021,8 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
                                       src={imageUrl}
                                       alt=""
                                       className={`w-full transition-transform duration-500 group-hover:scale-105 ${activeModalTab === 'Why'
-                                          ? 'h-100'
-                                          : 'h-70'
+                                        ? 'h-100'
+                                        : 'h-70'
                                         }`}
                                     />
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
@@ -1030,8 +1030,8 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
                                 </DialogTrigger>
                                 <DialogContent
                                   className={`border-none p-0 shadow-none overflow-hidden flex items-center justify-center outline-none translate-x-[-50%] translate-y-[-50%] ${isGif
-                                      ? 'max-w-[95vw] w-full max-h-[95vh] h-fit bg-white rounded-lg'
-                                      : 'max-w-[95vw] max-h-[95vh] w-fit h-fit sm:max-w-none bg-transparent'
+                                    ? 'max-w-[95vw] w-full max-h-[95vh] h-fit bg-white rounded-lg'
+                                    : 'max-w-[95vw] max-h-[95vh] w-fit h-fit sm:max-w-none bg-transparent'
                                     }`}
                                 >
                                   <DialogTitle className="sr-only">
@@ -1045,8 +1045,8 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
                                     src={imageUrl}
                                     alt=""
                                     className={`object-contain block ${isGif
-                                        ? 'w-full h-auto max-h-[90vh] rounded-none'
-                                        : 'max-h-[90vh] max-w-[90vw] w-auto h-auto rounded-lg shadow-2xl'
+                                      ? 'w-full h-auto max-h-[90vh] rounded-none'
+                                      : 'max-h-[90vh] max-w-[90vw] w-auto h-auto rounded-lg shadow-2xl'
                                       }`}
                                   />
                                 </DialogContent>

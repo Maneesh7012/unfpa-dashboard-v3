@@ -25,7 +25,7 @@ import {
 const InfoTooltip = ({
   text,
   position = 'top',
-  source,
+  // source,
 }: {
   text: string;
   position?: 'top' | 'bottom';
@@ -71,7 +71,7 @@ import {
   cogProtocol,
   setColorFunction,
 } from '@geomatico/maplibre-cog-protocol';
-import { DISTRICT_NAME_VARIANTS, LULC_STATS, LULC_STATS_YEARLY } from '../../data/comparativeData';
+import { DISTRICT_NAME_VARIANTS, LULC_STATS, LULC_STATS_YEARLY, getDistrictBounds } from '../../data/comparativeData';
 
 try {
   const protocol = new pmtiles.Protocol();
@@ -182,7 +182,7 @@ function generateQuarters(startYear: number, endYear: number): Quarter[] {
   return quarters;
 }
 
-const QUARTERS = generateQuarters(2017, 2024);
+const QUARTERS = generateQuarters(2017, 2025);
 const PMTILES_URL =
   'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc_quarterly/od_district_lulc_quarterly.pmtiles';
 const ODISHA_CENTER: [number, number] = [84.8, 20.5];
@@ -216,8 +216,30 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
   const mapRef = useRef<maplibregl.Map | null>(null);
   const timelineCardRef = useRef<HTMLDivElement>(null);
   const [timelineHeight, setTimelineHeight] = useState(180);
-  const [selectedIdx, setSelectedIdx] = useState(QUARTERS.length - 1);
+  const [selectedIdx, setSelectedIdx] = useState(() => {
+    const defaultIdx = QUARTERS.length - 1;
+    if (!isQuarterly) {
+      for (let i = defaultIdx; i >= 0; i--) {
+        if (QUARTERS[i].q === 1) {
+          return i;
+        }
+      }
+    }
+    return defaultIdx;
+  });
   const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!isQuarterly) {
+      const current = QUARTERS[selectedIdx];
+      if (current && current.q !== 1) {
+        const q1Idx = QUARTERS.findIndex((q) => q.year === current.year && q.q === 1);
+        if (q1Idx !== -1) {
+          setSelectedIdx(q1Idx);
+        }
+      }
+    }
+  }, [isQuarterly, selectedIdx]);
   // const [isPlaying, setIsPlaying] = useState(false); // Removed play state
   const [pmtilesBounds, setPmtilesBounds] =
     useState<maplibregl.LngLatBoundsLike | null>(null);
@@ -263,6 +285,15 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
   > | null>(null);
 
   const currentQuarter = QUARTERS[selectedIdx];
+
+  const timelineItems = useMemo(() => {
+    return QUARTERS.filter((q) => isQuarterly || q.q === 1);
+  }, [isQuarterly]);
+
+  const activeTimelineIdx = useMemo(() => {
+    const idx = timelineItems.findIndex((q) => q.key === currentQuarter?.key);
+    return idx !== -1 ? idx : 0;
+  }, [timelineItems, currentQuarter]);
 
   const getOrCreateMosaicUrl = useCallback(
     async (q: Quarter, bbox: number[]): Promise<string | null> => {
@@ -389,7 +420,15 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
       const layerId = 'sentinel-quarterly-layer';
 
       try {
-        const bboxToUse = targetBounds
+        const staticBounds = getDistrictBounds(targetDistrict);
+        const bboxToUse = staticBounds
+          ? [
+            staticBounds[0][0],
+            staticBounds[0][1],
+            staticBounds[1][0],
+            staticBounds[1][1],
+          ]
+          : targetBounds
           ? [
             targetBounds[0][0],
             targetBounds[0][1],
@@ -441,7 +480,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
           url: sentinelUrl ? `cog://${sentinelUrl}` : (tileUrl ?? undefined), // fallback to existing planetary computer logic
           tileSize: 256,
           minzoom: 0,
-          maxzoom: 14,
+          maxzoom: 22,
           bounds: bboxToUse as any,
           attribution:
             'Sentinel-2 L2A © ESA / Copernicus via Microsoft Planetary Computer',
@@ -463,7 +502,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
             paint: {
               'raster-opacity': 1,
               'raster-fade-duration': 200,
-              'raster-resampling': 'linear',
+              'raster-resampling': 'nearest',
             },
           },
           beforeLayer,
@@ -482,7 +521,8 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
       targetBounds,
       ODISHA_BBOX,
       QUARTERS,
-      setTileStatus, // safe even if stable
+      setTileStatus,
+      targetDistrict,
     ],
   );
 
@@ -520,12 +560,21 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
     if (lastFittedDistrictRef.current === districtKey) return;
     lastFittedDistrictRef.current = districtKey;
 
-    if (targetBounds) {
+    const staticBounds = getDistrictBounds(targetDistrict);
+    if (staticBounds) {
       const fitPadding = {
-        top: 30,
-        bottom: timelineHeight + 30,
-        left: 310,
-        right: selectedPoint ? 430 : 340,
+        top: 90,
+        bottom: timelineHeight + 80,
+        left: 320,
+        right: selectedPoint ? 500 : 320,
+      };
+      map.fitBounds(staticBounds, { padding: fitPadding, duration: 1500 });
+    } else if (targetBounds) {
+      const fitPadding = {
+        top: 100,
+        bottom: timelineHeight + 100,
+        left: 380,
+        right: selectedPoint ? 500 : 410,
       };
       map.fitBounds(targetBounds, { padding: fitPadding, duration: 1500 });
     } else if (targetDistrict?.toLowerCase() === 'odisha' || !targetDistrict) {
@@ -554,10 +603,10 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         );
         if (!bounds.isEmpty()) {
           const fitPadding = {
-            top: 20,
-            bottom: timelineHeight + 10,
-            left: 250,
-            right: selectedPoint ? 430 : 250,
+            top: 90,
+            bottom: timelineHeight + 80,
+            left: 320,
+            right: selectedPoint ? 500 : 320,
           };
           map.fitBounds(bounds, { padding: fitPadding, duration: 1500 });
         }
@@ -1167,7 +1216,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                 className="w-2 h-2 rounded-full"
                 style={{ backgroundColor: '#F76000' }}
               />
-              {currentQuarter.label}
+              {isQuarterly ? currentQuarter.label : currentQuarter.year}
             </span>
             <ChevronDown
               className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
@@ -1182,8 +1231,9 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
               <div className="absolute right-0 top-full mt-3 bg-white rounded-xl shadow-2xl border border-gray-100 p-3 z-[200] min-w-[180px] max-h-[400px] overflow-y-auto custom-scrollbar">
                 {QUARTERS.slice()
                   .reverse()
-                  .map((q, idx) => {
-                    const originalIdx = QUARTERS.length - 1 - idx;
+                  .filter((q) => isQuarterly || q.q === 1)
+                  .map((q) => {
+                    const originalIdx = QUARTERS.findIndex((item) => item.key === q.key);
                     return (
                       <button
                         key={q.key}
@@ -1199,7 +1249,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                             style={{ backgroundColor: '#F76000' }}
                           />
                           <span className="text-[11px] font-bold">
-                            {q.label}
+                            {isQuarterly ? q.label : q.year}
                           </span>
                         </span>
                       </button>
@@ -1312,7 +1362,10 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
             };
 
             return (
-              <div className="absolute top-8 right-8 z-[110] bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-2xl p-5 w-64 max-h-[70%] overflow-y-auto custom-scrollbar">
+              <div
+                className="absolute top-8 right-8 z-[110] bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-2xl p-5 w-64 transition-all duration-300 overflow-y-auto custom-scrollbar"
+                style={{ maxHeight: `calc(100% - ${timelineHeight + 100}px)` }}
+              >
                 <div className="mb-4">
                   <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-none border-b border-gray-100 pb-2">
                     Landscape Transformation
@@ -1490,22 +1543,26 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
           >
             <div className="flex gap-2 shrink-0">
               <button
-                onClick={() => setSelectedIdx((prev) => Math.max(0, prev - 1))}
-                disabled={selectedIdx === 0}
+                onClick={() => {
+                  const newIdx = Math.max(0, activeTimelineIdx - 1);
+                  const originalIdx = QUARTERS.findIndex((q) => q.key === timelineItems[newIdx].key);
+                  setSelectedIdx(originalIdx);
+                }}
+                disabled={activeTimelineIdx === 0}
                 className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#F76000] text-white shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all font-black"
-                title="Previous Quarter"
+                title={isQuarterly ? "Previous Quarter" : "Previous Year"}
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
               <button
-                onClick={() =>
-                  setSelectedIdx((prev) =>
-                    Math.min(QUARTERS.length - 1, prev + 1),
-                  )
-                }
-                disabled={selectedIdx === QUARTERS.length - 1}
+                onClick={() => {
+                  const newIdx = Math.min(timelineItems.length - 1, activeTimelineIdx + 1);
+                  const originalIdx = QUARTERS.findIndex((q) => q.key === timelineItems[newIdx].key);
+                  setSelectedIdx(originalIdx);
+                }}
+                disabled={activeTimelineIdx === timelineItems.length - 1}
                 className="w-10 h-10 flex items-center justify-center rounded-xl bg-[#F76000] text-white shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all font-black"
-                title="Next Quarter"
+                title={isQuarterly ? "Next Quarter" : "Next Year"}
               >
                 <ChevronRight className="w-6 h-6" />
               </button>
@@ -1516,9 +1573,11 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                   <span className="text-gray-400">Timeline Control</span>
                 </div>
                 <div className="text-right flex items-center gap-2">
-                  <span className="text-[#F76000] text-lg font-mono font-bold leading-none">
-                    {currentQuarter.label.split(' ')[0]}
-                  </span>
+                  {isQuarterly && (
+                    <span className="text-[#F76000] text-lg font-mono font-bold leading-none">
+                      {currentQuarter.label.split(' ')[0]}
+                    </span>
+                  )}
                   <span className="text-gray-700 text-sm font-mono font-bold">
                     {currentQuarter.year}
                   </span>
@@ -1702,26 +1761,24 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                   <div
                     className="absolute h-full rounded-full transition-all duration-300"
                     style={{
-                      width: `${(selectedIdx / (QUARTERS.length - 1)) * 100}%`,
+                      width: `${(activeTimelineIdx / (timelineItems.length - 1)) * 100}%`,
                       backgroundColor: '#F76000',
                     }}
                   />
 
                   {/* Tick Marks & Labels Container */}
                   <div className="absolute inset-0 flex justify-between items-center px-0.5 pointer-events-none">
-                    {QUARTERS.map((q, idx) => (
+                    {timelineItems.map((q, idx) => (
                       <div
                         key={q.key}
                         className="relative flex flex-col items-center"
                       >
-                        {(isQuarterly || q.q === 1) && (
-                          <div
-                            className={`w-[2px] h-3 rounded-full mb-1 transition-all ${idx === selectedIdx ? 'bg-[#F76000] h-4' : 'bg-gray-300'}`}
-                          />
-                        )}
+                        <div
+                          className={`w-[2px] h-3 rounded-full mb-1 transition-all ${idx === activeTimelineIdx ? 'bg-[#F76000] h-4' : 'bg-gray-300'}`}
+                        />
 
-                        {/* Year Indicator Above (Only on Q1) */}
-                        {q.q === 1 && (
+                        {/* Year Indicator Above (Only on Q1/March when quarterly, or all items when year-wise) */}
+                        {(!isQuarterly || q.q === 1) && (
                           <div className="absolute -top-6 whitespace-nowrap">
                             <span className="text-[10px] font-black text-gray-800 tracking-tighter opacity-70">
                               {q.year}
@@ -1733,7 +1790,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                         {isQuarterly && (
                           <div className="absolute -bottom-5">
                             <span
-                              className={`text-[8px] font-bold transition-all ${idx === selectedIdx ? 'text-[#F76000] scale-110' : 'text-gray-400 opacity-60'}`}
+                              className={`text-[8px] font-bold transition-all ${idx === activeTimelineIdx ? 'text-[#F76000] scale-110' : 'text-gray-400 opacity-60'}`}
                             >
                               {q.label.charAt(0)}
                             </span>
@@ -1748,10 +1805,12 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                 <input
                   type="range"
                   min="0"
-                  max={QUARTERS.length - 1}
-                  value={selectedIdx}
+                  max={timelineItems.length - 1}
+                  value={activeTimelineIdx}
                   onChange={(e) => {
-                    setSelectedIdx(parseInt(e.target.value));
+                    const newActiveIdx = parseInt(e.target.value);
+                    const originalIdx = QUARTERS.findIndex((q) => q.key === timelineItems[newActiveIdx].key);
+                    setSelectedIdx(originalIdx);
                   }}
                   className="absolute inset-0 w-full opacity-0 cursor-pointer z-10"
                 />

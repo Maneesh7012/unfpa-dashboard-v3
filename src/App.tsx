@@ -14,6 +14,9 @@ import { StateDemographics_v3 } from './components/Hero/StateDemographics/StateD
 import { TooltipProvider } from './components/ui/tooltip';
 
 import { HeroSection_v3 } from './components/Hero/HeroSection_v3';
+import { OdishaChart } from './components/Chart/OdishaChart';
+
+
 
 const Dashboard: React.FC = () => {
   useEffect(() => {
@@ -55,13 +58,16 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
-      {/* Combined Stats Section with Overlay */}
+      {/* Odisha Chart Section */}
+      {(!selectedDistrict || selectedDistrict.toLowerCase() === 'odisha') && (
+        <OdishaChart />
+      )}
+
       <div
-        className={`relative ${
-          !selectedDistrict || selectedDistrict.toLowerCase() === 'odisha'
-            ? 'h-[500px] overflow-hidden'
-            : 'min-h-[500px]'
-        }`}
+        className={`relative ${!selectedDistrict || selectedDistrict.toLowerCase() === 'odisha'
+          ? 'h-[500px] overflow-hidden'
+          : 'min-h-[500px]'
+          }`}
       >
         {(!selectedDistrict || selectedDistrict.toLowerCase() === 'odisha') && (
           <div className="absolute inset-0 z-[900] bg-white/60 backdrop-blur-xl flex flex-col items-center justify-center text-center p-8 transition-all duration-700 animate-in fade-in">
@@ -109,22 +115,22 @@ const App: React.FC = () => {
     <Router basename="/odisha/">
       <TooltipProvider>
         <div className="flex flex-col min-h-screen bg-background">
-        <Header />
+          <Header />
 
-        <div className="flex-1">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/methodology" element={<MethodologyPage />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
-            <Route path="/catalog" element={<DataCatalogPage />} />
-          </Routes>
-          <Footer />
+          <div className="flex-1">
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/methodology" element={<MethodologyPage />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/catalog" element={<DataCatalogPage />} />
+            </Routes>
+            <Footer />
+          </div>
         </div>
-      </div>
-    </TooltipProvider>
-  </Router>
-);
+      </TooltipProvider>
+    </Router>
+  );
 };
 
 export default App;

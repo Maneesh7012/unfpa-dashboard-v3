@@ -23,34 +23,34 @@ import { MULTI_TOOLTIPS } from '../../data/tooltipInfo';
 import { DISTRICT_NAME_VARIANTS } from '../../data/comparativeData';
 import smodClasses from './ghsl_smod_classes.json';
 
-const InfoTooltip = ({
-  text,
-  position = 'top',
-  source,
-}: {
-  text: string;
-  position?: 'top' | 'bottom';
-  source?: string;
-}) => (
-  <span className="group/info relative inline-block ml-2 align-middle z-[100]">
-    <Info className="w-4 h-4 text-gray-400 group-hover/info:text-[#F96000] transition-colors cursor-help" />
-    <span
-      className={`absolute left-1/2 -translate-x-1/2 w-48 px-1 hidden group-hover/info:flex flex-col items-center animate-in fade-in zoom-in-95 duration-200 pointer-events-none z-[200] 
-            ${position === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'}`}
-    >
-      <span className="bg-white/98 backdrop-blur-md p-3 rounded-xl shadow-2xl border border-gray-100 w-full block whitespace-normal text-center">
-        <span className="text-[10px] text-gray-700 leading-relaxed font-semibold block">
-          {text}
-        </span>
-        {position === 'top' ? (
-          <span className="absolute top-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 shadow-sm block"></span>
-        ) : (
-          <span className="absolute bottom-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45 shadow-sm block"></span>
-        )}
-      </span>
-    </span>
-  </span>
-);
+// const InfoTooltip = ({
+//   text,
+//   position = 'top',
+//   source,
+// }: {
+//   text: string;
+//   position?: 'top' | 'bottom';
+//   source?: string;
+// }) => (
+//   <span className="group/info relative inline-block ml-2 align-middle z-[100]">
+//     <Info className="w-4 h-4 text-gray-400 group-hover/info:text-[#F96000] transition-colors cursor-help" />
+//     <span
+//       className={`absolute left-1/2 -translate-x-1/2 w-48 px-1 hidden group-hover/info:flex flex-col items-center animate-in fade-in zoom-in-95 duration-200 pointer-events-none z-[200] 
+//             ${position === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'}`}
+//     >
+//       <span className="bg-white/98 backdrop-blur-md p-3 rounded-xl shadow-2xl border border-gray-100 w-full block whitespace-normal text-center">
+//         <span className="text-[10px] text-gray-700 leading-relaxed font-semibold block">
+//           {text}
+//         </span>
+//         {position === 'top' ? (
+//           <span className="absolute top-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 shadow-sm block"></span>
+//         ) : (
+//           <span className="absolute bottom-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45 shadow-sm block"></span>
+//         )}
+//       </span>
+//     </span>
+//   </span>
+// );
 
 const SettlementTooltip = () => {
   return (
@@ -537,7 +537,7 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
         </div>
       </div>
 
-      <div className="flex flex-nowrap gap-4 overflow-x-auto pb-4 custom-scrollbar">
+      <div className="flex flex-nowrap gap-4 overflow-x-auto pb-0 custom-scrollbar">
         {mapConfigs.map((config, idx) => (
           <div
             key={`${config.id}-${selectedDistrict}`}

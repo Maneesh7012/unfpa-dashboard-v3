@@ -205,7 +205,7 @@ export const DISTRICT_OVERVIEWS: Record<string, DistrictOverview> = {
     ],
   },
 
-  Debagarh: {
+  Deogarh: {
     paragraphs: [
       `Debagarh (Deogarh) is one of the smallest and lowest-density districts in Odisha. Population grows from 312,520 in 2011 to 373,000 by 2036, an addition of 60,000. Across 2,940 km², density rises from 106 to 127 persons per km², among the bottom three in the state. Annual growth runs ~0.82% early, easing to ~0.64%.`,
       `Carved out of Sambalpur in 1994, Debagarh is heavily forested (Pradhanpat, Kurudkut hills) with tribal Bhuiyan and Kolha communities. Iron-ore deposits in the south are being explored, but the district lacks the established mining infrastructure of Kendujhar or Sundargarh. Economic activity is agriculture, forest produce and small-trader commerce.`,
@@ -328,7 +328,7 @@ export const DISTRICT_OVERVIEWS: Record<string, DistrictOverview> = {
     ],
   },
 
-  Jajpur: {
+  Jajapur: {
     paragraphs: [
       `Jajpur grows from 1.83 million in 2011 to 2.15 million by 2036, an increase of 325,000, substantial for its 2,899 km² area. Density rises from 630 to 743 persons per km², among the higher coastal densities. Annual growth runs ~0.77% early, easing to ~0.59%.`,
       `The district hosts the Kalinga Nagar Industrial Complex, Tata Steel Long Products (the former NINL), Visa Steel, MESCO Steel, and Jindal Stainless ferrochrome, making it one of Odisha's most concentrated steel-and-ferrochrome clusters. Beyond industry, Buddhist heritage (Lalitgiri, Ratnagiri, Udayagiri, the "Diamond Triangle") and the Sukinda chromite belt anchor the district.`,
