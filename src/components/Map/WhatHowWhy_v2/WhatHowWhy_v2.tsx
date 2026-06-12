@@ -679,7 +679,7 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
   }, [selectedPoint, lastSelectedPoint]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

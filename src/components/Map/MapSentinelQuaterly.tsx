@@ -429,13 +429,13 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
             staticBounds[1][1],
           ]
           : targetBounds
-          ? [
-            targetBounds[0][0],
-            targetBounds[0][1],
-            targetBounds[1][0],
-            targetBounds[1][1],
-          ]
-          : ODISHA_BBOX;
+            ? [
+              targetBounds[0][0],
+              targetBounds[0][1],
+              targetBounds[1][0],
+              targetBounds[1][1],
+            ]
+            : ODISHA_BBOX;
         const tileUrl = await getOrCreateMosaicUrl(q, bboxToUse);
         // const tileUrl =
         //   'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/sentinel%C2%A0%202_tci/Anugul/Anugul_2018_q1.tif';
@@ -1194,7 +1194,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
     });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">

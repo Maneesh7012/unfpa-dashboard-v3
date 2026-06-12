@@ -386,7 +386,7 @@ export function StateDemographics_v3({
 
   return (
     <motion.div
-      className="mx-auto px-4 lg:px-6 py-14 space-y-10"
+      className="mx-auto px-4 lg:px-6 py-14 space-y-10 pb-15"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
@@ -404,7 +404,7 @@ export function StateDemographics_v3({
 
       {/* STAT CARDS, full width, above the 2-col layout */}
       {withCards && stats.length > 0 && (
-        <div className="-mt-4 mb-8">
+        <div className="-mt-4 mb-20">
           <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">
             Key Figures at a Glance
           </p>

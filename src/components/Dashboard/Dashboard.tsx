@@ -721,7 +721,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
     <div className="flex flex-col bg-[#F8FAFC] mx-auto py-14 space-y-12">
       {/* BOTTOM SECTION: CONTENT AREA */}
       <div className="flex-1">
-        <div className="w-full mx-auto px-4 lg:px-6 flex flex-col lg:flex-row gap-4">
+        <div className="w-full mx-auto px-4 lg:px-6 flex flex-col lg:flex-row gap-4 pt-10 pb-10">
           {/* ----------------- CENTER: MAP AREA ----------------- */}
           <div className="w-full h-112.5 lg:flex-1 relative overflow-hidden lg:h-[80vh] bg-white rounded-lg shadow-sm border border-gray-100 group">
             <MapComponent
@@ -1372,7 +1372,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                     <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">
                       Pop. Density
                       <InfoTooltip
-                        text="Average number of people per square kilometer of land area."
+                        text="Population divided by the official Census 2011 land area (persons/km²)."
                         source={tooltipSource}
                       />
                     </span>
@@ -1476,7 +1476,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                         (vs. {parseInt(appliedFilters.year) - 1})
                       </span>
                       <InfoTooltip
-                        text="Annual percentage change in population size compared to the previous year."
+                        text="Annual percentage change (null for 2011 base year)."
                         source={tooltipSource}
                       />
                     </span>

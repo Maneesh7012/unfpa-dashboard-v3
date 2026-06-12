@@ -587,7 +587,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     <div className="bg-white min-h-[500px]">
       <div className="w-full mx-auto px-4 lg:px-6 py-14 space-y-12">
         {/* 1.5 Population Projections Section */}
-        <div className="space-y-6">
+        <div className="space-y-6 pb-10 pt-2">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
@@ -1250,23 +1250,25 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
             </div>
 
             {/* 1. Comparative Analysis Section */}
-            <section className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-              <div className="bg-white p-6 md:p-8">
-                <MapCompare
-                  targetBounds={mapBounds}
-                  activeLayer={compareLayer}
-                  activeLulcPixel={compareLulcPixel}
-                  year1={year1.toString()}
-                  year2={year2.toString()}
-                  resetTrigger={resetMapTrigger}
-                  targetDistrict={selectedDistrict}
-                  onDistrictSelect={onDistrictSelect}
-                  viewMode={viewMode}
-                  onMapClick={() => setShowSentinel(true)}
-                  isQuarterly={isQuarterly}
-                />
-              </div>
-            </section>
+            <div className="pb-10">
+              <section className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                <div className="bg-white p-6 md:p-8">
+                  <MapCompare
+                    targetBounds={mapBounds}
+                    activeLayer={compareLayer}
+                    activeLulcPixel={compareLulcPixel}
+                    year1={year1.toString()}
+                    year2={year2.toString()}
+                    resetTrigger={resetMapTrigger}
+                    targetDistrict={selectedDistrict}
+                    onDistrictSelect={onDistrictSelect}
+                    viewMode={viewMode}
+                    onMapClick={() => setShowSentinel(true)}
+                    isQuarterly={isQuarterly}
+                  />
+                </div>
+              </section>
+            </div>
 
             {/* 1.2 Multi-Temporal Analysis Section */}
             {/* <div className="mb-6">
@@ -1329,7 +1331,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
         )}
 
         {/* 3. Regional Performance Matrix Section */}
-        <div className="space-y-6">
+        <div className="space-y-6 pb-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
@@ -1499,7 +1501,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
         </div>
 
         {/* 4. Critical Insights Section */}
-        <div className="space-y-6">
+        <div className="space-y-6 pb-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
@@ -1611,7 +1613,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
           </section>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 pb-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">

@@ -510,7 +510,7 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">

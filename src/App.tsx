@@ -66,7 +66,7 @@ const Dashboard: React.FC = () => {
       <div
         className={`relative ${!selectedDistrict || selectedDistrict.toLowerCase() === 'odisha'
           ? 'h-[500px] overflow-hidden'
-          : 'min-h-[500px]'
+          : 'min-h-[480px]'
           }`}
       >
         {(!selectedDistrict || selectedDistrict.toLowerCase() === 'odisha') && (
@@ -88,16 +88,17 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* District Overview */}
-        <div className="border-t border-gray-100 bg-gray-50">
+        <div className="border-t border-gray-100 bg-gray-50 mb-[20px]">
           <StateDemographics_v3
             selectedDistrict={selectedDistrict}
             selectedData={selectedData}
             allDistrictsData={allDistrictsData}
           />
+          <div className="border-t border-gray-100"></div>
         </div>
 
         {/* Detailed Stats */}
-        <div className="border-t border-gray-100">
+        <div >
           <StatsDetails
             selectedDistrict={selectedDistrict}
             onDistrictSelect={setSelectedDistrict}
@@ -105,7 +106,7 @@ const Dashboard: React.FC = () => {
             allDistrictsData={allDistrictsData}
           />
         </div>
-      </div>
+      </div >
     </>
   );
 };
