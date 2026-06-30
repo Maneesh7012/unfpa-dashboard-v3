@@ -1103,14 +1103,23 @@ export const MapSection: React.FC<MapSectionProps> = ({
 
               {/* Sticky Legend (Bottom) */}
               {(() => {
-                const steps = LAYER_SCALES[activeLayer ?? ''] ?? [
-                  0, 25, 50, 75, 100,
-                ];
+                const steps = (showSubdistrict && LAYER_SCALES[`sub_${activeLayer}`])
+                  ? LAYER_SCALES[`sub_${activeLayer}`]
+                  : (LAYER_SCALES[activeLayer ?? ''] ?? [0, 25, 50, 75, 100]);
 
                 const formatNum = (v: number) => {
-                  if (Math.abs(v) >= 1000000)
-                    return (v / 1000000).toFixed(2) + 'M';
-                  if (Math.abs(v) >= 1000) return (v / 1000).toFixed(0) + 'k';
+                  if (Math.abs(v) >= 1000000) {
+                    const formatted = (v / 1000000).toFixed(2);
+                    return formatted.endsWith('.00')
+                      ? formatted.slice(0, -3) + 'M'
+                      : formatted.endsWith('0')
+                        ? formatted.slice(0, -1) + 'M'
+                        : formatted + 'M';
+                  }
+                  if (Math.abs(v) >= 1000) {
+                    const kVal = v / 1000;
+                    return kVal % 1 === 0 ? kVal.toFixed(0) + 'K' : kVal.toFixed(1) + 'K';
+                  }
                   return Math.round(v).toString();
                 };
 
@@ -1809,7 +1818,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                               />
                               <XAxis
                                 type="number"
-                                domain={[-maxVal * 1.1, maxVal * 1.1]}
+                                domain={[-400000, 400000]}
                                 tickFormatter={formatAgeTick}
                                 tick={{
                                   fontSize: 9,

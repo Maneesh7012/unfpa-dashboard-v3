@@ -195,8 +195,7 @@ export const getDistrictConfig = (district: string, isQuarterly = false) => {
   return {
     nightlight: {
       urls: ntlUrls,
-      params:
-        '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000", "#fe0000"],0,100,c',
+      params: '',
     },
     roads: {
       urls: roadUrls,
@@ -336,15 +335,15 @@ const ROAD_CATEGORIES = [
 // const NTL_CLASSES = [
 //   { label: '< 5', min: 0, max: 5, color: '#000000' },
 //   { label: '5 - 25', min: 5, max: 25, color: '#48485d' },
-//   { label: '26 - 50', min: 26, max: 50, color: '#f6eaaf' },
-//   { label: '> 50', min: 50, max: 9999, color: '#fe0000' },
+//   { label: '26 - 80', min: 26, max: 80, color: '#f6eaaf' },
+//   { label: '> 80', min: 80, max: 9999, color: '#fe0000' },
 //   { label: 'No Data', noData: true, color: '#b44ef1' },
 // ];
 const NTL_CLASSES = [
   { label: 'Very Low Intensity', min: 0, max: 5, color: '#000000' },
   { label: 'Low Intensity', min: 5, max: 25, color: '#48485d' },
-  { label: 'High Intensity', min: 26, max: 50, color: '#f6eaaf' },
-  { label: 'Very High Intensity', min: 50, max: 9999, color: '#fe0000' },
+  { label: 'High Intensity', min: 26, max: 80, color: '#f6eaaf' },
+  { label: 'Very High Intensity', min: 80, max: 9999, color: '#fe0000' },
   // { label: 'No Data', noData: true, color: '#b44ef1' },
 ];
 
@@ -523,22 +522,17 @@ export default function MapCompare({
       return uniqueBaseUrl;
     }
 
-    if (config.type === 'dynamic_lulc') {
-      // Use setColorFunction for LULC layers
+    if (config.type === 'dynamic_lulc' || currentLayerKey === 'nightlight') {
+      // Use setColorFunction for LULC layers and nightlight
       return `cog://${uniqueBaseUrl}`;
     }
 
     let params = config.params || '';
     if (side === 'right') {
-      if (currentLayerKey === 'nightlight') {
-        params =
-          '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000", "#fe0000"],0,100,c';
-      } else {
-        params = params.replace(
-          /#color:\["[^\]]+"\]/,
-          '#color:["#ED022A","#ED022A"]',
-        );
-      }
+      params = params.replace(
+        /#color:\["[^\]]+"\]/,
+        '#color:["#ED022A","#ED022A"]',
+      );
     }
 
     return `cog://${uniqueBaseUrl}${params}`;
@@ -818,6 +812,24 @@ export default function MapCompare({
             color.set(rgba);
           } else {
             color.set([0, 0, 0, 0]);
+          }
+        });
+      } else if (activeLayerKey === 'nightlight') {
+        const pureUrl = url.replace('cog://', '');
+        setColorFunction(pureUrl, (pixel: any, color: any, metadata: any) => {
+          const val = pixel[0];
+          if (val === metadata.noData || val < 0) {
+            color.set([0, 0, 0, 0]);
+            return;
+          }
+          if (val <= 5) {
+            color.set([0, 0, 0, 255]); // #000000
+          } else if (val <= 25) {
+            color.set([72, 72, 93, 255]); // #48485d
+          } else if (val <= 80) {
+            color.set([246, 234, 175, 255]); // #f6eaaf
+          } else {
+            color.set([254, 0, 0, 255]); // #fe0000
           }
         });
       }

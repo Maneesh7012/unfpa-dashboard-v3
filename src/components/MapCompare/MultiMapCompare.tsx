@@ -258,7 +258,7 @@ const LAYER_CONFIGS: any = {
     // We keep a placeholder so year-validation logic knows available options
     urls: Object.fromEntries(NTL_YEAR_OPTIONS.map((opt) => [opt, ''])),
     params:
-      '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000", "#fe0000"],0,100,c',
+      '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000"],0,60,c',
     type: 'raster',
     isNightlight: true, // flag to trigger dynamic URL build
   },
@@ -1072,7 +1072,7 @@ const MapItem = ({
       if (config.layer === 'nightlight') {
         // ✅ Build dynamic URL from district + quarterly label
         url = buildNtlUrl(yearKey, selectedDistrict || 'Anugul');
-        rasterParams = '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000", "#fe0000"],0,100,c';
+        rasterParams = '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000"],0,60,c';
       } else if (config.layer === 'ghsl') {
         url = buildGhslUrl(yearKey, selectedDistrict || 'Anugul');
         rasterParams = ''; // Colors handled by setColorFunction
@@ -1106,8 +1106,8 @@ const MapItem = ({
         tileSize: 256,
       });
       const paintProps: any = { 'raster-opacity': 1 };
-      if (config.layer === 'ghsl' || config.layer === 'builtup') {
-        paintProps['raster-resampling'] = 'nearest';
+      if (config.layer === 'nightlight' || config.layer === 'ghsl' || config.layer === 'builtup') {
+        paintProps['raster-resampling'] = 'linear';
       }
 
       map.addLayer({

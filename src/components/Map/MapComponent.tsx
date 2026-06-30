@@ -16,7 +16,40 @@ import {
   ALLOWED_DISTRICTS,
   GENDER,
   getDistrictBounds,
+  DISTRICT_BOUNDS,
 } from '../../data/comparativeData';
+
+const getDistrictCentersGeoJSON = () => {
+  const features = Object.keys(DISTRICT_BOUNDS).map((name) => {
+    const bounds = DISTRICT_BOUNDS[name];
+    const centerLon = (bounds.minx + bounds.maxx) / 2;
+    const centerLat = (bounds.miny + bounds.maxy) / 2;
+
+    // Map to user-friendly dashboard spelling variations
+    let displayName = name;
+    if (name === 'Baleshwar') displayName = 'Balasore';
+    if (name === 'Jagatsinghapur') displayName = 'Jagatsinghpur';
+    if (name === 'Jajapur') displayName = 'Jajpur';
+    if (name === 'Kendujhar') displayName = 'Keonjhar';
+    if (name === 'Khordha') displayName = 'Khurda';
+    if (name === 'Sonepur') displayName = 'Subarnapur';
+
+    return {
+      type: 'Feature' as const,
+      geometry: {
+        type: 'Point' as const,
+        coordinates: [centerLon, centerLat],
+      },
+      properties: {
+        name: displayName,
+      },
+    };
+  });
+  return {
+    type: 'FeatureCollection' as const,
+    features,
+  };
+};
 
 interface MapComponentProps {
   activeLayer?: string;
@@ -39,13 +72,13 @@ const SUBDISTRICT_URL =
 
 // Static scales for map legends — district-level vs subdistrict-level ranges differ significantly
 export const LAYER_SCALES: Record<string, number[]> = {
-  density: [0, 200, 400, 800, 1500],
+  density: [0, 200, 400, 800, 2000],
   pop: [0, 500000, 1000000, 2000000, 4000000],
   deg_urbanisation: [0, 100, 250, 500, 1000],
   growth: [-2, 0, 1.2, 2.5, 5.0],
   // Subdistrict-specific (smaller administrative units)
-  sub_density: [0, 200, 400, 800, 1500],
-  sub_pop: [0, 20000, 50000, 100000, 250000],
+  sub_density: [0, 200, 400, 800, 2000],
+  sub_pop: [0, 25000, 100000, 500000, 1500000],
   sub_deg_urbanisation: [0, 100, 250, 500, 1000],
   sub_growth: [-2, 0, 1.2, 2.5, 5.0],
 };
@@ -286,6 +319,13 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       });
     }
 
+    if (!map.getSource('districts-labels-source')) {
+      map.addSource('districts-labels-source', {
+        type: 'geojson',
+        data: getDistrictCentersGeoJSON(),
+      });
+    }
+
     // Ensure layer exists
     if (!map.getLayer('districts-fill')) {
       // Highlight Layer (Selected District)
@@ -309,7 +349,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         'source-layer': 'zcta',
         paint: {
           'fill-color': '#bae4bc', // Default color, will be updated dynamically
-          'fill-opacity': 0.9,
+          'fill-opacity': 1.0,
           'fill-outline-color': '#FFFFFF',
         },
         layout: {
@@ -330,6 +370,27 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         },
         layout: {
           visibility: 'visible',
+        },
+      });
+
+      // Add district names labels above the polygon
+      map.addLayer({
+        id: 'districts-labels',
+        type: 'symbol',
+        source: 'districts-labels-source',
+        layout: {
+          'text-field': ['get', 'name'],
+          'text-font': ['Open Sans Semibold', 'Arial Unicode MS Regular'],
+          'text-size': 10,
+          'text-anchor': 'center',
+          'text-justify': 'center',
+          'text-allow-overlap': false,
+          'visibility': showSubdistrict ? 'none' : 'visible',
+        },
+        paint: {
+          'text-color': '#1e293b', // slate-800
+          'text-halo-color': '#ffffff',
+          'text-halo-width': 1.5,
         },
       });
 
@@ -907,6 +968,9 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           if (map.getLayer('selected-district-outline')) {
             map.moveLayer('selected-district-outline');
           }
+          if (map.getLayer('districts-labels')) {
+            map.moveLayer('districts-labels');
+          }
         }
         setStyleLoadedCount((prev) => prev + 1);
       } else {
@@ -1029,10 +1093,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           ? '#D3D3D3'
           : activeLayer === 'pop'
             ? [
-              'interpolate',
-              ['linear'],
+              'step',
               ['coalesce', ['get', propName], valueMatch],
-              scaleValues[0],
               '#f0f9e8',
               scaleValues[1],
               '#bae4bc',
@@ -1042,10 +1104,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
               '#0868ac',
             ]
             : [
-              'interpolate',
-              ['linear'],
+              'step',
               ['coalesce', ['get', propName], valueMatch],
-              scaleValues[0],
               '#f0f9e8',
               scaleValues[1],
               '#bae4bc',
@@ -1071,10 +1131,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             ? '#E5E7EB'
             : activeLayer === 'pop'
               ? [
-                'interpolate',
-                ['linear'],
+                'step',
                 ['coalesce', ['get', subPropName], sValueMatch],
-                sScale[0],
                 '#f0f9e8',
                 sScale[1],
                 '#bae4bc',
@@ -1084,10 +1142,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                 '#0868ac',
               ]
               : [
-                'interpolate',
-                ['linear'],
+                'step',
                 ['coalesce', ['get', subPropName], sValueMatch],
-                sScale[0],
                 '#f0f9e8',
                 sScale[1],
                 '#bae4bc',
@@ -1107,7 +1163,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         map.setPaintProperty(
           'subdistricts-fill',
           'fill-opacity',
-          showSubdistrict ? 0.9 : 0,
+          showSubdistrict ? 1 : 0,
         );
       }
 
@@ -1136,11 +1192,15 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     if (!map) return;
 
     if (map.getLayer('districts-fill')) {
-      map.setLayoutProperty('districts-fill', 'visibility', 'visible');
+      map.setLayoutProperty(
+        'districts-fill',
+        'visibility',
+        showSubdistrict ? 'none' : 'visible',
+      );
       map.setPaintProperty(
         'districts-fill',
         'fill-opacity',
-        showSubdistrict ? 0 : 0.9,
+        showSubdistrict ? 0 : 1.0,
       );
     }
     if (map.getLayer('districts-border')) {
@@ -1170,6 +1230,11 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         'visibility',
         showSubdistrict ? 'visible' : 'none',
       );
+      map.setPaintProperty(
+        'subdistricts-fill',
+        'fill-opacity',
+        showSubdistrict ? 1.0 : 0,
+      );
     }
     if (map.getLayer('subdistricts-border')) {
       map.setLayoutProperty(
@@ -1180,6 +1245,16 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     }
     if (map.getLayer('selected-district-outline')) {
       map.moveLayer('selected-district-outline');
+    }
+    if (map.getLayer('districts-labels')) {
+      map.setLayoutProperty(
+        'districts-labels',
+        'visibility',
+        showSubdistrict ? 'none' : 'visible',
+      );
+      if (!showSubdistrict) {
+        map.moveLayer('districts-labels');
+      }
     }
   });
 
@@ -1252,8 +1327,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                     setIsDropdownOpen(false);
                   }}
                   className={`w-full px-4 py-2 text-left text-[11px] font-bold transition-colors flex items-center justify-between ${activeBasemap === option.id
-                      ? 'bg-orange-50 text-primary'
-                      : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-orange-50 text-primary'
+                    : 'text-gray-600 hover:bg-gray-50'
                     }`}
                 >
                   {option.label}

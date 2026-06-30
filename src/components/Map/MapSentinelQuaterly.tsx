@@ -20,6 +20,8 @@ import {
   X,
   LineChart as LucideLineChart,
   Info,
+  Search,
+  MapPin,
 } from 'lucide-react';
 
 const InfoTooltip = ({
@@ -193,6 +195,13 @@ const ODISHA_BOUNDS: maplibregl.LngLatBoundsLike = [
 const SUBDISTRICT_URL =
   'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/population_data/od_subdistrict_pop_total_2036.pmtiles';
 
+const LULC_DESCRIPTIONS: Record<string, string> = {
+  water: 'Areas consistently covered by water, including oceans, lakes, reservoirs, rivers, wetlands, and ponds.',
+  vegetation: 'Consolidated vegetation cover, which aggregates trees, crops, flooded vegetation, and rangeland.',
+  built: 'Human-made structures, buildings, roads, pavements, and other impervious surfaces.',
+  bare: 'Areas with little to no vegetation, characterized by exposed soil, sand, rocks, and gravel.',
+};
+
 interface MapSentinelQuaterlyProps {
   targetDistrict?: string;
   targetBounds?: any;
@@ -283,6 +292,145 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
     string,
     any
   > | null>(null);
+
+  // Nominatim Search States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const performSearch = useCallback(async (queryText: string) => {
+    if (!queryText.trim() || !mapRef.current) return;
+
+    setIsSearching(true);
+    setSearchError(null);
+
+    try {
+      const isOdisha = !targetDistrict || targetDistrict.toLowerCase() === 'odisha';
+      const suffix = isOdisha ? 'Odisha, India' : `${targetDistrict}, Odisha, India`;
+      const fullQuery = `${queryText}, ${suffix}`;
+
+      let url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(fullQuery)}&format=json&addressdetails=1&limit=5&countrycodes=in`;
+
+      const bounds = getDistrictBounds(targetDistrict);
+      if (bounds) {
+        const [[minLon, minLat], [maxLon, maxLat]] = bounds;
+        url += `&viewbox=${minLon},${maxLat},${maxLon},${minLat}&bounded=1`;
+      } else {
+        url += `&viewbox=81.3883,22.5674,87.477,17.8124&bounded=1`;
+      }
+
+      const response = await fetch(url, {
+        headers: {
+          'Accept-Language': 'en',
+          'User-Agent': 'UNFPA-Dashboard/1.0',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch search results');
+      }
+
+      const data = await response.json();
+
+      const odishaResults = data.filter((item: any) => {
+        const address = item.address || {};
+        const state = address.state || '';
+        const lat = parseFloat(item.lat);
+        const lon = parseFloat(item.lon);
+        const inOdishaBBox = lat >= 17.5 && lat <= 23.0 && lon >= 81.0 && lon <= 88.0;
+        return state.toLowerCase().includes('odisha') || inOdishaBBox;
+      });
+
+      setSuggestions(odishaResults);
+      setShowSuggestions(odishaResults.length > 0);
+
+      if (odishaResults.length === 0) {
+        setSearchError('No locations found within this area');
+      }
+    } catch (err: any) {
+      console.error('Search error:', err);
+      setSearchError('Error finding locations');
+    } finally {
+      setIsSearching(false);
+    }
+  }, [targetDistrict]);
+
+  // Debounced search
+  useEffect(() => {
+    if (searchQuery.trim().length < 1) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      performSearch(searchQuery);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, performSearch]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      performSearch(searchQuery);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setSearchError(null);
+    if (searchMarkerRef.current) {
+      searchMarkerRef.current.remove();
+      searchMarkerRef.current = null;
+    }
+  };
+
+  const handleSelectSuggestion = (place: any) => {
+    if (!mapRef.current) return;
+
+    const lat = parseFloat(place.lat);
+    const lon = parseFloat(place.lon);
+    const name = place.display_name.split(',')[0] || place.name || 'Searched Location';
+
+    setSearchQuery(name);
+    setShowSuggestions(false);
+    setSuggestions([]);
+
+    mapRef.current.flyTo({
+      center: [lon, lat],
+      zoom: 14,
+      duration: 1500,
+    });
+
+    if (searchMarkerRef.current) {
+      searchMarkerRef.current.remove();
+    }
+
+    const marker = new maplibregl.Marker({ color: '#F76000' })
+      .setLngLat([lon, lat])
+      .addTo(mapRef.current);
+
+    searchMarkerRef.current = marker;
+  };
+
+  // Reset search when targetDistrict changes
+  useEffect(() => {
+    setSearchQuery('');
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setSearchError(null);
+    if (searchMarkerRef.current) {
+      searchMarkerRef.current.remove();
+      searchMarkerRef.current = null;
+    }
+  }, [targetDistrict]);
 
   const currentQuarter = QUARTERS[selectedIdx];
 
@@ -1061,6 +1209,10 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
     return () => {
       map.remove();
       mapRef.current = null;
+      if (searchMarkerRef.current) {
+        searchMarkerRef.current.remove();
+        searchMarkerRef.current = null;
+      }
     };
   }, []);
 
@@ -1283,6 +1435,80 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
             )}
         </div>
 
+        {/* Nominatim Search Box */}
+        <div className="absolute top-8 left-[350px] z-[70] w-80 hidden md:block">
+          <div className="relative bg-white/95 backdrop-blur-md rounded-xl border border-gray-200 shadow-xl p-2 flex items-center gap-2">
+            <Search className="w-4 h-4 text-gray-400 shrink-0 ml-1" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder={`Search in ${targetDistrict === 'Odisha' ? 'Odisha' : targetDistrict}...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="w-full bg-transparent border-0 outline-none text-[12px] font-semibold text-gray-800 placeholder-gray-400 p-1"
+            />
+            {isSearching ? (
+              <div className="w-4 h-4 border-2 border-[#F76000] border-t-transparent rounded-full animate-spin shrink-0 mr-1" />
+            ) : searchQuery ? (
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleClearSearch();
+                }}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-600 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            ) : null}
+          </div>
+
+          {/* Suggestions Dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute left-0 right-0 top-full mt-2 bg-white/98 backdrop-blur-md rounded-xl border border-gray-100 shadow-2xl p-1.5 z-[80] flex flex-col gap-1 max-h-[300px] overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-1 duration-200">
+              {suggestions.map((place, idx) => {
+                const name = place.display_name.split(',')[0] || place.name || 'Location';
+                const subText = place.display_name.split(',').slice(1).join(',').trim();
+                return (
+                  <button
+                    type="button"
+                    key={`${place.place_id}-${idx}`}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSelectSuggestion(place);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-orange-50/50 rounded-lg flex items-start gap-2.5 transition-colors group cursor-pointer"
+                  >
+                    <MapPin className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#F76000] shrink-0 mt-0.5" />
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="text-[11px] font-bold text-gray-800 group-hover:text-black truncate">
+                        {name}
+                      </span>
+                      {subText && (
+                        <span className="text-[9px] font-semibold text-gray-400 group-hover:text-gray-500 truncate">
+                          {subText}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Error Message */}
+          {searchError && (
+            <div className="absolute left-0 right-0 top-full mt-2 bg-rose-50 border border-rose-100 rounded-lg p-2 text-[10px] text-rose-600 font-semibold shadow-md animate-in fade-in duration-200">
+              {searchError}
+            </div>
+          )}
+        </div>
+
         {/* ── LULC CHANGE SUMMARY (Top Right Overlay) ────────────────────── */}
         {!selectedPoint &&
           (() => {
@@ -1487,11 +1713,16 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                       <div className="w-1.5 h-1.5 rounded-full bg-[#F76000]" />
                     )}
                   </div>
-                  <span
-                    className={`text-[10px] font-black uppercase ${selectedLulcCategory === 'all' ? 'text-[#F76000]' : 'text-gray-600'}`}
-                  >
-                    All Classes
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-[10px] font-black uppercase ${selectedLulcCategory === 'all' ? 'text-[#F76000]' : 'text-gray-600'}`}
+                    >
+                      All Classes
+                    </span>
+                    <span onClick={(e) => e.stopPropagation()}>
+                      <InfoTooltip text="Displays all land cover categories simultaneously, showing the overall distribution across the region." position="top" />
+                    </span>
+                  </div>
                 </div>
               </button>
               {UI_LULC_LEGEND.map((item) => (
@@ -1521,6 +1752,9 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
                         className={`text-[10px] font-bold capitalize ${selectedLulcCategory === item.value ? 'text-[#F76000]' : 'text-gray-600'}`}
                       >
                         {item.label}
+                      </span>
+                      <span onClick={(e) => e.stopPropagation()}>
+                        <InfoTooltip text={LULC_DESCRIPTIONS[item.key] || ''} position="top" />
                       </span>
                     </div>
                   </div>
