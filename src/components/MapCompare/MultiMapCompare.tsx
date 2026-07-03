@@ -191,7 +191,7 @@ const NTL_YEARS = Array.from({ length: 2026 - 2012 + 1 }, (_, i) =>
 // All dropdown options for nightlight: ["2012 March", "2012 June", ..., "2026 March"]
 // Note: 2026 only has q1 data (March), so other quarters are excluded for that year
 const NTL_YEAR_OPTIONS: string[] = NTL_YEARS.flatMap((year) => {
-  const months = year === '2026' ? ['March'] : NTL_QUARTER_MONTHS;
+  const months = year === '2026' ? ['March', 'June'] : NTL_QUARTER_MONTHS;
   return months.map((month) => `${year} ${month}`);
 });
 
@@ -312,7 +312,7 @@ const ROAD_CATEGORIES = [
 
 const BASE_MAP_STYLE: any = {
   version: 8,
-  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+  glyphs: 'https://basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
   sources: {
     'esri-grey': {
       type: 'raster',
@@ -380,7 +380,7 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
     },
     {
       id: 'map-2',
-      year: propActiveLayer === 'nightlight' ? '2026 March' : '2025',
+      year: propActiveLayer === 'nightlight' ? '2026 June' : '2025',
       layer: propActiveLayer || 'builtup',
       basemap: 'grey',
     },
@@ -595,7 +595,7 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
                       const layer = e.target.value;
                       const defaultYear =
                         layer === 'nightlight'
-                          ? '2026 March'
+                          ? '2026 June'
                           : pendingConfig.year.includes(' ')
                             ? '2024'
                             : pendingConfig.year;
@@ -848,7 +848,7 @@ const MapItem = ({
       } else if (config.layer === 'nightlight') {
         // For nightlight, validate against NTL_YEAR_OPTIONS
         if (!NTL_YEAR_OPTIONS.includes(config.year)) {
-          onUpdate({ year: '2026 March' });
+          onUpdate({ year: '2026 June' });
           return;
         }
       } else {
@@ -1072,7 +1072,23 @@ const MapItem = ({
       if (config.layer === 'nightlight') {
         // ✅ Build dynamic URL from district + quarterly label
         url = buildNtlUrl(yearKey, selectedDistrict || 'Anugul');
-        rasterParams = '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000"],0,60,c';
+        rasterParams = ''; // Colors handled by setColorFunction
+        setColorFunction(url, (pixel: any, color: any, metadata: any) => {
+          const val = pixel[0];
+          if (val === metadata.noData || val < 0) {
+            color.set([0, 0, 0, 0]);
+            return;
+          }
+          if (val <= 0.8) {
+            color.set([0, 0, 0, 255]); // #000000
+          } else if (val <= 5) {
+            color.set([72, 72, 93, 255]); // #48485D
+          } else if (val <= 30) {
+            color.set([246, 234, 175, 255]); // #F6EAAF
+          } else {
+            color.set([254, 0, 0, 255]); // #FE0000
+          }
+        });
       } else if (config.layer === 'ghsl') {
         url = buildGhslUrl(yearKey, selectedDistrict || 'Anugul');
         rasterParams = ''; // Colors handled by setColorFunction
@@ -1213,7 +1229,7 @@ const MapItem = ({
   };
 
   return (
-    <div className="relative h-[600px] bg-gray-100 rounded-2xl border border-gray-200 overflow-hidden group shadow-sm transition-all hover:shadow-md">
+    <div className="relative h-[600px] 2xl:h-[750px] bg-gray-100 rounded-2xl border border-gray-200 overflow-hidden group shadow-sm transition-all hover:shadow-md">
       <div ref={containerRef} className="w-full h-full" />
 
       {isLoading && (
@@ -1331,7 +1347,7 @@ const MapItem = ({
                       // Synchronize year format when switching layers
                       const nextYear =
                         key === 'nightlight'
-                          ? '2026 March'
+                          ? '2026 June'
                           : config.year.includes(' ')
                             ? '2024'
                             : config.year;

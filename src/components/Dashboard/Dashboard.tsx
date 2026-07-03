@@ -302,6 +302,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [showSubdistrict, setShowSubdistrict] = useState(true);
   const [showScrollHint, setShowScrollHint] = useState(true);
+  const [customLegendSteps, setCustomLegendSteps] = useState<number[] | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -718,12 +719,12 @@ export const MapSection: React.FC<MapSectionProps> = ({
   };
 
   return (
-    <div className="flex flex-col bg-[#F8FAFC] mx-auto py-14 space-y-12">
+    <div className="flex flex-col bg-[#F8FAFC] mx-auto py-14 2xl:py-[56px] space-y-12">
       {/* BOTTOM SECTION: CONTENT AREA */}
       <div className="flex-1">
-        <div className="w-full mx-auto px-4 lg:px-6 flex flex-col lg:flex-row gap-4 pt-10 pb-10">
+        <div className="w-full mx-auto px-4 lg:px-6 2xl:px-[24px] flex flex-col lg:flex-row gap-4 pt-10 pb-10">
           {/* ----------------- CENTER: MAP AREA ----------------- */}
-          <div className="w-full h-112.5 lg:flex-1 relative overflow-hidden lg:h-[80vh] bg-white rounded-lg shadow-sm border border-gray-100 group">
+          <div className="w-full h-112.5 lg:flex-1 relative overflow-hidden lg:h-[80vh] 2xl:h-[84vh] bg-white rounded-lg shadow-sm border border-gray-100 group">
             <MapComponent
               activeLayer={appliedFilters.layer}
               selectedYear={appliedFilters.year}
@@ -731,6 +732,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
               region={appliedFilters.region}
               targetDistrict={appliedFilters.district}
               showSubdistrict={showSubdistrict}
+              onLegendStepsUpdate={setCustomLegendSteps}
               onResetClick={() => {
                 setDistrictData(null);
                 setSelectedDistrictName('All Districts');
@@ -760,7 +762,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
             <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#000000_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.03] group-hover:opacity-[0.05] transition-opacity"></div>
 
             {/* Floating Control Panel (Top Left) */}
-            <div className="absolute top-5 bottom-5 left-5 z-60 bg-white/90 backdrop-blur-md rounded-lg shadow-sm border border-gray-100 w-[260px] max-w-[calc(100%-40px)] transition-all hover:shadow-md flex flex-col overflow-hidden">
+            <div className="absolute top-5 bottom-5 left-5 z-60 bg-white/90 backdrop-blur-md rounded-lg shadow-sm border border-gray-100 w-[260px] 2xl:w-[320px] max-w-[calc(100%-40px)] transition-all hover:shadow-md flex flex-col overflow-hidden">
               <style
                 dangerouslySetInnerHTML={{
                   __html: `
@@ -1103,9 +1105,11 @@ export const MapSection: React.FC<MapSectionProps> = ({
 
               {/* Sticky Legend (Bottom) */}
               {(() => {
-                const steps = (showSubdistrict && LAYER_SCALES[`sub_${activeLayer}`])
-                  ? LAYER_SCALES[`sub_${activeLayer}`]
-                  : (LAYER_SCALES[activeLayer ?? ''] ?? [0, 25, 50, 75, 100]);
+                const steps = customLegendSteps
+                  ? customLegendSteps
+                  : (showSubdistrict && LAYER_SCALES[`sub_${activeLayer}`])
+                    ? LAYER_SCALES[`sub_${activeLayer}`]
+                    : (LAYER_SCALES[activeLayer ?? ''] ?? [0, 25, 50, 75, 100]);
 
                 const formatNum = (v: number) => {
                   if (Math.abs(v) >= 1000000) {
@@ -1151,16 +1155,16 @@ export const MapSection: React.FC<MapSectionProps> = ({
                 }
 
                 return (
-                  <div className="p-4 sticky bottom-0 bg-white/90 backdrop-blur-md z-[70] shrink-0 border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(255,255,255,0.9)]">
-                    <h4 className="text-[10px] font-bold text-gray-500 uppercase mb-2 tracking-wide">
+                  <div className="p-3 2xl:p-4 sticky bottom-0 bg-white/90 backdrop-blur-md z-[70] shrink-0 border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(255,255,255,0.9)]">
+                    <h4 className="text-[10px] 2xl:text-[12px] font-bold text-gray-500 uppercase mb-1.5 2xl:mb-2 tracking-wide">
                       {layers.find((l) => l.id === activeLayer)?.label ||
                         'Legend'}
                     </h4>
-                    <div className="flex flex-col gap-1.5 font-semibold">
+                    <div className="flex flex-col gap-1 2xl:gap-1.5 font-semibold">
                       {activeLayer === 'deg_urbanisation' ? (
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-6 h-3 rounded-full bg-[#D3D3D3]"></div>
-                          <span className="text-[11px] text-gray-800 font-medium tracking-wide">
+                        <div className="flex items-center gap-2.5 2xl:gap-3">
+                          <div className="w-6 h-3 2xl:w-8 2xl:h-4 rounded-full bg-[#D3D3D3]"></div>
+                          <span className="text-[10px] 2xl:text-[12px] text-gray-800 font-medium tracking-wide">
                             Urbanisation Distribution
                           </span>
                         </div>
@@ -1177,12 +1181,12 @@ export const MapSection: React.FC<MapSectionProps> = ({
                           { color: '#43a2ca', label: labels[3] },
                           { color: '#0868ac', label: labels[4] },
                         ]).map((item, id) => (
-                          <div key={id} className="flex items-center gap-2.5">
+                          <div key={id} className="flex items-center gap-2.5 2xl:gap-3">
                             <div
-                              className="w-6 h-3 rounded-full"
+                              className="w-6 h-3 2xl:w-8 2xl:h-4 rounded-full shrink-0"
                               style={{ backgroundColor: item.color }}
                             ></div>
-                            <span className="text-[11px] text-gray-800 font-medium tracking-wide">
+                            <span className="text-[10px] 2xl:text-[12px] text-gray-800 font-medium tracking-wide">
                               {item.label}
                             </span>
                           </div>
@@ -1196,7 +1200,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
           </div>
 
           {/* ----------------- RIGHT SIDEBAR: DETAILS ----------------- */}
-          <div className="w-full lg:w-80 h-auto lg:h-[80vh] bg-white border border-gray-100 rounded-lg flex flex-col z-20 shadow-sm transition-all hover:shadow-md relative">
+          <div className="w-full lg:w-80 2xl:w-[420px] h-auto lg:h-[80vh] 2xl:h-[84vh] bg-white border border-gray-100 rounded-lg flex flex-col z-20 shadow-sm transition-all hover:shadow-md relative">
             <div className="p-6 border-b border-gray-100 flex flex-col items-start bg-gray-50/30">
               <div className="flex justify-between w-full">
                 {/* Left Side */}
@@ -1907,6 +1911,20 @@ export const MapSection: React.FC<MapSectionProps> = ({
 
               {/* Trends/Population charts commented out per original */}
             </div>
+            {/* {selectedDistrictName && selectedDistrictName !== 'All Districts' && selectedDistrictName !== 'Odisha' && (
+              <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    const districtQuery = selectedDistrictName === 'All Districts' ? 'Odisha' : selectedDistrictName;
+                    window.open(`/odisha/report?district=${encodeURIComponent(districtQuery)}`, '_blank');
+                  }}
+                  className="w-full py-2.5 px-4 bg-[#F96000] hover:bg-[#E05300] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <ArrowUpRight className="w-4 h-4" />
+                  Export Report (PDF)
+                </button>
+              </div>
+            )} */}
           </div>
         </div>
       </div>

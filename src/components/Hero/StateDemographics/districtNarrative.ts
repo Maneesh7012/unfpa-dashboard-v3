@@ -131,7 +131,7 @@ export const DISTRICT_OVERVIEWS: Record<string, DistrictOverview> = {
     ],
   },
 
-  Baudh: {
+  Boudh: {
     paragraphs: [
       `Baudh (Boudh) is the smallest district in Odisha by population: 441,000 in 2011 growing to 527,000 by 2036, an addition of about 86,000. Annual growth runs ~0.83% early, settling to ~0.65% by the 2030s, close to the panel mean. Across 3,098 km², density climbs from 142 to 170 persons per km², among the lowest in the state.`,
       `Carved out of undivided Phulbani in 1994, the district remains predominantly rural with forest cover above 35%. The economy is agriculture (rice, oilseeds), forest produce (mahua, kendu leaves, tasar silk) and small-trader commerce along the Tel river. Tribal communities, primarily Kondh and Kandha, constitute a sizeable share of the population and shape settlement patterns.`,

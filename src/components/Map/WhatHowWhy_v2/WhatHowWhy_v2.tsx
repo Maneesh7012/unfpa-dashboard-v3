@@ -286,7 +286,7 @@ export const WhatHowWhy_v2: React.FC<WhatHowWhy_v2Props> = ({
       container: mapContainerRef.current,
       style: {
         version: 8,
-        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+        glyphs: 'https://basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
         sources: {},
         layers: [],
       },

@@ -62,9 +62,6 @@ export function HeroSection_v3() {
               several districts face out-migration, ageing populations, and
               changing household structures, each with distinct implications for
               planning and service delivery.{' '}
-            </p>
-
-            <p>
               Much of this complexity, however, remains fragmented across
               departments, surveys, and administrative records, with
               demographic, health, migration, and spatial datasets rarely

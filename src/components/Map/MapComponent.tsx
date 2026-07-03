@@ -61,6 +61,7 @@ interface MapComponentProps {
   initialBasemap?: 'dark' | 'grey' | 'satellite';
   onDataLoad?: (features: any[]) => void;
   onLegendDataUpdate?: (min: number, max: number) => void;
+  onLegendStepsUpdate?: (steps: number[] | null) => void;
   targetDistrict?: string;
   showSubdistrict?: boolean;
 }
@@ -89,6 +90,104 @@ const getSubScale = (layer?: string): number[] => {
   return LAYER_SCALES[key] ?? LAYER_SCALES[layer ?? ''] ?? [0, 25, 50, 75, 100];
 };
 
+// Helper to get all spelling and casing variants of a district name for robust shape/data matching
+const getDistrictVariants = (target: string): string[] => {
+  const t = target.toLowerCase().trim();
+  
+  if (t === 'angul' || t === 'anugul') {
+    return ['Angul', 'Anugul', 'ANGUL', 'ANUGUL'];
+  }
+  if (t === 'balangir' || t === 'bolangir') {
+    return ['Balangir', 'Bolangir', 'BALANGIR', 'BOLANGIR'];
+  }
+  if (t === 'balasore' || t === 'baleswar' || t === 'baleshwar') {
+    return ['Balasore', 'Baleswar', 'Baleshwar', 'BALASORE', 'BALESWAR', 'BALESHWAR'];
+  }
+  if (t === 'bargarh' || t === 'baragarh') {
+    return ['Bargarh', 'Baragarh', 'BARGARH', 'BARAGARH'];
+  }
+  if (t === 'bhadrak') {
+    return ['Bhadrak', 'BHADRAK'];
+  }
+  if (t === 'boudh' || t === 'baudh') {
+    return ['Boudh', 'Baudh', 'BOUDH', 'BAUDH'];
+  }
+  if (t === 'cuttack' || t === 'katak') {
+    return ['Cuttack', 'Katak', 'CUTTACK', 'KATAK'];
+  }
+  if (t === 'deogarh' || t === 'debagarh' || t === 'deoghar') {
+    return ['Deogarh', 'Debagarh', 'Deoghar', 'DEOGARH', 'DEBAGARH'];
+  }
+  if (t === 'dhenkanal') {
+    return ['Dhenkanal', 'DHENKANAL'];
+  }
+  if (t === 'gajapati') {
+    return ['Gajapati', 'GAJAPATI'];
+  }
+  if (t === 'ganjam') {
+    return ['Ganjam', 'GANJAM'];
+  }
+  if (t === 'jagatsinghpur' || t === 'jagatsinghapur') {
+    return ['Jagatsinghpur', 'Jagatsinghapur', 'JAGATSINGHPUR', 'JAGATSINGHAPUR'];
+  }
+  if (t === 'jajpur' || t === 'jajapura' || t === 'jajpura') {
+    return ['Jajpur', 'Jajapura', 'Jajpura', 'JAJPUR', 'JAJAPURA', 'JAJPURA'];
+  }
+  if (t === 'jharsuguda') {
+    return ['Jharsuguda', 'JHARSUGUDA'];
+  }
+  if (t === 'kalahandi') {
+    return ['Kalahandi', 'KALAHANDI'];
+  }
+  if (t === 'kandhamal') {
+    return ['Kandhamal', 'KANDHAMAL'];
+  }
+  if (t === 'kendrapara' || t === 'kendraparha') {
+    return ['Kendrapara', 'Kendraparha', 'KENDRAPARA', 'KENDRAPARHA'];
+  }
+  if (t === 'kendujhar' || t === 'keonjhar') {
+    return ['Kendujhar', 'Keonjhar', 'KENDUJHAR', 'KEONJHAR'];
+  }
+  if (t === 'khordha' || t === 'khurda' || t === 'khorda') {
+    return ['Khordha', 'Khurda', 'Khorda', 'KHORDHA', 'KHURDA', 'KHORDA'];
+  }
+  if (t === 'koraput') {
+    return ['Koraput', 'KORAPUT'];
+  }
+  if (t === 'malkangiri') {
+    return ['Malkangiri', 'MALKANGIRI'];
+  }
+  if (t === 'mayurbhanj') {
+    return ['Mayurbhanj', 'MAYURBHANJ'];
+  }
+  if (t === 'nabarangpur' || t === 'nabrangpur') {
+    return ['Nabarangpur', 'Nabrangpur', 'NABARANGPUR', 'NABRANGPUR'];
+  }
+  if (t === 'nayagarh') {
+    return ['Nayagarh', 'NAYAGARH'];
+  }
+  if (t === 'nuapada') {
+    return ['Nuapada', 'NUAPADA'];
+  }
+  if (t === 'puri') {
+    return ['Puri', 'PURI'];
+  }
+  if (t === 'rayagada') {
+    return ['Rayagada', 'RAYAGADA'];
+  }
+  if (t === 'sambalpur' || t === 'sambalapur') {
+    return ['Sambalpur', 'Sambalapur', 'SAMBALPUR', 'SAMBALAPUR'];
+  }
+  if (t === 'subarnapur' || t === 'sonepur') {
+    return ['Subarnapur', 'Sonepur', 'SUBARNAPUR', 'SONEPUR'];
+  }
+  if (t === 'sundargarh' || t === 'sundergarh') {
+    return ['Sundargarh', 'Sundergarh', 'SUNDARGARH', 'SUNDERGARH'];
+  }
+  
+  return [target, target.toUpperCase(), target.toLowerCase()];
+};
+
 export const MapComponent: React.FC<MapComponentProps> = ({
   activeLayer,
   selectedYear = '2025',
@@ -101,6 +200,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   targetDistrict,
   showSubdistrict = true,
   onLegendDataUpdate,
+  onLegendStepsUpdate,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -220,7 +320,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
   const MAP_STYLES = {
     dark: {
       version: 8,
-      glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+      glyphs: 'https://basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
       sources: {
         'carto-dark': {
           type: 'raster',
@@ -246,7 +346,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     },
     grey: {
       version: 8,
-      glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+      glyphs: 'https://basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
       sources: {
         'esri-grey': {
           type: 'raster',
@@ -269,7 +369,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     },
     satellite: {
       version: 8,
-      glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+      glyphs: 'https://basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
       sources: {
         'esri-satellite': {
           type: 'raster',
@@ -384,7 +484,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           'text-size': 10,
           'text-anchor': 'center',
           'text-justify': 'center',
-          'text-allow-overlap': false,
+          'text-allow-overlap': true,
+          'text-ignore-placement': true,
           'visibility': showSubdistrict ? 'none' : 'visible',
         },
         paint: {
@@ -781,6 +882,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       interactive: true,
     });
     map.scrollZoom.disable();
+    mapRef.current = map;
     map.on('load', async () => {
       map.resize();
 
@@ -803,6 +905,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       }
 
       setupPopulationLayer(map);
+      setStyleLoadedCount((prev) => prev + 1);
 
       map.on('zoom', () => {
         const currentZoom = map.getZoom();
@@ -1027,6 +1130,83 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       }
 
       const effectiveLayer = gender !== 'All' ? 'pop' : (activeLayer ?? 'pop');
+
+      // Calculate dynamic subdistrict scale for the selected district if applicable
+      let dynamicSteps: number[] | null = null;
+      if (
+        showSubdistrict &&
+        targetDistrict &&
+        targetDistrict !== 'All Districts' &&
+        targetDistrict !== 'Odisha' &&
+        (effectiveLayer === 'pop' || effectiveLayer === 'density')
+      ) {
+        const subdistrictFeatures = Array.from(accumulatedSubdistrictFeaturesRef.current.values());
+        const matchNamesLower = getDistrictVariants(targetDistrict).map(n => n.toLowerCase());
+        const filtered = subdistrictFeatures.filter((f) => {
+          const rawDistName = f.properties?.district_name || f.properties?.DIST_NAME || f.properties?.NAME || f.properties?.name;
+          if (!rawDistName) return false;
+          return matchNamesLower.includes(rawDistName.toLowerCase().trim());
+        });
+
+        if (filtered.length > 0) {
+          const values: number[] = [];
+          filtered.forEach((f) => {
+            let val = f.properties[subPropName];
+            if (val !== undefined && val !== null) {
+              const num = parseFloat(val);
+              if (!isNaN(num)) values.push(num);
+            }
+          });
+
+          if (values.length > 0) {
+            const sorted = [...values].sort((a, b) => a - b);
+            const min = sorted[0];
+            const p90 = sorted[Math.floor(sorted.length * 0.9)] || sorted[sorted.length - 1];
+            const maxLimit = p90 > min ? p90 : sorted[sorted.length - 1];
+
+            if (maxLimit > min) {
+              const range = maxLimit - min;
+              const roundNice = (val: number, maxVal: number) => {
+                if (maxVal > 100000) return Math.round(val / 10000) * 10000;
+                if (maxVal > 10000) return Math.round(val / 1000) * 1000;
+                if (maxVal > 1000) return Math.round(val / 100) * 100;
+                if (maxVal > 100) return Math.round(val / 10) * 10;
+                return Math.round(val);
+              };
+
+              let stepsTemp = [
+                min,
+                min + range * 0.25,
+                min + range * 0.5,
+                min + range * 0.75,
+                maxLimit
+              ].map((v, i) => {
+                if (i === 0) return Math.max(0, Math.floor(v));
+                return roundNice(v, maxLimit);
+              });
+
+              // Ensure strictly increasing steps
+              const hasDuplicates = new Set(stepsTemp).size !== stepsTemp.length;
+              if (hasDuplicates) {
+                stepsTemp = [
+                  min,
+                  min + range * 0.25,
+                  min + range * 0.5,
+                  min + range * 0.75,
+                  maxLimit
+                ].map((v, i) => (i === 0 ? Math.max(0, Math.floor(v)) : Math.round(v)));
+              }
+              
+              dynamicSteps = stepsTemp;
+            }
+          }
+        }
+      }
+
+      if (onLegendStepsUpdate) {
+        onLegendStepsUpdate(dynamicSteps);
+      }
+
       const scaleValues = LAYER_SCALES[effectiveLayer] ?? [0, 25, 50, 75, 100];
       const nameExpr = [
         'coalesce',
@@ -1125,7 +1305,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
 
       // 2. Subdistrict Layer
       if (map.getLayer('subdistricts-fill')) {
-        const sScale = getSubScale(effectiveLayer);
+        const sScale = dynamicSteps ?? getSubScale(effectiveLayer);
         const subColorExp =
           activeLayer === 'deg_urbanisation'
             ? '#E5E7EB'
@@ -1160,15 +1340,41 @@ export const MapComponent: React.FC<MapComponentProps> = ({
           'fill-color',
           subColorExp as any,
         );
+        const nameExpr = [
+          'coalesce',
+          ['get', 'district_name'],
+          ['get', 'DIST_NAME'],
+          ['get', 'NAME'],
+          ['get', 'name'],
+        ];
+        const hasTarget = targetDistrict && targetDistrict !== 'All Districts' && targetDistrict !== 'Odisha';
+        const fillOpacityExpr = hasTarget
+          ? ['match', nameExpr, getDistrictVariants(targetDistrict), 1.0, 0.0]
+          : 1.0;
+        const lineOpacityExpr = hasTarget
+          ? ['match', nameExpr, getDistrictVariants(targetDistrict), 0.8, 0.0]
+          : 0.8;
+
         map.setPaintProperty(
           'subdistricts-fill',
           'fill-opacity',
-          showSubdistrict ? 1 : 0,
+          showSubdistrict ? fillOpacityExpr as any : 0,
         );
+        if (map.getLayer('subdistricts-border')) {
+          map.setPaintProperty(
+            'subdistricts-border',
+            'line-opacity',
+            showSubdistrict ? lineOpacityExpr as any : 0,
+          );
+        }
       }
 
       if (onLegendDataUpdate) {
         onLegendDataUpdate(scaleValues[0], scaleValues[4]);
+      }
+
+      if (map.getLayer('districts-labels') && !showSubdistrict) {
+        map.moveLayer('districts-labels');
       }
     };
 
@@ -1182,6 +1388,8 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     showSubdistrict,
     subdistrictDataLoaded,
     onLegendDataUpdate,
+    onLegendStepsUpdate,
+    targetDistrict,
     activeBasemap,
     styleLoadedCount,
   ]);
@@ -1202,6 +1410,9 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         'fill-opacity',
         showSubdistrict ? 0 : 1.0,
       );
+
+      // Filter districts to show only the selected district if targetDistrict is active
+      map.setFilter('districts-fill', null);
     }
     if (map.getLayer('districts-border')) {
       map.setLayoutProperty('districts-border', 'visibility', 'visible');
@@ -1230,10 +1441,21 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         'visibility',
         showSubdistrict ? 'visible' : 'none',
       );
+      const nameExpr = [
+        'coalesce',
+        ['get', 'district_name'],
+        ['get', 'DIST_NAME'],
+        ['get', 'NAME'],
+        ['get', 'name'],
+      ];
+      const hasTarget = targetDistrict && targetDistrict !== 'All Districts' && targetDistrict !== 'Odisha';
+      const fillOpacityExpr = hasTarget
+        ? ['match', nameExpr, getDistrictVariants(targetDistrict), 1.0, 0.0]
+        : 1.0;
       map.setPaintProperty(
         'subdistricts-fill',
         'fill-opacity',
-        showSubdistrict ? 1.0 : 0,
+        showSubdistrict ? fillOpacityExpr as any : 0,
       );
     }
     if (map.getLayer('subdistricts-border')) {
@@ -1242,7 +1464,30 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         'visibility',
         showSubdistrict ? 'visible' : 'none',
       );
+      const nameExpr = [
+        'coalesce',
+        ['get', 'district_name'],
+        ['get', 'DIST_NAME'],
+        ['get', 'NAME'],
+        ['get', 'name'],
+      ];
+      const hasTarget = targetDistrict && targetDistrict !== 'All Districts' && targetDistrict !== 'Odisha';
+      const lineOpacityExpr = hasTarget
+        ? ['match', nameExpr, getDistrictVariants(targetDistrict), 0.8, 0.0]
+        : 0.8;
+      map.setPaintProperty(
+        'subdistricts-border',
+        'line-opacity',
+        showSubdistrict ? lineOpacityExpr as any : 0,
+      );
     }
+
+    // Do not filter subdistricts, clear any existing filters to allow click/hover on non-selected ones
+    if (map.getLayer('subdistricts-fill') && map.getLayer('subdistricts-border')) {
+      map.setFilter('subdistricts-fill', null);
+      map.setFilter('subdistricts-border', null);
+    }
+
     if (map.getLayer('selected-district-outline')) {
       map.moveLayer('selected-district-outline');
     }

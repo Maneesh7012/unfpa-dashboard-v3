@@ -117,7 +117,7 @@ export const LULC_QUARTERS = [
 export const NTL_QUARTERS = [
   ...Array.from({ length: 2026 - 2012 + 1 }, (_, i) => {
     const year = 2012 + i;
-    const quarters = year === 2026 ? ['q1'] : ['q1', 'q2', 'q3', 'q4'];
+    const quarters = year === 2026 ? ['q1', 'q2'] : ['q1', 'q2', 'q3', 'q4'];
     return quarters.map((q) => `${year} ${q}`);
   }).flat(),
 ];
@@ -822,14 +822,14 @@ export default function MapCompare({
             color.set([0, 0, 0, 0]);
             return;
           }
-          if (val <= 5) {
+          if (val <= 0.8) {
             color.set([0, 0, 0, 255]); // #000000
-          } else if (val <= 25) {
-            color.set([72, 72, 93, 255]); // #48485d
-          } else if (val <= 80) {
-            color.set([246, 234, 175, 255]); // #f6eaaf
+          } else if (val <= 5) {
+            color.set([72, 72, 93, 255]); // #48485D
+          } else if (val <= 30) {
+            color.set([246, 234, 175, 255]); // #F6EAAF
           } else {
-            color.set([254, 0, 0, 255]); // #fe0000
+            color.set([254, 0, 0, 255]); // #FE0000
           }
         });
       }
@@ -1764,7 +1764,7 @@ export default function MapCompare({
       <div className="relative w-full overflow-hidden">
         <div
           ref={containerRef}
-          className="relative w-full h-[600px] overflow-hidden select-none rounded-lg"
+          className="relative w-full h-[600px] 2xl:h-[750px] overflow-hidden select-none rounded-lg"
         >
           {/* Loading Spinner */}
           {isLoading && (
@@ -1939,7 +1939,7 @@ export default function MapCompare({
           {/* LEFT MAP */}
           <div
             ref={leftMapRef}
-            className="relative w-full h-[600px] overflow-hidden select-none"
+            className="relative w-full h-[600px] 2xl:h-[750px] overflow-hidden select-none"
           />
 
           {/* RIGHT MAP (clipped by slider) */}

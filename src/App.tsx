@@ -9,6 +9,7 @@ import AboutPage from './pages/About/About';
 import MethodologyPage from './pages/Methodology/Methodology';
 import AnalyticsPage from './pages/Analytics/Analytics';
 import DataCatalogPage from './pages/DataCatalog/DataCatalog';
+import ReportPage from './pages/Report/Report';
 import type { ViewType } from '../types';
 import { StateDemographics_v3 } from './components/Hero/StateDemographics/StateDemographics_v3';
 import { TooltipProvider } from './components/ui/tooltip';
@@ -125,6 +126,7 @@ const App: React.FC = () => {
               <Route path="/methodology" element={<MethodologyPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/catalog" element={<DataCatalogPage />} />
+              <Route path="/report" element={<ReportPage />} />
             </Routes>
             <Footer />
           </div>

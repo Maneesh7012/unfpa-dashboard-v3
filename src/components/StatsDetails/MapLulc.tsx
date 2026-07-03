@@ -48,7 +48,7 @@ interface MapLulcProps {
 const MAP_STYLES = {
   dark: {
     version: 8,
-    glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+    glyphs: 'https://basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
     sources: {
       'carto-dark': {
         type: 'raster',
@@ -64,7 +64,7 @@ const MAP_STYLES = {
   },
   grey: {
     version: 8,
-    glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+    glyphs: 'https://basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
     sources: {
       'esri-grey': {
         type: 'raster',
@@ -79,7 +79,7 @@ const MAP_STYLES = {
   },
   satellite: {
     version: 8,
-    glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+    glyphs: 'https://basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
     sources: {
       'esri-satellite': {
         type: 'raster',

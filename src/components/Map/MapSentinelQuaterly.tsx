@@ -90,6 +90,7 @@ const PC_TILE_BASE =
   'https://planetarycomputer.microsoft.com/api/data/v1/mosaic/tiles';
 
 const ODISHA_BBOX = [81.3883, 17.8124, 87.477, 22.5674];
+
 const PC_RENDER_PARAMS =
   'assets=B04&assets=B03&assets=B02&color_formula=Gamma%20RGB%203.2%20Saturation%200.8%20Sigmoidal%20RGB%2025%200.35&collection=sentinel-2-l2a&format=png';
 
@@ -110,7 +111,7 @@ const LULC_RGBA: Record<number, number[]> = {
   4: [122, 135, 198, 255], // Flooded vegetation (#7A87C6)
   5: [228, 150, 53, 255], // Crops (#E49635)
   7: [196, 40, 27, 255], // Built (#C4281B)
-  8: [165, 155, 143, 255], // Bare (#A59B8F)
+  8: [255, 0, 204, 1], // Bare (#A59B8F)
   9: [240, 240, 240, 255], // Snow/Ice (#F0F0F0)
   10: [255, 255, 255, 255], // Clouds (#FFFFFF)
   11: [223, 195, 90, 255], // Rangeland (#DFC35A)
@@ -136,7 +137,7 @@ const LULC_LEGEND: LulcLegendItem[] = [
   },
   { label: 'Crops', color: '#E49635', value: 5, key: 'crops' },
   { label: 'Built area', color: '#C4281B', value: 7, key: 'built' },
-  { label: 'Bare Ground', color: '#A59B8F', value: 8, key: 'bare' },
+  { label: 'Bare Ground', color: '#ff00ccff', value: 8, key: 'bare' },
   { label: 'Snow/Ice', color: '#F0F0F0', value: 9, key: 'snow_ice' },
   { label: 'Clouds', color: '#FFFFFF', value: 10, key: 'clouds' },
   { label: 'Rangeland', color: '#DFC35A', value: 11, key: 'rangeland' },
@@ -189,6 +190,11 @@ const PMTILES_URL =
   'https://dicratiler.blob.core.windows.net/dicra-dev/unfpa/data_v3/lulc_quarterly/od_district_lulc_quarterly.pmtiles';
 const ODISHA_CENTER: [number, number] = [84.8, 20.5];
 const ODISHA_BOUNDS: maplibregl.LngLatBoundsLike = [
+  [81.3883, 17.8124],
+  [87.477, 22.5674],
+];
+// Array version for easy destructuring
+const ODISHA_BOUNDS_ARRAY: [[number, number], [number, number]] = [
   [81.3883, 17.8124],
   [87.477, 22.5674],
 ];
@@ -336,19 +342,25 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
 
       const data = await response.json();
 
-      const odishaResults = data.filter((item: any) => {
+      const searchBounds = getDistrictBounds(targetDistrict) ?? ODISHA_BOUNDS_ARRAY;
+      const [[minLonB, minLatB], [maxLonB, maxLatB]] = searchBounds;
+      const queryLower = searchQuery.toLowerCase();
+
+      const filteredResults = data.filter((item: any) => {
         const address = item.address || {};
         const state = address.state || '';
         const lat = parseFloat(item.lat);
         const lon = parseFloat(item.lon);
-        const inOdishaBBox = lat >= 17.5 && lat <= 23.0 && lon >= 81.0 && lon <= 88.0;
-        return state.toLowerCase().includes('odisha') || inOdishaBBox;
+        const inBBox = lat >= minLatB && lat <= maxLatB && lon >= minLonB && lon <= maxLonB;
+        const name = (item.display_name || '').toLowerCase();
+        // Keep results inside district bbox that start with the query
+        return state.toLowerCase().includes('odisha') && inBBox && name.startsWith(queryLower);
       });
 
-      setSuggestions(odishaResults);
-      setShowSuggestions(odishaResults.length > 0);
+      setSuggestions(filteredResults);
+      setShowSuggestions(filteredResults.length > 0);
 
-      if (odishaResults.length === 0) {
+      if (filteredResults.length === 0) {
         setSearchError('No locations found within this area');
       }
     } catch (err: any) {
@@ -934,7 +946,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
       container: mapContainerRef.current,
       style: {
         version: 8,
-        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+        glyphs: 'https://basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
         sources: {},
         layers: [
           {
@@ -1413,7 +1425,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         </div>
       </div>
 
-      <section className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xl h-[700px] relative">
+      <section className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xl h-[700px] 2xl:h-[820px] relative">
         <div className="w-full h-full relative z-0">
           <div ref={mapContainerRef} className="w-full h-full" />
 
@@ -1436,7 +1448,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         </div>
 
         {/* Nominatim Search Box */}
-        <div className="absolute top-8 left-[350px] z-[70] w-80 hidden md:block">
+        <div className="absolute top-8 left-[350px] 2xl:left-[490px] z-[70] w-80 2xl:w-96 hidden md:block">
           <div className="relative bg-white/95 backdrop-blur-md rounded-xl border border-gray-200 shadow-xl p-2 flex items-center gap-2">
             <Search className="w-4 h-4 text-gray-400 shrink-0 ml-1" />
             <input
@@ -1582,14 +1594,14 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
               if (lower === 'rangeland') return '#DFC35A';
               if (lower.includes('water')) return '#419BDF';
               if (lower.includes('built')) return '#C4281B';
-              if (lower.includes('bare')) return '#A59B8F';
+              if (lower.includes('bare')) return '#ff00ccff';
               if (lower === 'vegetation') return '#397D49';
               return '#94a3b8';
             };
 
             return (
               <div
-                className="absolute top-8 right-8 z-[110] bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-2xl p-5 w-64 transition-all duration-300 overflow-y-auto custom-scrollbar"
+                className="absolute top-8 right-8 z-[110] bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 shadow-2xl p-5 w-64 2xl:w-80 transition-all duration-300 overflow-y-auto custom-scrollbar"
                 style={{ maxHeight: `calc(100% - ${timelineHeight + 100}px)` }}
               >
                 <div className="mb-4">
@@ -1680,7 +1692,7 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
           })()}
 
         <div
-          className={`absolute top-8 left-8 w-75 h-fit transition-all duration-300 text-gray-900 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 p-6 shadow-2xl z-[60] flex flex-col gap-6 overflow-y-auto custom-scrollbar`}
+          className={`absolute top-8 left-8 w-75 2xl:w-96 h-fit transition-all duration-300 text-gray-900 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 p-6 shadow-2xl z-[60] flex flex-col gap-6 overflow-y-auto custom-scrollbar`}
           style={{ maxHeight: `calc(100% - ${timelineHeight + 100}px)` }}
         >
           <div>

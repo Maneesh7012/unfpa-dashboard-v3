@@ -129,7 +129,7 @@ export const DISTRICT_NAME_VARIANTS: Record<string, string> = {
   Sambalpur: 'Sambalpur',
   Sonepur: 'Subarnapur',
   Sundargarh: 'Sundargarh',
-  Boudh: 'Boudh',
+  Baudh: 'Boudh',
 };
 
 export const DISTRICT_BOUNDS: Record<string, { minx: number; miny: number; maxx: number; maxy: number }> = {
@@ -168,15 +168,15 @@ export const DISTRICT_BOUNDS: Record<string, { minx: number; miny: number; maxx:
 export const getDistrictBounds = (name: string): [[number, number], [number, number]] | null => {
   if (!name) return null;
   const cleanName = name.trim();
-  
+
   // Try direct lookup case-insensitively
   let key = Object.keys(DISTRICT_BOUNDS).find(k => k.toLowerCase() === cleanName.toLowerCase());
-  
+
   if (!key) {
     // Try variant mapping from DISTRICT_NAME_VARIANTS (e.g. Baleshwar vs Balasore, Sonepur vs Subarnapur)
     const normalized = DISTRICT_NAME_VARIANTS[cleanName] || cleanName;
     key = Object.keys(DISTRICT_BOUNDS).find(k => k.toLowerCase() === normalized.toLowerCase());
-    
+
     // Try reverse variant mapping
     if (!key) {
       const revVariant = Object.keys(DISTRICT_NAME_VARIANTS).find(k => DISTRICT_NAME_VARIANTS[k] === cleanName);
@@ -185,7 +185,7 @@ export const getDistrictBounds = (name: string): [[number, number], [number, num
       }
     }
   }
-  
+
   if (key) {
     const b = DISTRICT_BOUNDS[key];
     return [[b.minx, b.miny], [b.maxx, b.maxy]];
