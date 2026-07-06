@@ -73,7 +73,7 @@ const SUBDISTRICT_URL =
 
 // Static scales for map legends — district-level vs subdistrict-level ranges differ significantly
 export const LAYER_SCALES: Record<string, number[]> = {
-  density: [0, 200, 400, 800, 2000],
+  density: [0, 200, 400, 800],
   pop: [0, 500000, 1000000, 2000000, 4000000],
   deg_urbanisation: [0, 100, 250, 500, 1000],
   growth: [-2, 0, 1.2, 2.5, 5.0],
@@ -1271,7 +1271,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       const districtColorExp =
         activeLayer === 'deg_urbanisation'
           ? '#D3D3D3'
-          : activeLayer === 'pop'
+          : (activeLayer === 'pop' || activeLayer === 'density')
             ? [
               'step',
               ['coalesce', ['get', propName], valueMatch],

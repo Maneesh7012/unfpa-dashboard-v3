@@ -1137,12 +1137,21 @@ export const MapSection: React.FC<MapSectionProps> = ({
                         : '';
 
                 let labels: string[] = [];
+                const isDistrictDensity = activeLayer === 'density' && !showSubdistrict;
+
                 if (activeLayer === 'pop') {
                   labels = [
                     `${formatNum(steps[0])} to <${formatNum(steps[1])}`,
                     `${formatNum(steps[1])} to <${formatNum(steps[2])}`,
                     `${formatNum(steps[2])} to <${formatNum(steps[3])}`,
                     `${formatNum(steps[3])} to <${formatNum(steps[4])}`
+                  ];
+                } else if (isDistrictDensity) {
+                  labels = [
+                    `${formatNum(steps[0])} - ${formatNum(steps[1])} ${unit}`,
+                    `${formatNum(steps[1])} - ${formatNum(steps[2])} ${unit}`,
+                    `${formatNum(steps[2])} - ${formatNum(steps[3])} ${unit}`,
+                    `> ${formatNum(steps[3])} ${unit}`,
                   ];
                 } else {
                   labels = [
@@ -1169,7 +1178,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                           </span>
                         </div>
                       ) : (
-                        (activeLayer === 'pop' ? [
+                        (activeLayer === 'pop' || isDistrictDensity ? [
                           { color: '#f0f9e8', label: labels[0] },
                           { color: '#bae4bc', label: labels[1] },
                           { color: '#7bccc4', label: labels[2] },
@@ -1582,111 +1591,6 @@ export const MapSection: React.FC<MapSectionProps> = ({
                 );
               })()}
 
-              {/* <div className="grid grid-cols-2 gap-4"> */}
-              {/* Population Density Card */}
-              {/* <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 hover:bg-blue-50 hover:border-blue-200 transition-all group/stat flex flex-col justify-between">
-                                    <p className="text-[10px] uppercase font-bold text-[#3B82F6] mb-1 tracking-wide opacity-70">Pop. Density</p>
-                                    <p className="text-xl font-bold text-gray-900 group-hover/stat:scale-105 transition-transform origin-left">{DEMOGRAPHIC_STATS[stats.name === 'All Districts' ? 'Odisha' : stats.name]?.density || "—"}</p>
-                                </div> */}
-
-              {/* Sex Ratio Card */}
-              {/* <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100/50 hover:bg-gray-50 hover:border-gray-200 transition-all group/stat flex flex-col justify-between">
-                                    <p className="text-[10px] uppercase font-bold text-gray-500 mb-1 tracking-wide opacity-70">Sex Ratio</p>
-                                    <p className="text-xl font-bold text-gray-900 group-hover/stat:scale-105 transition-transform origin-left">{DEMOGRAPHIC_STATS[stats.name === 'All Districts' ? 'Odisha' : stats.name]?.sexRatio || "—"}</p>
-                                </div> */}
-              {/* </div> */}
-
-              {/* Yearly Trend Chart */}
-              {/* <div className="bg-white p-1 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                                <div className="flex justify-between items-start mb-4">
-                                    <h4 className="text-[12px] font-bold text-gray-700 uppercase tracking-wide"></h4>
-                                </div>
-                                <div className="w-full">
-                                    {(() => {
-                                        const getTrendData = () => {
-                                            const isAllDistricts = selectedDistrictName === 'All Districts' || selectedDistrictName === 'Odisha';
-                                            if (isAllDistricts) {
-                                                return [
-                                                    { year: 2012, value: 41000000 }, { year: 2013, value: 41500000 },
-                                                    { year: 2014, value: 42000000 }, { year: 2015, value: 42500000 },
-                                                    { year: 2016, value: 43000000 }, { year: 2017, value: 43500000 },
-                                                    { year: 2018, value: 44000000 }, { year: 2019, value: 44500000 },
-                                                    { year: 2020, value: 45000000 }, { year: 2021, value: 45500000 },
-                                                    { year: 2022, value: 46000000 }, { year: 2023, value: 46500000 },
-                                                    { year: 2024, value: 47000000 }, { year: 2025, value: 47500000 }
-                                                ];
-                                            }
-
-                                            if (!allDistrictsData || allDistrictsData.length === 0) return [];
-
-                                            const first = allDistrictsData[0];
-                                            const years = Object.keys(first)
-                                                .filter(k => /^pop_\d{4}_sum$/.test(k))
-                                                .map(k => parseInt(k.split('_')[1]))
-                                                .sort((a, b) => a - b);
-
-                                            return years.map(year => {
-                                                const key = `pop_${year}_sum`;
-                                                let value = 0;
-
-                                                const d = districtData || allDistrictsData.find(d => {
-                                                    const rawName = d.district_name || d.NAME || d.name;
-                                                    const name = DISTRICT_NAME_VARIANTS[rawName] || rawName;
-                                                    return name === selectedDistrictName;
-                                                });
-
-                                                if (d) {
-                                                    const val = d[key];
-                                                    value = typeof val === 'string' ? parseFloat(val) : (val || 0);
-                                                }
-
-                                                return { year, value };
-                                            });
-                                        };
-
-                                        const data = getTrendData();
-
-                                        if (data.length === 0) return <div className="flex items-center justify-center h-full text-xs text-gray-400">No trend data available</div>;
-
-                                        return (
-                                            <ResponsiveContainer width="100%" height={120}>
-                                                <AreaChart data={data} margin={{ top: 15, right: 20, left: 20, bottom: 15 }}>
-                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                                                    <XAxis
-                                                        dataKey="year"
-                                                        tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 600 }}
-                                                        tickLine={false}
-                                                        axisLine={{ stroke: '#f3f4f6' }}
-                                                        dy={10}
-                                                        padding={{ left: 10, right: 10 }}
-                                                    />
-                                                    <RechartsTooltip
-                                                        cursor={{ stroke: '#f3f4f6', strokeWidth: 2 }}
-                                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', padding: '8px 12px' }}
-                                                        labelStyle={{ fontSize: '10px', fontWeight: 'bold', color: '#6b7280', marginBottom: '4px' }}
-                                                        itemStyle={{ fontSize: '12px', fontWeight: 'bold', padding: 0 }}
-                                                        formatter={(value: any) => [
-                                                            value >= 1000000 ? `${(value / 1000000).toFixed(2)}M` : value.toLocaleString(),
-                                                            'Population'
-                                                        ]}
-                                                    />
-                                                    <Area
-                                                        type="monotone"
-                                                        dataKey="value"
-                                                        stroke="#F58220"
-                                                        strokeWidth={2}
-                                                        fill="#F58220"
-                                                        fillOpacity={0.2}
-                                                        dot={false}
-                                                        activeDot={{ r: 5, strokeWidth: 0, fill: '#F58220' }}
-                                                    />
-                                                </AreaChart>
-                                            </ResponsiveContainer>
-                                        );
-                                    })()}
-                                </div>
-                            </div> */}
-
               {/* Gender Distribution Chart */}
               {isCensusSource && (
                 <div className="bg-white p-5 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all relative">
@@ -1794,12 +1698,12 @@ export const MapSection: React.FC<MapSectionProps> = ({
                     <div className="w-full h-70">
                       {(() => {
                         const data = ageDistributionData;
-                        const maxVal = Math.max(
-                          1,
-                          ...data.map((d) =>
-                            Math.max(Math.abs(d.male), d.female),
-                          ),
-                        );
+                        // const maxVal = Math.max(
+                        //   1,
+                        //   ...data.map((d) =>
+                        //     Math.max(Math.abs(d.male), d.female),
+                        //   ),
+                        // );
 
                         return (
                           <ResponsiveContainer width="100%" height="100%">
@@ -1892,52 +1796,12 @@ export const MapSection: React.FC<MapSectionProps> = ({
                   </div>
                 )}
 
-              {/* Commented out original individual cards
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 hover:bg-blue-50 hover:border-blue-200 transition-all group/stat">
-                                    <p className="text-[10px] uppercase font-bold text-[#3B82F6] mb-1 tracking-wide opacity-70">Literacy</p>
-                                    <p className="text-xl font-bold text-gray-900 group-hover/stat:scale-105 transition-transform origin-left">{formatStatValue(stats.literacy)}</p>
-                                </div>
-                                <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100/50 hover:bg-gray-50 hover:border-gray-200 transition-all group/stat">
-                                    <p className="text-[10px] uppercase font-bold text-gray-500 mb-1 tracking-wide opacity-70">Male</p>
-                                    <p className="text-xl font-bold text-gray-900 group-hover/stat:scale-105 transition-transform origin-left">{formatStatValue(stats.male)}</p>
-                                </div>
-                                <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100/50 hover:bg-gray-50 hover:border-gray-200 transition-all group/stat">
-                                    <p className="text-[10px] uppercase font-bold text-gray-500 mb-1 tracking-wide opacity-70">Female</p>
-                                    <p className="text-xl font-bold text-gray-900 group-hover/stat:scale-105 transition-transform origin-left">{formatStatValue(stats.female)}</p>
-                                </div>
-                            </div>
-                            */}
-
-              {/* Trends/Population charts commented out per original */}
             </div>
-            {/* {selectedDistrictName && selectedDistrictName !== 'All Districts' && selectedDistrictName !== 'Odisha' && (
-              <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex gap-2 shrink-0">
-                <button
-                  onClick={() => {
-                    const districtQuery = selectedDistrictName === 'All Districts' ? 'Odisha' : selectedDistrictName;
-                    window.open(`/odisha/report?district=${encodeURIComponent(districtQuery)}`, '_blank');
-                  }}
-                  className="w-full py-2.5 px-4 bg-[#F96000] hover:bg-[#E05300] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <ArrowUpRight className="w-4 h-4" />
-                  Export Report (PDF)
-                </button>
-              </div>
-            )} */}
           </div>
         </div>
 
       </div>
 
-      {/* Scroll Indication Animation */}
-      {/* {showScrollHint && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-bounce pointer-events-none">
-          <div className="text-black p-2 w-10 h-10 flex items-center justify-center">
-            <ChevronsDown className="w-5 h-5" />
-          </div>
-        </div>
-      )} */}
 
       {showScrollHint && (
         <motion.div

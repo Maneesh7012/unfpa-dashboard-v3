@@ -78,6 +78,7 @@ import {
   MODEL_DATA,
   MODEL_URBAN_RURAL_DATA,
 } from '../../data/modelStats';
+import { DISTRICT_DEVELOPMENT } from '../../data/districtDevelopment';
 import type { LayerType } from '../../../types';
 // import MapLulc from './MapLulc';
 // import { ChangeAnalysis } from './ChangeAnalysis';
@@ -130,6 +131,13 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     'Khordha',
   ]);
   const [openDistrictSelector, setOpenDistrictSelector] = useState(false);
+
+  // Per-district Development Activities & Insights content (falls back to
+  // Anugul for unmatched names, e.g. the 'Odisha' state view behind the blur).
+  const devContent =
+    (getRecord(DISTRICT_DEVELOPMENT, selectedDistrict) as
+      | (typeof DISTRICT_DEVELOPMENT)[string]
+      | undefined) || DISTRICT_DEVELOPMENT['Anugul'];
   const [projectionMode, setProjectionMode] = useState<
     'Model Only' | 'Model Vs Census Projection'
   >('Model Only');
@@ -1510,7 +1518,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                 {/* <InfoTooltip text="Overview of ongoing development activities." position="top" /> */}
               </h3>
               <p className="text-sm text-gray-500 mt-1 font-medium">
-                Core developments in Anugul
+                Core developments in {selectedDistrict}
               </p>
             </div>
           </div>
@@ -1543,72 +1551,19 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                                     display: none;
                                 }
                             `}</style>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Coal‑ and power‑led industrialisation deepening
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  Talcher hosts India’s largest power‑grade coalfield, with an
-                  estimated 168,000 workers in Anugul dependent on coal; studies
-                  suggest production will peak within the next decade then
-                  decline after 2040.
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Major upgrades in road and rail logistics
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  The four‑laning of NH‑55 via Anugul is nearing completion
-                  stretches already operational.{' '}
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Anugul railway station becoming a modern hub
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  Anugul station is being redeveloped under the Amrit Bharat /
-                  Amrit Station Scheme with about ₹25.4 crore sanctioned, and
-                  over half the physical work done by 2025.{' '}
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Talcher coal rail corridors and new mines
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  The Talcher coalfield inner and outer rail corridors (₹4,882
-                  crore total) are being taken up to raise MCL’s coal dispatch
-                  by rail to about 88% (162.8 MT) by 2029–30, with Phase‑I
-                  already commissioned.{' '}
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Mahanadi Coal Railway Ltd Phase‑II (Balram–Jarpada–Tentuloi)
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  Phase‑II of the Mahanadi Coal Railway
-                  (Balram–Jarpada–Tentuloi, about 54 km) is targeted for
-                  commissioning by December 2025 and is designed to evacuate
-                  around 58 MT of coal annually from CIL and non‑CIL blocks in
-                  the southern and central Talcher coalfield.
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  New district‑level road and education projects
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  In July 2025, the Union education minister inaugurated 34
-                  projects worth about ₹44.9 crore and laid foundations for 19
-                  projects worth about ₹8.9 crore in Anugul, including key road
-                  improvements (Kosala–Chhendipada, NH‑55 to Patharagada) and
-                  upgrades to educational infrastructure, which will be
-                  implemented over the next few years.
-                </p>
-              </div>
+              {devContent.activities.map((card) => (
+                <div
+                  key={card.title}
+                  className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start"
+                >
+                  <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
+                    {card.title}
+                  </h4>
+                  <p className="text-sm text-[#F58220] leading-relaxed">
+                    {card.text}
+                  </p>
+                </div>
+              ))}
             </div>
           </section>
         </div>
@@ -1622,13 +1577,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                 {/* <InfoTooltip text="Key insights derived from the data." position="top" /> */}
               </h3>
               <p className="text-sm text-gray-500 mt-1 font-medium">
-                The demographic transformation of Anugul district from 2011 to
-                2024 presents a compelling narrative of industrial-driven
-                urbanization captured through advanced geospatial analysis. By
-                integrating satellite imagery and machine learning algorithms,
-                this study reveals critical insights into how industrialization
-                and urban growth has fundamentally reshaped the district's
-                population dynamics and spatial distribution.
+                {devContent.insightsIntro}
               </p>
             </div>
           </div>
@@ -1661,81 +1610,19 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                                     display: none;
                                 }
                             `}</style>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Industrial Expansion as the Primary Growth Catalyst
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  The coal mining sector has emerged as the dominant force
-                  driving Anugul's demographic evolution and has attracted
-                  substantial migration from other states and districts,
-                  creating concentrated population clusters around mining and
-                  industrial centers. The mining belt effect has fundamentally
-                  altered the district's economic structure, transforming Anugul
-                  from a predominantly agricultural region into one that
-                  continues to draw workers and their families seeking
-                  employment opportunities.
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Concentrated Urban Growth in Strategic Corridors
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  Spatial analysis reveals that urbanization has occurred in a
-                  highly concentrated pattern. The Anugul-Talcher region has
-                  expanded rapidly with s and nightlight data patterns
-                  increasing between 2011 and 2024. This concentrated growth
-                  pattern indicates that economic benefits and population
-                  increases have been geographically uneven, with some areas
-                  experiencing rapid transformation while rural peripheries
-                  remain comparatively underdeveloped.{' '}
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Significant Land Use Transformation and Agricultural Decline
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  The industrial expansion has necessitated substantial land use
-                  changes that have reshaped the district's physical landscape.
-                  As shown in the Agricultural land changes, increase in
-                  opencast mining activities and coalfield expansions. This
-                  dramatic shift of the district's economic base has direct
-                  implications for traditional livelihoods, food security, and
-                  the occupational profiles of the local population.
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Population Displacement and Resettlement Dynamics
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  Industrial and mining expansion has triggered significant
-                  population displacement, creating complex resettlement
-                  patterns across the district. Mining operations affect many
-                  families who then are forced to migrate and have their
-                  traditional community structures and agricultural livelihoods
-                  disrupted, requiring affected populations to adapt to new
-                  locations and often transition to non-agricultural employment
-                  in the industrial sector.{' '}
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Infrastructure Development Enabling Further Growth
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  The expansion of transportation networks and civic
-                  infrastructure has both facilitated and accelerated population
-                  growth in industrial centers. Improvements to National Highway
-                  55, development of new railway lines, and the launch of
-                  multiple development projects have enhanced connectivity
-                  across the district, making it easier to transport goods and
-                  people while encouraging the establishment of new settlements
-                  and small-scale industries around major corridors.
-                </p>
-              </div>
+              {devContent.insights.map((card) => (
+                <div
+                  key={card.title}
+                  className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start"
+                >
+                  <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
+                    {card.title}
+                  </h4>
+                  <p className="text-sm text-[#F58220] leading-relaxed">
+                    {card.text}
+                  </p>
+                </div>
+              ))}
             </div>
           </section>
         </div>
