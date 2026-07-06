@@ -1927,6 +1927,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
             )} */}
           </div>
         </div>
+
       </div>
 
       {/* Scroll Indication Animation */}

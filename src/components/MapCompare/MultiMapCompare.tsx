@@ -1083,7 +1083,7 @@ const MapItem = ({
             color.set([0, 0, 0, 255]); // #000000
           } else if (val <= 5) {
             color.set([72, 72, 93, 255]); // #48485D
-          } else if (val <= 30) {
+          } else if (val <= 10) {
             color.set([246, 234, 175, 255]); // #F6EAAF
           } else {
             color.set([254, 0, 0, 255]); // #FE0000

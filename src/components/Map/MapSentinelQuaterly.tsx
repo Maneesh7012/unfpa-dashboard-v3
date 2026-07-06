@@ -111,7 +111,7 @@ const LULC_RGBA: Record<number, number[]> = {
   4: [122, 135, 198, 255], // Flooded vegetation (#7A87C6)
   5: [228, 150, 53, 255], // Crops (#E49635)
   7: [196, 40, 27, 255], // Built (#C4281B)
-  8: [255, 0, 204, 1], // Bare (#A59B8F)
+  8: [0, 0, 0, 0], // Bare (Hidden)
   9: [240, 240, 240, 255], // Snow/Ice (#F0F0F0)
   10: [255, 255, 255, 255], // Clouds (#FFFFFF)
   11: [223, 195, 90, 255], // Rangeland (#DFC35A)
@@ -152,7 +152,6 @@ const UI_LULC_LEGEND = [
     key: 'vegetation',
   },
   LULC_LEGEND.find((c) => c.value === 7),
-  LULC_LEGEND.find((c) => c.value === 8),
 ].filter(Boolean) as any[];
 
 interface Quarter {
@@ -1278,6 +1277,10 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
         } else if (selectedLulcCategory === 'vegetation') {
           isVisible = [2, 4, 5, 11].includes(val); // Trees, Flooded Veg, Crops, Rangeland
         }
+        // Force Bare Ground (value 8) to be hidden
+        if (val === 8) {
+          isVisible = false;
+        }
         if (!isVisible) rgba[3] = 0;
         color.set(rgba);
       },
@@ -1562,12 +1565,11 @@ export const MapSentinelQuaterly: React.FC<MapSentinelQuaterlyProps> = ({
               1: ['Water'],
               vegetation: ['Trees', 'Flooded Vegetation', 'Crops', 'Rangeland'],
               7: ['Built Area'],
-              8: ['Bare Ground'],
             };
 
             const categories =
               selectedLulcCategory === 'all'
-                ? ['Water', 'Vegetation', 'Built Area', 'Bare Ground']
+                ? ['Water', 'Vegetation', 'Built Area']
                 : valueToCategory[selectedLulcCategory] || [];
 
             if (categories.length === 0) return null;
