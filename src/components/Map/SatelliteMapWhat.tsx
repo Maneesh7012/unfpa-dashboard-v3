@@ -109,7 +109,7 @@ export const SatelliteMapWhat: React.FC<SatelliteMapProps> = ({
   // Basemap style definitions
   const SATELLITE_STYLE = {
     version: 8,
-    glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+    glyphs: 'https://basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
     sources: {
       'esri-satellite': {
         type: 'raster',

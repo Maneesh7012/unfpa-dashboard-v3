@@ -41,6 +41,7 @@ import {
   CENSUS_PROJECTION_DATA,
   CENSUS_URBAN_RURAL_DATA,
   CENSUS_STATS_DATA,
+  getRecord,
 } from '../../data/comparativeData';
 import {
   MODEL_DATA,
@@ -301,6 +302,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [showSubdistrict, setShowSubdistrict] = useState(true);
   const [showScrollHint, setShowScrollHint] = useState(true);
+  const [customLegendSteps, setCustomLegendSteps] = useState<number[] | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -405,7 +407,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
       const name = DISTRICT_NAME_VARIANTS[districtName] || districtName;
       const nameForLookup = name === 'All Districts' ? 'Odisha' : name;
       const yearInt = parseInt(year);
-      const censusVal = CENSUS_PROJECTION_DATA[nameForLookup]?.[yearInt];
+      const censusVal = getRecord(CENSUS_PROJECTION_DATA, nameForLookup)?.[yearInt];
       if (censusVal !== undefined) {
         if (gender === 'Male') return censusVal * 0.5;
         if (gender === 'Female') return censusVal * 0.5;
@@ -425,7 +427,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
       const name = DISTRICT_NAME_VARIANTS[districtName] || districtName;
       const nameForLookup = name === 'All Districts' ? 'Odisha' : name;
       const yearInt = parseInt(year);
-      const modelVal = MODEL_DATA[nameForLookup]?.[yearInt];
+      const modelVal = getRecord(MODEL_DATA, nameForLookup)?.[yearInt];
       if (modelVal !== undefined && modelVal !== null) return modelVal;
     }
 
@@ -463,9 +465,10 @@ export const MapSection: React.FC<MapSectionProps> = ({
     }
 
     // Priority 3: Static GENDER data
-    if (gender !== 'sum' && GENDER[districtName]) {
+    const genderRecord = getRecord(GENDER, districtName);
+    if (gender !== 'sum' && genderRecord) {
       const key = gender === 'Male' ? `${year}_male` : `${year}_female`;
-      const staticVal = GENDER[districtName][key];
+      const staticVal = genderRecord[key];
       if (staticVal !== undefined) return staticVal;
     }
 
@@ -479,16 +482,16 @@ export const MapSection: React.FC<MapSectionProps> = ({
         ? selectedDistrictName
         : districtData
           ? districtData.district_name ||
-            districtData.NAME ||
-            districtData.name ||
-            'Selected Area'
+          districtData.NAME ||
+          districtData.name ||
+          'Selected Area'
           : 'All Districts';
     const name = DISTRICT_NAME_VARIANTS[dName] || dName;
     const yearSuffix = appliedFilters.year;
     const yearInt = parseInt(yearSuffix);
 
     const nameForLookup = name === 'All Districts' ? 'Odisha' : name;
-    const demo = DISTRICT_DEMOGRAPHICS[nameForLookup];
+    const demo = getRecord(DISTRICT_DEMOGRAPHICS, nameForLookup);
 
     const getPopDataForYear = (year: number) => {
       if (!demo) return null;
@@ -533,14 +536,15 @@ export const MapSection: React.FC<MapSectionProps> = ({
       ) as number;
 
       // Fallback to static demographics if missing model data
+      const nameDemoRecord = getRecord(DISTRICT_DEMOGRAPHICS, name);
       if (
         !modelMaleCount &&
         !modelFemaleCount &&
-        DISTRICT_DEMOGRAPHICS[name] &&
-        DISTRICT_DEMOGRAPHICS[name][yearInt]
+        nameDemoRecord &&
+        nameDemoRecord[yearInt]
       ) {
-        modelMaleCount = DISTRICT_DEMOGRAPHICS[name][yearInt].male;
-        modelFemaleCount = DISTRICT_DEMOGRAPHICS[name][yearInt].female;
+        modelMaleCount = nameDemoRecord[yearInt].male;
+        modelFemaleCount = nameDemoRecord[yearInt].female;
       } else {
         modelMaleCount = modelMaleCount || latestModelPop * 0.51;
         modelFemaleCount = modelFemaleCount || latestModelPop * 0.49;
@@ -559,7 +563,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
         districtData?.['area'] ||
         (nameForLookup === 'Odisha' ? 155707 : 5000);
       const censusStat =
-        CENSUS_STATS_DATA[nameForLookup]?.[appliedFilters.year];
+        getRecord(CENSUS_STATS_DATA, nameForLookup)?.[appliedFilters.year];
       let censusDensity = censusStat?.density;
 
       if (censusDensity === undefined && totalP > 0 && area > 0) {
@@ -594,8 +598,8 @@ export const MapSection: React.FC<MapSectionProps> = ({
       maleCount: formatNumber(mP),
       femaleCount: formatNumber(fP),
       density:
-        MODEL_STATS_DATA[nameForLookup]?.[yearSuffix]?.density.toString() ??
-        DEMOGRAPHIC_STATS['Odisha']?.[yearInt]?.density ??
+        getRecord(MODEL_STATS_DATA, nameForLookup)?.[yearSuffix]?.density.toString() ??
+        getRecord(DEMOGRAPHIC_STATS, 'Odisha')?.[yearInt]?.density ??
         '270',
     };
 
@@ -621,14 +625,15 @@ export const MapSection: React.FC<MapSectionProps> = ({
     let femalePop = femaleCount || latestPop * 0.49;
 
     // Explicitly set absolute male/female population figures for baseline display if pmtiles is missing
+    const statsDemoRecord = getRecord(DISTRICT_DEMOGRAPHICS, name);
     if (
       !maleCount &&
       !femaleCount &&
-      DISTRICT_DEMOGRAPHICS[name] &&
-      DISTRICT_DEMOGRAPHICS[name][yearInt]
+      statsDemoRecord &&
+      statsDemoRecord[yearInt]
     ) {
-      malePop = DISTRICT_DEMOGRAPHICS[name][yearInt].male;
-      femalePop = DISTRICT_DEMOGRAPHICS[name][yearInt].female;
+      malePop = statsDemoRecord[yearInt].male;
+      femalePop = statsDemoRecord[yearInt].female;
       // Update the total population implicitly to match the sum of exact demographic points
       if (!getPopForYear(name, yearSuffix, 'sum')) {
         latestPop = malePop + femalePop;
@@ -643,7 +648,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
     let densityValue: string | number = '—';
 
     if (!isCensusSource) {
-      const modelStat = MODEL_STATS_DATA[name]?.[yearSuffix];
+      const modelStat = getRecord(MODEL_STATS_DATA, name)?.[yearSuffix];
       if (modelStat?.density !== undefined) {
         densityValue = modelStat.density;
       }
@@ -661,13 +666,12 @@ export const MapSection: React.FC<MapSectionProps> = ({
     }
 
     // Fallback or Odisha default
+    const demoStatRecord = getRecord(DEMOGRAPHIC_STATS, name === 'All Districts' ? 'Odisha' : name);
     if (
       densityValue === '—' &&
-      DEMOGRAPHIC_STATS[name === 'All Districts' ? 'Odisha' : name]?.[yearInt]
+      demoStatRecord?.[yearInt]
     ) {
-      densityValue =
-        DEMOGRAPHIC_STATS[name === 'All Districts' ? 'Odisha' : name][yearInt]
-          .density;
+      densityValue = demoStatRecord[yearInt].density;
     }
 
     return {
@@ -715,12 +719,12 @@ export const MapSection: React.FC<MapSectionProps> = ({
   };
 
   return (
-    <div className="flex flex-col bg-[#F8FAFC] mx-auto py-14 space-y-12">
+    <div className="flex flex-col bg-[#F8FAFC] mx-auto py-14 2xl:py-[56px] space-y-12">
       {/* BOTTOM SECTION: CONTENT AREA */}
       <div className="flex-1">
-        <div className="w-full mx-auto px-4 lg:px-6 flex flex-col lg:flex-row gap-4">
+        <div className="w-full mx-auto px-4 lg:px-6 2xl:px-[24px] flex flex-col lg:flex-row gap-4 pt-10 pb-10">
           {/* ----------------- CENTER: MAP AREA ----------------- */}
-          <div className="w-full h-112.5 lg:flex-1 relative overflow-hidden lg:h-[80vh] bg-white rounded-lg shadow-sm border border-gray-100 group">
+          <div className="w-full h-112.5 lg:flex-1 relative overflow-hidden lg:h-[80vh] 2xl:h-[84vh] bg-white rounded-lg shadow-sm border border-gray-100 group">
             <MapComponent
               activeLayer={appliedFilters.layer}
               selectedYear={appliedFilters.year}
@@ -728,6 +732,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
               region={appliedFilters.region}
               targetDistrict={appliedFilters.district}
               showSubdistrict={showSubdistrict}
+              onLegendStepsUpdate={setCustomLegendSteps}
               onResetClick={() => {
                 setDistrictData(null);
                 setSelectedDistrictName('All Districts');
@@ -757,7 +762,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
             <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#000000_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.03] group-hover:opacity-[0.05] transition-opacity"></div>
 
             {/* Floating Control Panel (Top Left) */}
-            <div className="absolute top-5 bottom-5 left-5 z-60 bg-white/90 backdrop-blur-md rounded-lg shadow-sm border border-gray-100 w-[260px] max-w-[calc(100%-40px)] transition-all hover:shadow-md flex flex-col overflow-hidden">
+            <div className="absolute top-5 bottom-5 left-5 z-60 bg-white/90 backdrop-blur-md rounded-lg shadow-sm border border-gray-100 w-[260px] 2xl:w-[320px] max-w-[calc(100%-40px)] transition-all hover:shadow-md flex flex-col overflow-hidden">
               <style
                 dangerouslySetInnerHTML={{
                   __html: `
@@ -1068,10 +1073,10 @@ export const MapSection: React.FC<MapSectionProps> = ({
                 </div>
 
                 {/* Divider */}
-                <div className="w-full mx-auto h-px bg-gray-200 shrink-0"></div>
+                {/* <div className="w-full mx-auto h-px bg-gray-200 shrink-0"></div> */}
 
                 <div
-                  className={`w-full ${activeLayer === 'deg_urbanisation' ? 'opacity-50 pointer-events-none grayscale-[0.5]' : ''}`}
+                  className={`hidden w-full ${activeLayer === 'deg_urbanisation' ? 'opacity-50 pointer-events-none grayscale-[0.5]' : ''}`}
                 >
                   <span className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-70 block">
                     Gender
@@ -1081,15 +1086,14 @@ export const MapSection: React.FC<MapSectionProps> = ({
                       <button
                         key={g}
                         onClick={() => setSelectedGender(g)}
-                        className={`px-3 py-1 text-[12px] font-bold rounded-md tracking-wide transition-all ${
-                          selectedGender === g
-                            ? g === 'Male'
-                              ? 'bg-[#F96000] text-[#ffffff]'
-                              : g === 'Female'
-                                ? 'bg-[#F96000] text-[#ffffff] '
-                                : 'bg-[#F96000] text-[#ffffff] ' // Default/All
-                            : 'bg-gray-100 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-whit'
-                        }`}
+                        className={`px-3 py-1 text-[12px] font-bold rounded-md tracking-wide transition-all ${selectedGender === g
+                          ? g === 'Male'
+                            ? 'bg-[#F96000] text-[#ffffff]'
+                            : g === 'Female'
+                              ? 'bg-[#F96000] text-[#ffffff] '
+                              : 'bg-[#F96000] text-[#ffffff] ' // Default/All
+                          : 'bg-gray-100 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-whit'
+                          }`}
                       >
                         {g}
                       </button>
@@ -1101,14 +1105,25 @@ export const MapSection: React.FC<MapSectionProps> = ({
 
               {/* Sticky Legend (Bottom) */}
               {(() => {
-                const steps = LAYER_SCALES[activeLayer ?? ''] ?? [
-                  0, 25, 50, 75, 100,
-                ];
+                const steps = customLegendSteps
+                  ? customLegendSteps
+                  : (showSubdistrict && LAYER_SCALES[`sub_${activeLayer}`])
+                    ? LAYER_SCALES[`sub_${activeLayer}`]
+                    : (LAYER_SCALES[activeLayer ?? ''] ?? [0, 25, 50, 75, 100]);
 
                 const formatNum = (v: number) => {
-                  if (Math.abs(v) >= 1000000)
-                    return (v / 1000000).toFixed(2) + 'M';
-                  if (Math.abs(v) >= 1000) return (v / 1000).toFixed(0) + 'k';
+                  if (Math.abs(v) >= 1000000) {
+                    const formatted = (v / 1000000).toFixed(2);
+                    return formatted.endsWith('.00')
+                      ? formatted.slice(0, -3) + 'M'
+                      : formatted.endsWith('0')
+                        ? formatted.slice(0, -1) + 'M'
+                        : formatted + 'M';
+                  }
+                  if (Math.abs(v) >= 1000) {
+                    const kVal = v / 1000;
+                    return kVal % 1 === 0 ? kVal.toFixed(0) + 'K' : kVal.toFixed(1) + 'K';
+                  }
                   return Math.round(v).toString();
                 };
 
@@ -1121,42 +1136,66 @@ export const MapSection: React.FC<MapSectionProps> = ({
                         ? ' sq.km'
                         : '';
 
-                const labels = [
-                  `${formatNum(steps[0])} - ${formatNum(steps[1])} ${unit}`,
-                  `${formatNum(steps[1])} - ${formatNum(steps[2])} ${unit}`,
-                  `${formatNum(steps[2])} - ${formatNum(steps[3])} ${unit}`,
-                  `${formatNum(steps[3])} - ${formatNum(steps[4])} ${unit}`,
-                  `> ${formatNum(steps[4])} ${unit}`,
-                ];
+                let labels: string[] = [];
+                const isDistrictDensity = activeLayer === 'density' && !showSubdistrict;
+
+                if (activeLayer === 'pop') {
+                  labels = [
+                    `${formatNum(steps[0])} to <${formatNum(steps[1])}`,
+                    `${formatNum(steps[1])} to <${formatNum(steps[2])}`,
+                    `${formatNum(steps[2])} to <${formatNum(steps[3])}`,
+                    `${formatNum(steps[3])} to <${formatNum(steps[4])}`
+                  ];
+                } else if (isDistrictDensity) {
+                  labels = [
+                    `${formatNum(steps[0])} - ${formatNum(steps[1])} ${unit}`,
+                    `${formatNum(steps[1])} - ${formatNum(steps[2])} ${unit}`,
+                    `${formatNum(steps[2])} - ${formatNum(steps[3])} ${unit}`,
+                    `> ${formatNum(steps[3])} ${unit}`,
+                  ];
+                } else {
+                  labels = [
+                    `${formatNum(steps[0])} - ${formatNum(steps[1])} ${unit}`,
+                    `${formatNum(steps[1])} - ${formatNum(steps[2])} ${unit}`,
+                    `${formatNum(steps[2])} - ${formatNum(steps[3])} ${unit}`,
+                    `${formatNum(steps[3])} - ${formatNum(steps[4])} ${unit}`,
+                    `> ${formatNum(steps[4])} ${unit}`,
+                  ];
+                }
 
                 return (
-                  <div className="p-4 sticky bottom-0 bg-white/90 backdrop-blur-md z-[70] shrink-0 border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(255,255,255,0.9)]">
-                    <h4 className="text-[10px] font-bold text-gray-500 uppercase mb-2 tracking-wide">
+                  <div className="p-3 2xl:p-4 sticky bottom-0 bg-white/90 backdrop-blur-md z-[70] shrink-0 border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(255,255,255,0.9)]">
+                    <h4 className="text-[10px] 2xl:text-[12px] font-bold text-gray-500 uppercase mb-1.5 2xl:mb-2 tracking-wide">
                       {layers.find((l) => l.id === activeLayer)?.label ||
                         'Legend'}
                     </h4>
-                    <div className="flex flex-col gap-1.5 font-semibold">
+                    <div className="flex flex-col gap-1 2xl:gap-1.5 font-semibold">
                       {activeLayer === 'deg_urbanisation' ? (
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-6 h-3 rounded-full bg-[#D3D3D3]"></div>
-                          <span className="text-[11px] text-gray-800 font-medium tracking-wide">
+                        <div className="flex items-center gap-2.5 2xl:gap-3">
+                          <div className="w-6 h-3 2xl:w-8 2xl:h-4 rounded-full bg-[#D3D3D3]"></div>
+                          <span className="text-[10px] 2xl:text-[12px] text-gray-800 font-medium tracking-wide">
                             Urbanisation Distribution
                           </span>
                         </div>
                       ) : (
-                        [
+                        (activeLayer === 'pop' || isDistrictDensity ? [
+                          { color: '#f0f9e8', label: labels[0] },
+                          { color: '#bae4bc', label: labels[1] },
+                          { color: '#7bccc4', label: labels[2] },
+                          { color: '#0868ac', label: labels[3] },
+                        ] : [
                           { color: '#f0f9e8', label: labels[0] },
                           { color: '#bae4bc', label: labels[1] },
                           { color: '#7bccc4', label: labels[2] },
                           { color: '#43a2ca', label: labels[3] },
                           { color: '#0868ac', label: labels[4] },
-                        ].map((item, id) => (
-                          <div key={id} className="flex items-center gap-2.5">
+                        ]).map((item, id) => (
+                          <div key={id} className="flex items-center gap-2.5 2xl:gap-3">
                             <div
-                              className="w-6 h-3 rounded-full"
+                              className="w-6 h-3 2xl:w-8 2xl:h-4 rounded-full shrink-0"
                               style={{ backgroundColor: item.color }}
                             ></div>
-                            <span className="text-[11px] text-gray-800 font-medium tracking-wide">
+                            <span className="text-[10px] 2xl:text-[12px] text-gray-800 font-medium tracking-wide">
                               {item.label}
                             </span>
                           </div>
@@ -1170,7 +1209,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
           </div>
 
           {/* ----------------- RIGHT SIDEBAR: DETAILS ----------------- */}
-          <div className="w-full lg:w-80 h-auto lg:h-[80vh] bg-white border border-gray-100 rounded-lg flex flex-col z-20 shadow-sm transition-all hover:shadow-md relative">
+          <div className="w-full lg:w-80 2xl:w-[420px] h-auto lg:h-[80vh] 2xl:h-[84vh] bg-white border border-gray-100 rounded-lg flex flex-col z-20 shadow-sm transition-all hover:shadow-md relative">
             <div className="p-6 border-b border-gray-100 flex flex-col items-start bg-gray-50/30">
               <div className="flex justify-between w-full">
                 {/* Left Side */}
@@ -1279,11 +1318,11 @@ export const MapSection: React.FC<MapSectionProps> = ({
                   if (isCensusSource) {
                     const censusStat =
                       CENSUS_STATS_DATA[districtNameForStats]?.[
-                        selectedYear.toString()
+                      selectedYear.toString()
                       ];
                     growth =
                       censusStat?.growth !== null &&
-                      censusStat?.growth !== undefined
+                        censusStat?.growth !== undefined
                         ? censusStat.growth
                         : 1.25;
                   } else if (popCurr && popPrev && popPrev !== 0) {
@@ -1291,7 +1330,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                   } else {
                     // Fallback to DEMOGRAPHIC_STATS if specific year data is missing
                     const statRecord =
-                      DEMOGRAPHIC_STATS[districtNameForStats]?.[selectedYear];
+                      getRecord(DEMOGRAPHIC_STATS, districtNameForStats)?.[selectedYear];
                     growth = statRecord?.pop_total_growth || 0;
                   }
 
@@ -1355,7 +1394,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                     <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">
                       Pop. Density
                       <InfoTooltip
-                        text="Average number of people per square kilometer of land area."
+                        text="Population divided by the official Census 2011 land area (persons/km²)."
                         source={tooltipSource}
                       />
                     </span>
@@ -1381,7 +1420,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                             if (isCensusSource) {
                               const censusStat =
                                 CENSUS_STATS_DATA[dName]?.[
-                                  currentYear.toString()
+                                currentYear.toString()
                                 ];
                               if (censusStat?.growth === null)
                                 growthValue = '—';
@@ -1394,7 +1433,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                             if (!isCensusSource && growthValue === null) {
                               const modelStat =
                                 MODEL_STATS_DATA[dName]?.[
-                                  currentYear.toString()
+                                currentYear.toString()
                                 ];
                               if (modelStat?.growth === null) growthValue = '—';
                               else if (modelStat?.growth !== undefined) {
@@ -1429,7 +1468,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
 
                               if (val === undefined || val === null) {
                                 val =
-                                  DEMOGRAPHIC_STATS[dName]?.[currentYear]
+                                  getRecord(DEMOGRAPHIC_STATS, dName)?.[currentYear]
                                     ?.growth;
                               }
                               growthValue =
@@ -1459,7 +1498,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                         (vs. {parseInt(appliedFilters.year) - 1})
                       </span>
                       <InfoTooltip
-                        text="Annual percentage change in population size compared to the previous year."
+                        text="Annual percentage change (null for 2011 base year)."
                         source={tooltipSource}
                       />
                     </span>
@@ -1473,37 +1512,36 @@ export const MapSection: React.FC<MapSectionProps> = ({
                   selectedDistrictName === 'All Districts' ||
                   selectedDistrictName === 'Odisha';
                 const currentName = isAllDistricts ? 'Odisha' : stats.name;
-                const demographicData =
-                  DEMOGRAPHIC_STATS[currentName]?.[
-                    parseInt(appliedFilters.year)
-                  ];
+                const demographicData = getRecord(DEMOGRAPHIC_STATS, currentName)?.[
+                  parseInt(appliedFilters.year)
+                ];
+                const modelUrbanData = getRecord(MODEL_URBAN_RURAL_DATA, currentName)?.[appliedFilters.year];
                 if (
                   !isCensusSource &&
-                  (!demographicData || !demographicData.urban)
+                  (!demographicData || !demographicData.urban) &&
+                  (!modelUrbanData || !modelUrbanData.urban)
                 )
                   return null;
 
                 const urbanData = isCensusSource
-                  ? CENSUS_URBAN_RURAL_DATA[currentName]?.[appliedFilters.year]
+                  ? getRecord(CENSUS_URBAN_RURAL_DATA, currentName)?.[appliedFilters.year]
                   : null;
                 const urban = isCensusSource
                   ? urbanData?.urban ||
-                    0.6 *
-                      (getPopForYear(
-                        currentName,
-                        appliedFilters.year,
-                      ) as number)
-                  : (MODEL_URBAN_RURAL_DATA[currentName]?.[appliedFilters.year]
-                      ?.urban ?? demographicData.urban);
+                  0.6 *
+                  (getPopForYear(
+                    currentName,
+                    appliedFilters.year,
+                  ) as number)
+                  : (modelUrbanData?.urban ?? demographicData.urban);
                 const rural = isCensusSource
                   ? urbanData?.rural ||
-                    0.4 *
-                      (getPopForYear(
-                        currentName,
-                        appliedFilters.year,
-                      ) as number)
-                  : (MODEL_URBAN_RURAL_DATA[currentName]?.[appliedFilters.year]
-                      ?.rural ?? demographicData.rural);
+                  0.4 *
+                  (getPopForYear(
+                    currentName,
+                    appliedFilters.year,
+                  ) as number)
+                  : (modelUrbanData?.rural ?? demographicData.rural);
                 const total = urban + rural;
                 const urbanPercent = Math.round((urban / total) * 100);
                 const ruralPercent = 100 - urbanPercent;
@@ -1522,7 +1560,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                         Rural
                       </span>
                       <InfoTooltip
-                        text="Distribution of people living in urban centers versus rural localities."
+                        text="Population living in urban and rural areas. Classification follows the United Nations-endorsed Degree of Urbanisation (DEGURBA) methodology, which defines urban areas based on population density and settlement size. Areas outside these settlements are classified as rural."
                         source={tooltipSource}
                       />
                     </div>
@@ -1552,111 +1590,6 @@ export const MapSection: React.FC<MapSectionProps> = ({
                   </div>
                 );
               })()}
-
-              {/* <div className="grid grid-cols-2 gap-4"> */}
-              {/* Population Density Card */}
-              {/* <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 hover:bg-blue-50 hover:border-blue-200 transition-all group/stat flex flex-col justify-between">
-                                    <p className="text-[10px] uppercase font-bold text-[#3B82F6] mb-1 tracking-wide opacity-70">Pop. Density</p>
-                                    <p className="text-xl font-bold text-gray-900 group-hover/stat:scale-105 transition-transform origin-left">{DEMOGRAPHIC_STATS[stats.name === 'All Districts' ? 'Odisha' : stats.name]?.density || "—"}</p>
-                                </div> */}
-
-              {/* Sex Ratio Card */}
-              {/* <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100/50 hover:bg-gray-50 hover:border-gray-200 transition-all group/stat flex flex-col justify-between">
-                                    <p className="text-[10px] uppercase font-bold text-gray-500 mb-1 tracking-wide opacity-70">Sex Ratio</p>
-                                    <p className="text-xl font-bold text-gray-900 group-hover/stat:scale-105 transition-transform origin-left">{DEMOGRAPHIC_STATS[stats.name === 'All Districts' ? 'Odisha' : stats.name]?.sexRatio || "—"}</p>
-                                </div> */}
-              {/* </div> */}
-
-              {/* Yearly Trend Chart */}
-              {/* <div className="bg-white p-1 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                                <div className="flex justify-between items-start mb-4">
-                                    <h4 className="text-[12px] font-bold text-gray-700 uppercase tracking-wide"></h4>
-                                </div>
-                                <div className="w-full">
-                                    {(() => {
-                                        const getTrendData = () => {
-                                            const isAllDistricts = selectedDistrictName === 'All Districts' || selectedDistrictName === 'Odisha';
-                                            if (isAllDistricts) {
-                                                return [
-                                                    { year: 2012, value: 41000000 }, { year: 2013, value: 41500000 },
-                                                    { year: 2014, value: 42000000 }, { year: 2015, value: 42500000 },
-                                                    { year: 2016, value: 43000000 }, { year: 2017, value: 43500000 },
-                                                    { year: 2018, value: 44000000 }, { year: 2019, value: 44500000 },
-                                                    { year: 2020, value: 45000000 }, { year: 2021, value: 45500000 },
-                                                    { year: 2022, value: 46000000 }, { year: 2023, value: 46500000 },
-                                                    { year: 2024, value: 47000000 }, { year: 2025, value: 47500000 }
-                                                ];
-                                            }
-
-                                            if (!allDistrictsData || allDistrictsData.length === 0) return [];
-
-                                            const first = allDistrictsData[0];
-                                            const years = Object.keys(first)
-                                                .filter(k => /^pop_\d{4}_sum$/.test(k))
-                                                .map(k => parseInt(k.split('_')[1]))
-                                                .sort((a, b) => a - b);
-
-                                            return years.map(year => {
-                                                const key = `pop_${year}_sum`;
-                                                let value = 0;
-
-                                                const d = districtData || allDistrictsData.find(d => {
-                                                    const rawName = d.district_name || d.NAME || d.name;
-                                                    const name = DISTRICT_NAME_VARIANTS[rawName] || rawName;
-                                                    return name === selectedDistrictName;
-                                                });
-
-                                                if (d) {
-                                                    const val = d[key];
-                                                    value = typeof val === 'string' ? parseFloat(val) : (val || 0);
-                                                }
-
-                                                return { year, value };
-                                            });
-                                        };
-
-                                        const data = getTrendData();
-
-                                        if (data.length === 0) return <div className="flex items-center justify-center h-full text-xs text-gray-400">No trend data available</div>;
-
-                                        return (
-                                            <ResponsiveContainer width="100%" height={120}>
-                                                <AreaChart data={data} margin={{ top: 15, right: 20, left: 20, bottom: 15 }}>
-                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                                                    <XAxis
-                                                        dataKey="year"
-                                                        tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 600 }}
-                                                        tickLine={false}
-                                                        axisLine={{ stroke: '#f3f4f6' }}
-                                                        dy={10}
-                                                        padding={{ left: 10, right: 10 }}
-                                                    />
-                                                    <RechartsTooltip
-                                                        cursor={{ stroke: '#f3f4f6', strokeWidth: 2 }}
-                                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', padding: '8px 12px' }}
-                                                        labelStyle={{ fontSize: '10px', fontWeight: 'bold', color: '#6b7280', marginBottom: '4px' }}
-                                                        itemStyle={{ fontSize: '12px', fontWeight: 'bold', padding: 0 }}
-                                                        formatter={(value: any) => [
-                                                            value >= 1000000 ? `${(value / 1000000).toFixed(2)}M` : value.toLocaleString(),
-                                                            'Population'
-                                                        ]}
-                                                    />
-                                                    <Area
-                                                        type="monotone"
-                                                        dataKey="value"
-                                                        stroke="#F58220"
-                                                        strokeWidth={2}
-                                                        fill="#F58220"
-                                                        fillOpacity={0.2}
-                                                        dot={false}
-                                                        activeDot={{ r: 5, strokeWidth: 0, fill: '#F58220' }}
-                                                    />
-                                                </AreaChart>
-                                            </ResponsiveContainer>
-                                        );
-                                    })()}
-                                </div>
-                            </div> */}
 
               {/* Gender Distribution Chart */}
               {isCensusSource && (
@@ -1765,12 +1698,12 @@ export const MapSection: React.FC<MapSectionProps> = ({
                     <div className="w-full h-70">
                       {(() => {
                         const data = ageDistributionData;
-                        const maxVal = Math.max(
-                          1,
-                          ...data.map((d) =>
-                            Math.max(Math.abs(d.male), d.female),
-                          ),
-                        );
+                        // const maxVal = Math.max(
+                        //   1,
+                        //   ...data.map((d) =>
+                        //     Math.max(Math.abs(d.male), d.female),
+                        //   ),
+                        // );
 
                         return (
                           <ResponsiveContainer width="100%" height="100%">
@@ -1793,7 +1726,7 @@ export const MapSection: React.FC<MapSectionProps> = ({
                               />
                               <XAxis
                                 type="number"
-                                domain={[-maxVal * 1.1, maxVal * 1.1]}
+                                domain={[-400000, 400000]}
                                 tickFormatter={formatAgeTick}
                                 tick={{
                                   fontSize: 9,
@@ -1863,37 +1796,12 @@ export const MapSection: React.FC<MapSectionProps> = ({
                   </div>
                 )}
 
-              {/* Commented out original individual cards
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 hover:bg-blue-50 hover:border-blue-200 transition-all group/stat">
-                                    <p className="text-[10px] uppercase font-bold text-[#3B82F6] mb-1 tracking-wide opacity-70">Literacy</p>
-                                    <p className="text-xl font-bold text-gray-900 group-hover/stat:scale-105 transition-transform origin-left">{formatStatValue(stats.literacy)}</p>
-                                </div>
-                                <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100/50 hover:bg-gray-50 hover:border-gray-200 transition-all group/stat">
-                                    <p className="text-[10px] uppercase font-bold text-gray-500 mb-1 tracking-wide opacity-70">Male</p>
-                                    <p className="text-xl font-bold text-gray-900 group-hover/stat:scale-105 transition-transform origin-left">{formatStatValue(stats.male)}</p>
-                                </div>
-                                <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100/50 hover:bg-gray-50 hover:border-gray-200 transition-all group/stat">
-                                    <p className="text-[10px] uppercase font-bold text-gray-500 mb-1 tracking-wide opacity-70">Female</p>
-                                    <p className="text-xl font-bold text-gray-900 group-hover/stat:scale-105 transition-transform origin-left">{formatStatValue(stats.female)}</p>
-                                </div>
-                            </div>
-                            */}
-
-              {/* Trends/Population charts commented out per original */}
             </div>
           </div>
         </div>
+
       </div>
 
-      {/* Scroll Indication Animation */}
-      {/* {showScrollHint && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-bounce pointer-events-none">
-          <div className="text-black p-2 w-10 h-10 flex items-center justify-center">
-            <ChevronsDown className="w-5 h-5" />
-          </div>
-        </div>
-      )} */}
 
       {showScrollHint && (
         <motion.div

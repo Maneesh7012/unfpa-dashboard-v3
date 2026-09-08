@@ -12,7 +12,45 @@ import {
   ChevronRight,
   ChevronDown,
   Check,
+  Info,
 } from 'lucide-react';
+
+const InfoTooltip = ({
+  text,
+  position = 'top',
+  // source,
+  content,
+  className = 'w-48',
+}: {
+  text?: string;
+  position?: 'top' | 'bottom';
+  source?: string;
+  content?: React.ReactNode;
+  className?: string;
+}) => (
+  <span className="group/info relative inline-block ml-2 align-middle z-[100]">
+    <Info className="w-4 h-4 text-gray-400 group-hover/info:text-[#F96000] transition-colors cursor-help" />
+    <span
+      className={`absolute left-1/2 -translate-x-1/2 px-1 hidden group-hover/info:flex flex-col items-center animate-in fade-in zoom-in-95 duration-200 pointer-events-none z-[200] ${className} 
+            ${position === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'}`}
+    >
+      <span className="bg-white/98 backdrop-blur-md p-3 rounded-xl shadow-2xl border border-gray-100 w-full block whitespace-normal text-left">
+        {content ? (
+          content
+        ) : (
+          <span className="text-[10px] text-gray-700 leading-relaxed font-semibold block text-center">
+            {text}
+          </span>
+        )}
+        {position === 'top' ? (
+          <span className="absolute top-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 shadow-sm block"></span>
+        ) : (
+          <span className="absolute bottom-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45 shadow-sm block"></span>
+        )}
+      </span>
+    </span>
+  </span>
+);
 import {
   XAxis,
   YAxis,
@@ -33,19 +71,21 @@ import {
   ALLOWED_DISTRICTS,
   DEMOGRAPHIC_STATS,
   CENSUS_PROJECTION_DATA,
-  // GENDER,
+  getRecord,
 } from '../../data/comparativeData';
 import {
   MODEL_STATS_DATA,
   MODEL_DATA,
   MODEL_URBAN_RURAL_DATA,
 } from '../../data/modelStats';
+import { DISTRICT_DEVELOPMENT } from '../../data/districtDevelopment';
 import type { LayerType } from '../../../types';
 // import MapLulc from './MapLulc';
 // import { ChangeAnalysis } from './ChangeAnalysis';
 import MapCompare, {
   LULC_QUARTERS,
   LULC_YEARS,
+  NTL_QUARTERS,
 } from '../MapCompare/MapCompare';
 import { MultiMapCompare } from '../MapCompare/MultiMapCompare';
 
@@ -91,11 +131,18 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     'Khordha',
   ]);
   const [openDistrictSelector, setOpenDistrictSelector] = useState(false);
+
+  // Per-district Development Activities & Insights content (falls back to
+  // Anugul for unmatched names, e.g. the 'Odisha' state view behind the blur).
+  const devContent =
+    (getRecord(DISTRICT_DEVELOPMENT, selectedDistrict) as
+      | (typeof DISTRICT_DEVELOPMENT)[string]
+      | undefined) || DISTRICT_DEVELOPMENT['Anugul'];
   const [projectionMode, setProjectionMode] = useState<
     'Model Only' | 'Model Vs Census Projection'
   >('Model Only');
   const layerYearMap: Record<string, string[]> = {
-    nightlight: LULC_QUARTERS,
+    nightlight: NTL_QUARTERS,
     roads: [
       '2014',
       '2015',
@@ -399,8 +446,9 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
       const densityKey = `density_${yearForTable}`;
       let latestDensityValue = 0;
 
-      if (MODEL_STATS_DATA[name] && MODEL_STATS_DATA[name]['2025']) {
-        latestDensityValue = MODEL_STATS_DATA[name]['2025'].density;
+      const modelStat2025 = getRecord(MODEL_STATS_DATA, name)?.[2025];
+      if (modelStat2025) {
+        latestDensityValue = modelStat2025.density;
       } else if (selectedDistrict === name && data && data[densityKey]) {
         latestDensityValue = parseFloat(data[densityKey]);
       } else if (districtsLookup.has(name)) {
@@ -410,23 +458,26 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
 
       // Growth calculation from MODEL_STATS_DATA for 2025
       let growthStr = '+0.0%';
-      if (MODEL_STATS_DATA[name] && MODEL_STATS_DATA[name]['2025']) {
-        const growthVal = MODEL_STATS_DATA[name]['2025'].growth;
+      if (modelStat2025) {
+        const growthVal = modelStat2025.growth;
         if (growthVal === null) {
           growthStr = '-';
         } else {
           growthStr = (growthVal >= 0 ? '+' : '') + growthVal.toFixed(2) + '%';
         }
-      } else if (DEMOGRAPHIC_STATS[name] && DEMOGRAPHIC_STATS[name][2025]) {
-        const growthVal = DEMOGRAPHIC_STATS[name][2025].growth;
-        growthStr = (growthVal >= 0 ? '+' : '') + growthVal.toFixed(2) + '%';
-      } else if (pmtilesPop > 0 && pmtilesPop2023 > 0) {
-        // Total growth over 2 years divided by 2 to approximate YoY
-        const totalGrowth =
-          ((pmtilesPop - pmtilesPop2023) / pmtilesPop2023) * 100;
-        const yearlyGrowth = totalGrowth / 2;
-        growthStr =
-          (yearlyGrowth >= 0 ? '+' : '') + yearlyGrowth.toFixed(1) + '%';
+      } else {
+        const demoStatRecord = getRecord(DEMOGRAPHIC_STATS, name)?.[2025];
+        if (demoStatRecord) {
+          const growthVal = demoStatRecord.growth;
+          growthStr = (growthVal >= 0 ? '+' : '') + growthVal.toFixed(2) + '%';
+        } else if (pmtilesPop > 0 && pmtilesPop2023 > 0) {
+          // Total growth over 2 years divided by 2 to approximate YoY
+          const totalGrowth =
+            ((pmtilesPop - pmtilesPop2023) / pmtilesPop2023) * 100;
+          const yearlyGrowth = totalGrowth / 2;
+          growthStr =
+            (yearlyGrowth >= 0 ? '+' : '') + yearlyGrowth.toFixed(1) + '%';
+        }
       }
 
       const latestPop = populationValue;
@@ -438,12 +489,10 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
       // Use Urban/Rural data from MODEL_URBAN_RURAL_DATA
       let urbanPop = 0;
       let ruralPop = 0;
-      if (
-        MODEL_URBAN_RURAL_DATA[name] &&
-        MODEL_URBAN_RURAL_DATA[name]['2025']
-      ) {
-        urbanPop = MODEL_URBAN_RURAL_DATA[name]['2025'].urban;
-        ruralPop = MODEL_URBAN_RURAL_DATA[name]['2025'].rural;
+      const modelUrbanRural2025 = getRecord(MODEL_URBAN_RURAL_DATA, name)?.[2025];
+      if (modelUrbanRural2025) {
+        urbanPop = modelUrbanRural2025.urban;
+        ruralPop = modelUrbanRural2025.rural;
       }
 
       return {
@@ -454,9 +503,9 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
         density:
           latestDensityValue > 0
             ? latestDensityValue.toLocaleString(undefined, {
-                minimumFractionDigits: 1,
-                maximumFractionDigits: 1,
-              }) + '/km²'
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 1,
+            }) + '/km²'
             : (400 + seed * 50).toFixed(0) + '/km²',
         urban: (urbanPop / 1000000).toFixed(2) + 'M',
         rural: (ruralPop / 1000000).toFixed(2) + 'M',
@@ -505,8 +554,9 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
       chartDistricts.forEach((distName) => {
         // Model Data (Only from MODEL_DATA)
         let modelVal = null;
-        if (MODEL_DATA[distName] && MODEL_DATA[distName][y]) {
-          modelVal = MODEL_DATA[distName][y];
+        const modelRecord = getRecord(MODEL_DATA, distName);
+        if (modelRecord && modelRecord[y]) {
+          modelVal = modelRecord[y];
         }
 
         if (modelVal !== null) {
@@ -516,11 +566,12 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
 
         // Census Data (CENSUS_PROJECTION_DATA)
         if (projectionMode === 'Model Vs Census Projection') {
+          const censusRecord = getRecord(CENSUS_PROJECTION_DATA, distName);
           if (
-            CENSUS_PROJECTION_DATA[distName] &&
-            CENSUS_PROJECTION_DATA[distName][y]
+            censusRecord &&
+            censusRecord[y]
           ) {
-            const censusVal = CENSUS_PROJECTION_DATA[distName][y];
+            const censusVal = censusRecord[y];
             if (y <= 2025) row[`${distName}_census_s`] = censusVal;
             if (y >= 2025) row[`${distName}_census_d`] = censusVal;
           }
@@ -544,12 +595,13 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
     <div className="bg-white min-h-[500px]">
       <div className="w-full mx-auto px-4 lg:px-6 py-14 space-y-12">
         {/* 1.5 Population Projections Section */}
-        <div className="space-y-6">
+        <div className="space-y-6 pb-10 pt-2">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
                 <ChartNoAxesColumnIncreasing className="w-6 h-6 text-black" />
                 Population Projections - {selectedDistrict}
+                {/* <InfoTooltip text="Projected demographic trends and statistics." position="top" /> */}
               </h3>
               <p className="text-sm text-gray-500 mt-1 font-medium">
                 District wise demographic projection and growth trajectory
@@ -570,13 +622,12 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                     onClick={() =>
                       setProjectionMode('Model Vs Census Projection')
                     }
-                    className={`px-3 py-1.5 text-[11px] font-black uppercase tracking-wider rounded-md transition-all ${
-                      projectionMode === 'Model Vs Census Projection'
-                        ? 'bg-white text-[#1C68AC] shadow-sm'
-                        : isDistrictSelected
-                          ? 'text-gray-500 hover:text-gray-700'
-                          : 'text-gray-300 cursor-not-allowed'
-                    }`}
+                    className={`px-3 py-1.5 text-[11px] font-black uppercase tracking-wider rounded-md transition-all ${projectionMode === 'Model Vs Census Projection'
+                      ? 'bg-white text-[#1C68AC] shadow-sm'
+                      : isDistrictSelected
+                        ? 'text-gray-500 hover:text-gray-700'
+                        : 'text-gray-300 cursor-not-allowed'
+                      }`}
                   >
                     Model Vs. Census Proj.
                   </button>
@@ -1006,7 +1057,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
             {/* <MapLulc selectedDistrict={selectedDistrict} onDistrictSelect={onDistrictSelect} /> */}
 
             {/* Quarterly Sentinel-2 TCI Timelapse */}
-            <div className="w-full mb-8">
+            <div className="w-full mb-14">
               <MapSentinelQuaterly
                 targetDistrict={selectedDistrict}
                 targetBounds={mapBounds}
@@ -1019,6 +1070,62 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                 <h2 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
                   <MapIcon className="w-6 h-6 text-black" />
                   Comparative Analysis - {selectedDistrict}
+                  <InfoTooltip
+                    position="bottom"
+                    className="w-[280px] sm:w-[380px] md:w-[480px]"
+                    content={
+                      <div className="space-y-4 p-1 text-gray-800">
+                        <div>
+                          <h4 className="text-[11px] font-black uppercase tracking-wider mb-1">
+                            Built-up Area
+                          </h4>
+                          <p className="text-[10px] text-gray-600 leading-relaxed font-semibold">
+                            Built-up area represents land covered by human-made
+                            structures such as residential buildings, commercial
+                            establishments, industrial facilities, roads, and other
+                            impervious surfaces.
+                          </p>
+                        </div>
+                        <div className="border-t border-gray-100 pt-3">
+                          <h4 className="text-[11px] font-black  uppercase tracking-wider mb-1">
+                            Night Lights
+                          </h4>
+                          <p className="text-[10px] text-gray-600 leading-relaxed font-semibold">
+                            Night-Time Light (NTL) data are derived from the Visible
+                            Infrared Imaging Radiometer Suite (VIIRS) sensor onboard the
+                            joint NASA/NOAA satellites. The dataset captures artificial
+                            lighting emitted from human settlements and economic
+                            activities during nighttime. Higher radiance values
+                            generally indicate greater levels of human activity,
+                            infrastructure, and electrification.
+                          </p>
+                        </div>
+                        <div className="border-t border-gray-100 pt-3">
+                          <h4 className="text-[11px] font-black  uppercase tracking-wider mb-1">
+                            Road Network
+                          </h4>
+                          <p className="text-[10px] text-gray-600 leading-relaxed font-semibold">
+                            The road layer represents transportation infrastructure,
+                            including highways, primary roads, secondary roads, and local
+                            road networks. Roads provide connectivity between
+                            settlements, markets, healthcare facilities, schools, and
+                            other services.
+                          </p>
+                        </div>
+                        <div className="border-t border-gray-100 pt-3">
+                          <h4 className="text-[11px] font-black  uppercase tracking-wider mb-1">
+                            Cropland
+                          </h4>
+                          <p className="text-[10px] text-gray-600 leading-relaxed font-semibold">
+                            Cropland represents areas used for agricultural cultivation
+                            and food production. The layer is derived from the LULC
+                            dataset by extracting pixels classified as agricultural land
+                            or cropland.
+                          </p>
+                        </div>
+                      </div>
+                    }
+                  />
                 </h2>
                 <p className="text-sm text-gray-500 mt-1 font-medium">
                   Visualizing spatiotemporal changes in {selectedDistrict}.
@@ -1042,11 +1149,10 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                   <button
                     key={cat.layer}
                     onClick={() => setCompareLayer(cat.layer as any)}
-                    className={`px-4 py-2 text-xs font-bold transition-all whitespace-nowrap border rounded-md ${
-                      compareLayer === cat.layer
-                        ? 'bg-[#F96000] text-white shadow-sm'
-                        : 'bg-gray-100 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-white'
-                    }`}
+                    className={`px-4 py-2 text-xs font-bold transition-all whitespace-nowrap border rounded-md ${compareLayer === cat.layer
+                      ? 'bg-[#F96000] text-white shadow-sm'
+                      : 'bg-gray-100 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-white'
+                      }`}
                   >
                     {cat.label}
                   </button>
@@ -1152,23 +1258,25 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
             </div>
 
             {/* 1. Comparative Analysis Section */}
-            <section className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-              <div className="bg-white p-6 md:p-8">
-                <MapCompare
-                  targetBounds={mapBounds}
-                  activeLayer={compareLayer}
-                  activeLulcPixel={compareLulcPixel}
-                  year1={year1.toString()}
-                  year2={year2.toString()}
-                  resetTrigger={resetMapTrigger}
-                  targetDistrict={selectedDistrict}
-                  onDistrictSelect={onDistrictSelect}
-                  viewMode={viewMode}
-                  onMapClick={() => setShowSentinel(true)}
-                  isQuarterly={isQuarterly}
-                />
-              </div>
-            </section>
+            <div className="pb-10">
+              <section className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                <div className="bg-white p-6 md:p-8">
+                  <MapCompare
+                    targetBounds={mapBounds}
+                    activeLayer={compareLayer}
+                    activeLulcPixel={compareLulcPixel}
+                    year1={year1.toString()}
+                    year2={year2.toString()}
+                    resetTrigger={resetMapTrigger}
+                    targetDistrict={selectedDistrict}
+                    onDistrictSelect={onDistrictSelect}
+                    viewMode={viewMode}
+                    onMapClick={() => setShowSentinel(true)}
+                    isQuarterly={isQuarterly}
+                  />
+                </div>
+              </section>
+            </div>
 
             {/* 1.2 Multi-Temporal Analysis Section */}
             {/* <div className="mb-6">
@@ -1222,7 +1330,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
           //   />
           // </div>
 
-          <div className="w-full mb-14">
+          <div className="w-full mb-12">
             <WhatHowWhy_v2
               targetDistrict={selectedDistrict}
               targetBounds={mapBounds}
@@ -1231,12 +1339,13 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
         )}
 
         {/* 3. Regional Performance Matrix Section */}
-        <div className="space-y-6">
+        <div className="space-y-6 pb-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
                 <Trophy className="w-6 h-6 text-black" />
                 Regional Performance Matrix
+                {/* <InfoTooltip text="Performance indicators across different regions." position="top" /> */}
               </h3>
               <p className="text-sm text-gray-500 mt-1 font-medium">
                 Comprehensive district-level demographic indicators including
@@ -1346,7 +1455,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                                         selectedDistrict
                                           ?.trim()
                                           .toLowerCase() ===
-                                        d.name.trim().toLowerCase()
+                                          d.name.trim().toLowerCase()
                                           ? '#fff'
                                           : '#F58220'
                                       }
@@ -1358,7 +1467,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                                         selectedDistrict
                                           ?.trim()
                                           .toLowerCase() ===
-                                        d.name.trim().toLowerCase()
+                                          d.name.trim().toLowerCase()
                                           ? '#fff'
                                           : '#F58220'
                                       }
@@ -1371,7 +1480,7 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                                   dataKey="value"
                                   stroke={
                                     selectedDistrict?.trim().toLowerCase() ===
-                                    d.name.trim().toLowerCase()
+                                      d.name.trim().toLowerCase()
                                       ? '#fff'
                                       : '#F58220'
                                   }
@@ -1400,15 +1509,16 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
         </div>
 
         {/* 4. Critical Insights Section */}
-        <div className="space-y-6">
+        <div className="space-y-6 pb-10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
                 <AlertCircle className="w-6 h-6 text-black" />
-                Development Activities{' '}
+                Development Activities
+                {/* <InfoTooltip text="Overview of ongoing development activities." position="top" /> */}
               </h3>
               <p className="text-sm text-gray-500 mt-1 font-medium">
-                Core developments in Anugul
+                Core developments in {selectedDistrict}
               </p>
             </div>
           </div>
@@ -1441,91 +1551,33 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                                     display: none;
                                 }
                             `}</style>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Coal‑ and power‑led industrialisation deepening
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  Talcher hosts India’s largest power‑grade coalfield, with an
-                  estimated 168,000 workers in Anugul dependent on coal; studies
-                  suggest production will peak within the next decade then
-                  decline after 2040.
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Major upgrades in road and rail logistics
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  The four‑laning of NH‑55 via Anugul is nearing completion
-                  stretches already operational.{' '}
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Anugul railway station becoming a modern hub
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  Anugul station is being redeveloped under the Amrit Bharat /
-                  Amrit Station Scheme with about ₹25.4 crore sanctioned, and
-                  over half the physical work done by 2025.{' '}
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Talcher coal rail corridors and new mines
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  The Talcher coalfield inner and outer rail corridors (₹4,882
-                  crore total) are being taken up to raise MCL’s coal dispatch
-                  by rail to about 88% (162.8 MT) by 2029–30, with Phase‑I
-                  already commissioned.{' '}
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Mahanadi Coal Railway Ltd Phase‑II (Balram–Jarpada–Tentuloi)
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  Phase‑II of the Mahanadi Coal Railway
-                  (Balram–Jarpada–Tentuloi, about 54 km) is targeted for
-                  commissioning by December 2025 and is designed to evacuate
-                  around 58 MT of coal annually from CIL and non‑CIL blocks in
-                  the southern and central Talcher coalfield.
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  New district‑level road and education projects
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  In July 2025, the Union education minister inaugurated 34
-                  projects worth about ₹44.9 crore and laid foundations for 19
-                  projects worth about ₹8.9 crore in Anugul, including key road
-                  improvements (Kosala–Chhendipada, NH‑55 to Patharagada) and
-                  upgrades to educational infrastructure, which will be
-                  implemented over the next few years.
-                </p>
-              </div>
+              {devContent.activities.map((card) => (
+                <div
+                  key={card.title}
+                  className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start"
+                >
+                  <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
+                    {card.title}
+                  </h4>
+                  <p className="text-sm text-[#F58220] leading-relaxed">
+                    {card.text}
+                  </p>
+                </div>
+              ))}
             </div>
           </section>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 pb-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
                 <AlertCircle className="w-6 h-6 text-black" />
-                Insights{' '}
+                Insights
+                {/* <InfoTooltip text="Key insights derived from the data." position="top" /> */}
               </h3>
               <p className="text-sm text-gray-500 mt-1 font-medium">
-                The demographic transformation of Anugul district from 2011 to
-                2024 presents a compelling narrative of industrial-driven
-                urbanization captured through advanced geospatial analysis. By
-                integrating satellite imagery and machine learning algorithms,
-                this study reveals critical insights into how industrialization
-                and urban growth has fundamentally reshaped the district's
-                population dynamics and spatial distribution.
+                {devContent.insightsIntro}
               </p>
             </div>
           </div>
@@ -1558,81 +1610,19 @@ export const StatsDetails: React.FC<StatsDetailsProps> = ({
                                     display: none;
                                 }
                             `}</style>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Industrial Expansion as the Primary Growth Catalyst
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  The coal mining sector has emerged as the dominant force
-                  driving Anugul's demographic evolution and has attracted
-                  substantial migration from other states and districts,
-                  creating concentrated population clusters around mining and
-                  industrial centers. The mining belt effect has fundamentally
-                  altered the district's economic structure, transforming Anugul
-                  from a predominantly agricultural region into one that
-                  continues to draw workers and their families seeking
-                  employment opportunities.
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Concentrated Urban Growth in Strategic Corridors
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  Spatial analysis reveals that urbanization has occurred in a
-                  highly concentrated pattern. The Anugul-Talcher region has
-                  expanded rapidly with s and nightlight data patterns
-                  increasing between 2011 and 2024. This concentrated growth
-                  pattern indicates that economic benefits and population
-                  increases have been geographically uneven, with some areas
-                  experiencing rapid transformation while rural peripheries
-                  remain comparatively underdeveloped.{' '}
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Significant Land Use Transformation and Agricultural Decline
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  The industrial expansion has necessitated substantial land use
-                  changes that have reshaped the district's physical landscape.
-                  As shown in the Agricultural land changes, increase in
-                  opencast mining activities and coalfield expansions. This
-                  dramatic shift of the district's economic base has direct
-                  implications for traditional livelihoods, food security, and
-                  the occupational profiles of the local population.
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Population Displacement and Resettlement Dynamics
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  Industrial and mining expansion has triggered significant
-                  population displacement, creating complex resettlement
-                  patterns across the district. Mining operations affect many
-                  families who then are forced to migrate and have their
-                  traditional community structures and agricultural livelihoods
-                  disrupted, requiring affected populations to adapt to new
-                  locations and often transition to non-agricultural employment
-                  in the industrial sector.{' '}
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start">
-                <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
-                  Infrastructure Development Enabling Further Growth
-                </h4>
-                <p className="text-sm text-[#F58220] leading-relaxed">
-                  The expansion of transportation networks and civic
-                  infrastructure has both facilitated and accelerated population
-                  growth in industrial centers. Improvements to National Highway
-                  55, development of new railway lines, and the launch of
-                  multiple development projects have enhanced connectivity
-                  across the district, making it easier to transport goods and
-                  people while encouraging the establishment of new settlements
-                  and small-scale industries around major corridors.
-                </p>
-              </div>
+              {devContent.insights.map((card) => (
+                <div
+                  key={card.title}
+                  className="bg-white p-4 rounded-lg border border-gray-200 min-w-[85vw] md:min-w-[calc(33.333%-16px)] max-w-[85vw] md:max-w-[calc(33.333%-16px)] shrink-0 snap-start"
+                >
+                  <h4 className="text-xs font-bold text-[#F58220] uppercase mb-2">
+                    {card.title}
+                  </h4>
+                  <p className="text-sm text-[#F58220] leading-relaxed">
+                    {card.text}
+                  </p>
+                </div>
+              ))}
             </div>
           </section>
         </div>

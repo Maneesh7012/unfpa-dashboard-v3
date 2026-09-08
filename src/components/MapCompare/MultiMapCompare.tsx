@@ -23,6 +23,35 @@ import { MULTI_TOOLTIPS } from '../../data/tooltipInfo';
 import { DISTRICT_NAME_VARIANTS } from '../../data/comparativeData';
 import smodClasses from './ghsl_smod_classes.json';
 
+// const InfoTooltip = ({
+//   text,
+//   position = 'top',
+//   source,
+// }: {
+//   text: string;
+//   position?: 'top' | 'bottom';
+//   source?: string;
+// }) => (
+//   <span className="group/info relative inline-block ml-2 align-middle z-[100]">
+//     <Info className="w-4 h-4 text-gray-400 group-hover/info:text-[#F96000] transition-colors cursor-help" />
+//     <span
+//       className={`absolute left-1/2 -translate-x-1/2 w-48 px-1 hidden group-hover/info:flex flex-col items-center animate-in fade-in zoom-in-95 duration-200 pointer-events-none z-[200] 
+//             ${position === 'bottom' ? 'top-full mt-2' : 'bottom-full mb-2'}`}
+//     >
+//       <span className="bg-white/98 backdrop-blur-md p-3 rounded-xl shadow-2xl border border-gray-100 w-full block whitespace-normal text-center">
+//         <span className="text-[10px] text-gray-700 leading-relaxed font-semibold block">
+//           {text}
+//         </span>
+//         {position === 'top' ? (
+//           <span className="absolute top-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-r border-b border-gray-100 rotate-45 shadow-sm block"></span>
+//         ) : (
+//           <span className="absolute bottom-[calc(100%-6px)] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 rotate-45 shadow-sm block"></span>
+//         )}
+//       </span>
+//     </span>
+//   </span>
+// );
+
 const SettlementTooltip = () => {
   return (
     <div className="flex flex-col gap-4 p-1 max-w-[320px]">
@@ -155,14 +184,14 @@ const NTL_QUARTER_LABEL_MAP: Record<string, string> = {
 };
 
 const NTL_QUARTER_MONTHS = ['March', 'June', 'September', 'December'];
-const NTL_YEARS = Array.from({ length: 2026 - 2018 + 1 }, (_, i) =>
-  (2018 + i).toString(),
+const NTL_YEARS = Array.from({ length: 2026 - 2012 + 1 }, (_, i) =>
+  (2012 + i).toString(),
 );
 
-// All dropdown options for nightlight: ["2018 March", "2018 June", ..., "2026 March"]
+// All dropdown options for nightlight: ["2012 March", "2012 June", ..., "2026 March"]
 // Note: 2026 only has q1 data (March), so other quarters are excluded for that year
 const NTL_YEAR_OPTIONS: string[] = NTL_YEARS.flatMap((year) => {
-  const months = year === '2026' ? ['March'] : NTL_QUARTER_MONTHS;
+  const months = year === '2026' ? ['March', 'June'] : NTL_QUARTER_MONTHS;
   return months.map((month) => `${year} ${month}`);
 });
 
@@ -229,7 +258,7 @@ const LAYER_CONFIGS: any = {
     // We keep a placeholder so year-validation logic knows available options
     urls: Object.fromEntries(NTL_YEAR_OPTIONS.map((opt) => [opt, ''])),
     params:
-      '#color:["#000000","#333333","#663300","#ccaa00","#ffff00"],0,200,c',
+      '#color:["#000000", "#48485d", "#f6eaaf", "#fe0000"],0,60,c',
     type: 'raster',
     isNightlight: true, // flag to trigger dynamic URL build
   },
@@ -283,7 +312,7 @@ const ROAD_CATEGORIES = [
 
 const BASE_MAP_STYLE: any = {
   version: 8,
-  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+  glyphs: 'https://basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
   sources: {
     'esri-grey': {
       type: 'raster',
@@ -345,13 +374,13 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
   const [mapConfigs, setMapConfigs] = useState<MapConfig[]>([
     {
       id: 'map-1',
-      year: propActiveLayer === 'nightlight' ? '2018 March' : '2017',
+      year: propActiveLayer === 'nightlight' ? '2012 March' : '2017',
       layer: propActiveLayer || 'builtup',
       basemap: 'grey',
     },
     {
       id: 'map-2',
-      year: propActiveLayer === 'nightlight' ? '2026 March' : '2025',
+      year: propActiveLayer === 'nightlight' ? '2026 June' : '2025',
       layer: propActiveLayer || 'builtup',
       basemap: 'grey',
     },
@@ -364,24 +393,7 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
     year: '2024',
   });
 
-  useEffect(() => {
-    if (propActiveLayer) {
-      setMapConfigs((prev) =>
-        prev.map((m, idx) => {
-          let year = m.year;
-          if (idx === 0) {
-            year = propActiveLayer === 'nightlight' ? '2018 March' : '2017';
-          } else if (idx === 1) {
-            year = propActiveLayer === 'nightlight' ? '2026 March' : '2025';
-          } else {
-            // For 3rd map or others, default to a sensible middle/latest
-            year = propActiveLayer === 'nightlight' ? '2026 March' : '2024';
-          }
-          return { ...m, layer: propActiveLayer, year };
-        }),
-      );
-    }
-  }, [propActiveLayer]);
+
 
   const mapInstances = useRef<Map<string, maplibregl.Map>>(new Map());
   const isSyncing = useRef(false);
@@ -498,12 +510,13 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
             <MapIcon className="w-6 h-6" />
             Comparative Analysis - Splitview
+            {/* <InfoTooltip text="Compare different metrics side-by-side." position="top" /> */}
           </h3>
           <p className="text-[13px] text-gray-500 mt-1 font-medium leading-relaxed">
             Simultaneously visualize and compare spatio-temporal demographic
@@ -524,7 +537,7 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
         </div>
       </div>
 
-      <div className="flex flex-nowrap gap-4 overflow-x-auto pb-4 custom-scrollbar">
+      <div className="flex flex-nowrap gap-4 overflow-x-auto pb-0 custom-scrollbar">
         {mapConfigs.map((config, idx) => (
           <div
             key={`${config.id}-${selectedDistrict}`}
@@ -582,7 +595,7 @@ export const MultiMapCompare: React.FC<MultiMapCompareProps> = ({
                       const layer = e.target.value;
                       const defaultYear =
                         layer === 'nightlight'
-                          ? '2026 March'
+                          ? '2026 June'
                           : pendingConfig.year.includes(' ')
                             ? '2024'
                             : pendingConfig.year;
@@ -693,21 +706,21 @@ const MapItem = ({
   const [isBasemapOpen, setIsBasemapOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // const NTL_CLASSES = [
+  //   { label: '< 5', min: 0, max: 5, color: '#000000' },
+  //   { label: '5 - 25', min: 5, max: 25, color: '#48485d' },
+  //   { label: '26 - 50', min: 26, max: 50, color: '#f6eaaf' },
+  //   { label: '> 50', min: 50, max: 9999, color: '#fe0000' },
+  //   { label: 'No Data', noData: true, color: '#b44ef1' },
+  // ];
   const NTL_CLASSES = [
-    { label: '< 5', min: 0, max: 5, color: '#000000' },
-    { label: '5 - 25', min: 5, max: 25, color: '#48485d' },
-    { label: '26 - 50', min: 26, max: 50, color: '#f6eaaf' },
-    { label: '> 50', min: 50, max: 9999, color: '#fe0000' },
-    { label: 'No Data', noData: true, color: '#b44ef1' },
+    { label: 'Very Low Intensity', min: 0, max: 5, color: '#000000' },
+    { label: 'Low Intensity', min: 5, max: 25, color: '#48485d' },
+    { label: 'High Intensity', min: 26, max: 50, color: '#f6eaaf' },
+    { label: 'Very High Intensity', min: 50, max: 9999, color: '#fe0000' },
+    // { label: 'No Data', noData: true, color: '#b44ef1' },
   ];
 
-  const classifyNtl = (val: number): string => {
-    if (val == null || Number.isNaN(val)) return '#b44ef1';
-    if (val < 5) return '#000000';
-    if (val <= 25) return '#48485d';
-    if (val <= 50) return '#f6eaaf';
-    return '#fe0000';
-  };
 
   // const palettes = [
   //   ['#f7fbff', '#4292c6', '#2171b5', '#053b81'],
@@ -835,7 +848,7 @@ const MapItem = ({
       } else if (config.layer === 'nightlight') {
         // For nightlight, validate against NTL_YEAR_OPTIONS
         if (!NTL_YEAR_OPTIONS.includes(config.year)) {
-          onUpdate({ year: '2026 March' });
+          onUpdate({ year: '2026 June' });
           return;
         }
       } else {
@@ -1059,25 +1072,22 @@ const MapItem = ({
       if (config.layer === 'nightlight') {
         // ✅ Build dynamic URL from district + quarterly label
         url = buildNtlUrl(yearKey, selectedDistrict || 'Anugul');
-        rasterParams = ''; // Colors handled by setColorFunction (class-based)
-
+        rasterParams = ''; // Colors handled by setColorFunction
         setColorFunction(url, (pixel: any, color: any, metadata: any) => {
           const val = pixel[0];
-          const nd = metadata?.noData;
-          if (
-            val == null ||
-            Number.isNaN(val) ||
-            (nd != null && val === nd) ||
-            val === 0
-          ) {
-            // leave pixel as the default transparent (rgba buffer is pre-zeroed)
+          if (val === metadata.noData || val < 0) {
+            color.set([0, 0, 0, 0]);
             return;
           }
-          const hex = classifyNtl(val).replace('#', '');
-          const r = parseInt(hex.substring(0, 2), 16);
-          const g = parseInt(hex.substring(2, 4), 16);
-          const b = parseInt(hex.substring(4, 6), 16);
-          color.set([r, g, b, 255]);
+          if (val <= 0.8) {
+            color.set([0, 0, 0, 255]); // #000000
+          } else if (val <= 5) {
+            color.set([72, 72, 93, 255]); // #48485D
+          } else if (val <= 10) {
+            color.set([246, 234, 175, 255]); // #F6EAAF
+          } else {
+            color.set([254, 0, 0, 255]); // #FE0000
+          }
         });
       } else if (config.layer === 'ghsl') {
         url = buildGhslUrl(yearKey, selectedDistrict || 'Anugul');
@@ -1111,11 +1121,16 @@ const MapItem = ({
         url: `cog://${url}${rasterParams}`,
         tileSize: 256,
       });
+      const paintProps: any = { 'raster-opacity': 1 };
+      if (config.layer === 'nightlight' || config.layer === 'ghsl' || config.layer === 'builtup') {
+        paintProps['raster-resampling'] = 'linear';
+      }
+
       map.addLayer({
         id: layerId,
         type: 'raster',
         source: sourceId,
-        paint: { 'raster-opacity': 0.8 },
+        paint: paintProps,
       });
     } else {
       const url =
@@ -1214,7 +1229,7 @@ const MapItem = ({
   };
 
   return (
-    <div className="relative h-[600px] bg-gray-100 rounded-2xl border border-gray-200 overflow-hidden group shadow-sm transition-all hover:shadow-md">
+    <div className="relative h-[600px] 2xl:h-[750px] bg-gray-100 rounded-2xl border border-gray-200 overflow-hidden group shadow-sm transition-all hover:shadow-md">
       <div ref={containerRef} className="w-full h-full" />
 
       {isLoading && (
@@ -1332,7 +1347,7 @@ const MapItem = ({
                       // Synchronize year format when switching layers
                       const nextYear =
                         key === 'nightlight'
-                          ? '2026 March'
+                          ? '2026 June'
                           : config.year.includes(' ')
                             ? '2024'
                             : config.year;

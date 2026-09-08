@@ -285,3 +285,9 @@ body {
 .maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
   border-top-color: white !important;
 }
+
+@media (min-width: 1536px) {
+  html {
+    font-size: 18px;
+  }
+}

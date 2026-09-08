@@ -7,6 +7,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import * as pmtiles from 'pmtiles';
 
 import { DISTRICT_NAME_VARIANTS } from '../../../data/comparativeData';
+import { registerMiniMap, unregisterMiniMap } from '../../Report/mapSnapshot';
 
 // ---------------- PMTiles Setup (singleton safe) ----------------
 const protocol = new pmtiles.Protocol();
@@ -46,7 +47,7 @@ export const MiniDistrictMap = ({
       container: containerRef.current,
       style: {
         version: 8,
-        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+        glyphs: 'https://basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf',
         sources: showBasemap
           ? {
               base: {
@@ -72,6 +73,8 @@ export const MiniDistrictMap = ({
       zoom: 5,
       interactive: false,
       attributionControl: false,
+      // required so the report can snapshot the canvas (maplibre-gl v5 location)
+      canvasContextAttributes: { preserveDrawingBuffer: true },
     });
 
     map.on('load', () => {
@@ -131,8 +134,10 @@ export const MiniDistrictMap = ({
     });
 
     mapRef.current = map;
+    registerMiniMap(map);
 
     return () => {
+      unregisterMiniMap(map);
       map.remove();
       mapRef.current = null;
     };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { type DistrictData } from '../shared';
 import {
@@ -8,6 +8,8 @@ import {
   TrendingUp,
   Building2,
   Trees,
+  FileDown,
+  Loader2,
 } from 'lucide-react';
 import { MiniDistrictMap } from './MiniDistrictMap';
 import { DISTRICT_OVERVIEWS } from './districtNarrative';
@@ -329,6 +331,25 @@ export function StateDemographics_v3({
     });
   }, [selectedDistrict, selectedData]);
 
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    if (!selectedDistrict || isExporting) return;
+    try {
+      setIsExporting(true);
+      // Lazy-loaded so @react-pdf/renderer ships in its own chunk (fetched on demand).
+      const { downloadDistrictReport } = await import(
+        '../../Report/DistrictReportPdf'
+      );
+      // selectedData (the map feature's properties) feeds the age pyramid.
+      await downloadDistrictReport(selectedDistrict, selectedData);
+    } catch (err) {
+      console.error('District report export failed', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const overview = useMemo(() => {
     if (!selectedDistrict) return null;
     return DISTRICT_OVERVIEWS[selectedDistrict] || null;
@@ -386,25 +407,42 @@ export function StateDemographics_v3({
 
   return (
     <motion.div
-      className="mx-auto px-4 lg:px-6 py-14 space-y-10"
+      className="mx-auto px-4 lg:px-6 py-14 space-y-10 pb-15"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
       {/* HEADER */}
-      <div className="pb-0">
-        <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-          <TrendingUpDown className="w-6 h-6 text-black" />
-          District Overview - {districtName}
-        </h3>
-        <p className="text-sm text-gray-500 mt-1 font-medium">
-          A comprehensive synthesis of population dynamics and demographic
-          trends.
-        </p>
+      <div className="pb-0 flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+            <TrendingUpDown className="w-6 h-6 text-black" />
+            District Overview - {districtName}
+          </h3>
+          <p className="text-sm text-gray-500 mt-1 font-medium">
+            A comprehensive synthesis of population dynamics and demographic
+            trends.
+          </p>
+        </div>
+        {selectedDistrict && selectedDistrict.toLowerCase() !== 'odisha' && (
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={isExporting}
+            className="shrink-0 inline-flex items-center gap-2 rounded-lg bg-[#F96000] px-4 py-2 text-xs font-black uppercase tracking-wider text-white shadow-sm transition-colors hover:bg-[#D66B12] focus:outline-none focus:ring-2 focus:ring-[#F96000]/40 disabled:opacity-60 disabled:cursor-wait"
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <FileDown className="w-4 h-4" />
+            )}
+            {isExporting ? 'Generating…' : 'Export Report'}
+          </button>
+        )}
       </div>
 
       {/* STAT CARDS, full width, above the 2-col layout */}
       {withCards && stats.length > 0 && (
-        <div className="-mt-4 mb-8">
+        <div className="-mt-4 mb-20">
           <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">
             Key Figures at a Glance
           </p>
